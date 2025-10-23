@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}新闻动态{% endblock %}
+{% block content %}
+<h2>新闻动态</h2>
+<ul>
+    {% for item in news_list %}
+    <li>
+        <strong>{{ item.title }}</strong> <span style="color:#888;">{{ item.date }}</span><br>
+        <div>{{ item.content }}</div>
+    </li>
+    {% else %}
+    <li>暂无新闻</li>
+    {% endfor %}
+</ul>
+{% endblock %}

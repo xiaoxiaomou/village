@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}乡村网站{% endblock %}</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; margin: 0; padding: 0; background: #f7f7f7; }
+        header { background: #2d8cf0; color: #fff; padding: 20px 0; }
+        nav { display: flex; justify-content: center; gap: 40px; }
+        nav a { color: #fff; text-decoration: none; font-size: 18px; padding: 8px 16px; border-radius: 4px; }
+        nav a:hover { background: #1a6fb3; }
+        .container { max-width: 1000px; margin: 30px auto 40px auto; background: #fff; padding: 30px 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        footer { background: #222; color: #aaa; text-align: center; padding: 18px 0; position: fixed; left: 0; right: 0; bottom: 0; }
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            nav { flex-direction: column; gap: 10px; }
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div style="text-align:center;font-size:2em;font-weight:bold;letter-spacing:2px;">美丽乡村信息平台</div>
+        <nav>
+            <a href="/">首页</a>
+            <a href="/village">乡村概况</a>
+            <a href="/news">新闻动态</a>
+            <a href="/government">政务公开</a>
+            <a href="/services">便民服务</a>
+            <a href="/message">互动交流</a>
+            <a href="/contact">联系我们</a>
+            
+            <!-- 用户登录状态显示 -->
+            {% if session['user'] %}
+                <span style="color: #fff;">欢迎，{{ session['user'] }}</span>
+                {% if session['role'] == 'admin' %}
+                    <a href="/admin">后台管理</a>
+                {% endif %}
+                <a href="/logout">注销</a>
+            {% else %}
+                <a href="/login">登录</a>
+                <a href="/register">注册</a>
+            {% endif %}
+        </nav>
+    </header>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        &copy; 2024 美丽乡村信息平台 | 技术支持：乡村开发团队
+    </footer>
+</body>
+</html>

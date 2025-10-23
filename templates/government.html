@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}政务公开{% endblock %}
+{% block content %}
+<h2>政务公开</h2>
+<ul>
+    {% for item in government_list %}
+    <li>
+        <strong>{{ item.title }}</strong>
+        {% if item.file_url %}
+        <a href="{{ item.file_url }}" target="_blank">下载附件</a>
+        {% endif %}
+        <div>{{ item.content }}</div>
+    </li>
+    {% else %}
+    <li>暂无政务信息</li>
+    {% endfor %}
+</ul>
+{% endblock %}

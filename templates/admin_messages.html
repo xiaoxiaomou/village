@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+{% block title %}留言管理 - 管理后台{% endblock %}
+
+{% block head %}
+<style>
+    .admin-header {
+        background: #2d8cf0;
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center;
+        border-left: 4px solid #2d8cf0;
+    }
+    .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        color: #2d8cf0;
+        margin-bottom: 5px;
+    }
+    .stat-label {
+        color: #666;
+        font-size: 14px;
+    }
+    .message-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .message-header {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .message-info {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+    .message-name {
+        font-weight: bold;
+        color: #2d8cf0;
+    }
+    .message-contact {
+        color: #666;
+        font-size: 14px;
+    }
+    .message-time {
+        color: #999;
+        font-size: 12px;
+    }
+    .message-status {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    .status-replied {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .message-content {
+        padding: 20px;
+        line-height: 1.6;
+        color: #333;
+    }
+    .message-reply {
+        background: #f0f8ff;
+        border-top: 1px solid #e9ecef;
+        padding: 20px;
+    }
+    .reply-header {
+        font-weight: bold;
+        color: #2d8cf0;
+        margin-bottom: 10px;
+    }
+    .reply-form {
+        margin-top: 15px;
+    }
+    .reply-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        font-family: inherit;
+    }
+    .reply-buttons {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+    }
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.3s;
+    }
+    .btn-primary {
+        background: #2d8cf0;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #1a6fb3;
+    }
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background: #545b62;
+    }
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    .btn-danger:hover {
+        background: #c82333;
+    }
+    .filter-bar {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .filter-group {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .filter-select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+    }
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        min-width: 200px;
+    }
+    .no-messages {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-header">
+        <div>
+            <h1>💬 留言管理</h1>
+            <p>管理和回复村民留言</p>
+        </div>
+        <div>
+            <a href="/admin" class="btn btn-secondary">返回后台</a>
+        </div>
+    </div>
+    
+    <!-- 统计信息 -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number" id="total-messages">0</div>
+            <div class="stat-label">总留言数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="pending-messages">0</div>
+            <div class="stat-label">待回复</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="replied-messages">0</div>
+            <div class="stat-label">已回复</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="today-messages">0</div>
+            <div class="stat-label">今日新增</div>
+        </div>
+    </div>
+    
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label>状态筛选:</label>
+            <select class="filter-select" id="status-filter">
+                <option value="">全部</option>
+                <option value="pending">待回复</option>
+                <option value="replied">已回复</option>
+            </select>
+            
+            <label>搜索:</label>
+            <input type="text" class="search-input" id="search-input" placeholder="搜索留言内容或姓名...">
+            
+            <button class="btn btn-primary" onclick="filterMessages()">筛选</button>
+            <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
+        </div>
+    </div>
+    
+    <!-- 留言列表 -->
+    <div id="messages-container">
+        <!-- 留言将通过JavaScript动态加载 -->
+    </div>
+</div>
+
+<script>
+let allMessages = [];
+
+// 页面加载时获取留言数据
+document.addEventListener('DOMContentLoaded', function() {
+    loadMessages();
+});
+
+// 加载留言数据
+function loadMessages() {
+    fetch('/admin/messages')
+        .then(response => response.json())
+        .then(data => {
+            allMessages = data;
+            updateStats();
+            displayMessages(data);
+        })
+        .catch(error => {
+            console.error('加载留言失败:', error);
+            document.getElementById('messages-container').innerHTML = 
+                '<div class="no-messages">加载留言失败，请刷新页面重试</div>';
+        });
+}
+
+// 更新统计信息
+function updateStats() {
+    const total = allMessages.length;
+    const pending = allMessages.filter(msg => !msg.reply || msg.reply.trim() === '').length;
+    const replied = total - pending;
+    
+    // 计算今日新增（简化处理，实际应该在后端计算）
+    const today = new Date().toDateString();
+    const todayMessages = allMessages.filter(msg => {
+        const msgDate = new Date(msg.create_time).toDateString();
+        return msgDate === today;
+    }).length;
+    
+    document.getElementById('total-messages').textContent = total;
+    document.getElementById('pending-messages').textContent = pending;
+    document.getElementById('replied-messages').textContent = replied;
+    document.getElementById('today-messages').textContent = todayMessages;
+}
+
+// 显示留言列表
+function displayMessages(messages) {
+    const container = document.getElementById('messages-container');
+    
+    if (messages.length === 0) {
+        container.innerHTML = '<div class="no-messages">暂无留言数据</div>';
+        return;
+    }
+    
+    const html = messages.map(msg => {
+        const hasReply = msg.reply && msg.reply.trim() !== '';
+        const statusClass = hasReply ? 'status-replied' : 'status-pending';
+        const statusText = hasReply ? '已回复' : '待回复';
+        
+        return `
+            <div class="message-card" data-id="${msg.id}">
+                <div class="message-header">
+                    <div class="message-info">
+                        <span class="message-name">${msg.name || '匿名用户'}</span>
+                        ${msg.contact ? `<span class="message-contact">联系方式: ${msg.contact}</span>` : ''}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span class="message-time">${formatTime(msg.create_time)}</span>
+                        <span class="message-status ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+                
+                <div class="message-content">
+                    ${msg.content}
+                </div>
+                
+                ${hasReply ? `
+                    <div class="message-reply">
+                        <div class="reply-header">管理员回复:</div>
+                        <div>${msg.reply}</div>
+                        <div style="margin-top: 15px;">
+                            <button class="btn btn-primary" onclick="editReply(${msg.id}, '${msg.reply.replace(/'/g, "\\'")}')">修改回复</button>
+                            <button class="btn btn-danger" onclick="deleteReply(${msg.id})">删除回复</button>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="message-reply">
+                        <div class="reply-form">
+                            <textarea class="reply-textarea" id="reply-${msg.id}" placeholder="请输入回复内容..."></textarea>
+                            <div class="reply-buttons">
+                                <button class="btn btn-primary" onclick="submitReply(${msg.id})">提交回复</button>
+                            </div>
+                        </div>
+                    </div>
+                `}
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = html;
+}
+
+// 格式化时间
+function formatTime(timeStr) {
+    if (!timeStr) return '';
+    const date = new Date(timeStr);
+    return date.toLocaleString('zh-CN');
+}
+
+// 提交回复
+function submitReply(messageId) {
+    const replyContent = document.getElementById(`reply-${messageId}`).value.trim();
+    
+    if (!replyContent) {
+        alert('请输入回复内容');
+        return;
+    }
+    
+    fetch(`/admin/messages/${messageId}/reply`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reply: replyContent })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.msg) {
+            alert(data.msg);
+            loadMessages(); // 重新加载数据
+        }
+    })
+    .catch(error => {
+        console.error('回复失败:', error);
+        alert('回复失败，请稍后再试');
+    });
+}
+
+// 编辑回复
+function editReply(messageId, currentReply) {
+    const newReply = prompt('修改回复内容:', currentReply);
+    if (newReply !== null && newReply.trim() !== '') {
+        fetch(`/admin/messages/${messageId}/reply`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ reply: newReply.trim() })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.msg) {
+                alert(data.msg);
+                loadMessages();
+            }
+        })
+        .catch(error => {
+            console.error('修改回复失败:', error);
+            alert('修改回复失败，请稍后再试');
+        });
+    }
+}
+
+// 删除回复
+function deleteReply(messageId) {
+    if (confirm('确定要删除这条回复吗？')) {
+        fetch(`/admin/messages/${messageId}/reply`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ reply: '' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.msg) {
+                alert(data.msg);
+                loadMessages();
+            }
+        })
+        .catch(error => {
+            console.error('删除回复失败:', error);
+            alert('删除回复失败，请稍后再试');
+        });
+    }
+}
+
+// 筛选留言
+function filterMessages() {
+    const statusFilter = document.getElementById('status-filter').value;
+    const searchText = document.getElementById('search-input').value.toLowerCase();
+    
+    let filteredMessages = allMessages;
+    
+    // 状态筛选
+    if (statusFilter) {
+        filteredMessages = filteredMessages.filter(msg => {
+            const hasReply = msg.reply && msg.reply.trim() !== '';
+            return statusFilter === 'replied' ? hasReply : !hasReply;
+        });
+    }
+    
+    // 文本搜索
+    if (searchText) {
+        filteredMessages = filteredMessages.filter(msg => {
+            return (msg.name && msg.name.toLowerCase().includes(searchText)) ||
+                   (msg.content && msg.content.toLowerCase().includes(searchText)) ||
+                   (msg.contact && msg.contact.toLowerCase().includes(searchText));
+        });
+    }
+    
+    displayMessages(filteredMessages);
+}
+
+// 重置筛选
+function resetFilter() {
+    document.getElementById('status-filter').value = '';
+    document.getElementById('search-input').value = '';
+    displayMessages(allMessages);
+}
+
+// 搜索框回车事件
+document.getElementById('search-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        filterMessages();
+    }
+});
+</script>
+{% endblock %}

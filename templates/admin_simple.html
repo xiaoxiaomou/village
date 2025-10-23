@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>乡村网站管理后台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .header { background: #2c3e50; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav { background: #34495e; padding: 0.5rem; }
+        .nav a { color: white; text-decoration: none; padding: 0.5rem 1rem; margin-right: 1rem; border-radius: 4px; }
+        .nav a:hover, .nav a.active { background: #3498db; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: white; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn:hover { opacity: 0.9; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #ddd; }
+        .table th { background: #f8f9fa; font-weight: bold; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 8px; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>乡村网站管理后台</h1>
+        <button class="btn btn-danger" onclick="logout()">退出登录</button>
+    </div>
+    
+    <div class="nav">
+        <a href="#" onclick="showSection('dashboard')" class="active">仪表板</a>
+        <a href="#" onclick="showSection('news')">新闻管理</a>
+        <a href="#" onclick="showSection('messages')">留言管理</a>
+        <a href="#" onclick="showSection('village')">村情管理</a>
+        <a href="#" onclick="showSection('government')">政务管理</a>
+    </div>
+    
+    <div class="container">
+        <!-- 仪表板 -->
+        <div id="dashboard" class="section">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="newsCount">0</div>
+                    <div>新闻数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="messageCount">0</div>
+                    <div>留言数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="unreadCount">0</div>
+                    <div>未回复留言</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新闻管理 -->
+        <div id="news" class="section hidden">
+            <div class="card">
+                <h3>添加新闻</h3>
+                <form id="newsForm">
+                    <div class="form-group">
+                        <label>标题</label>
+                        <input type="text" id="newsTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>内容</label>
+                        <textarea id="newsContent" rows="6" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">发布新闻</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h3>新闻列表</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>标题</th>
+                            <th>作者</th>
+                            <th>发布时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="newsList"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 留言管理 -->
+        <div id="messages" class="section hidden">
+            <div class="card">
+                <h3>留言列表</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>联系方式</th>
+                            <th>留言内容</th>
+                            <th>留言时间</th>
+                            <th>回复</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="messagesList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSection = 'dashboard';
+        
+        // 显示指定部分
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(section).classList.remove('hidden');
+            document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+            event.target.classList.add('active');
+            currentSection = section;
+            
+            if (section === 'dashboard') loadStats();
+            if (section === 'news') loadNews();
+            if (section === 'messages') loadMessages();
+        }
+        
+        // 加载统计数据
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                document.getElementById('newsCount').textContent = stats.news_count || 0;
+                document.getElementById('messageCount').textContent = stats.message_count || 0;
+                document.getElementById('unreadCount').textContent = stats.unread_message_count || 0;
+            } catch (error) {
+                console.error('加载统计数据失败:', error);
+            }
+        }
+        
+        // 加载新闻列表
+        async function loadNews() {
+            try {
+                const response = await fetch('/admin/news');
+                const news = await response.json();
+                const tbody = document.getElementById('newsList');
+                tbody.innerHTML = news.map(item => `
+                    <tr>
+                        <td>${item.title}</td>
+                        <td>${item.author || '管理员'}</td>
+                        <td>${new Date(item.create_time).toLocaleString()}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="deleteNews(${item.id})">删除</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('加载新闻失败:', error);
+            }
+        }
+        
+        // 加载留言列表
+        async function loadMessages() {
+            try {
+                const response = await fetch('/admin/messages');
+                const messages = await response.json();
+                const tbody = document.getElementById('messagesList');
+                tbody.innerHTML = messages.map(item => `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.contact || '未提供'}</td>
+                        <td>${item.content.substring(0, 50)}...</td>
+                        <td>${new Date(item.create_time).toLocaleString()}</td>
+                        <td>${item.reply || '未回复'}</td>
+                        <td>
+                            ${!item.reply ? `<button class="btn btn-success" onclick="replyMessage(${item.id})">回复</button>` : '已回复'}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('加载留言失败:', error);
+            }
+        }
+        
+        // 发布新闻
+        document.getElementById('newsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('newsTitle').value;
+            const content = document.getElementById('newsContent').value;
+            
+            try {
+                const response = await fetch('/admin/news', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+                
+                if (response.ok) {
+                    alert('新闻发布成功');
+                    document.getElementById('newsForm').reset();
+                    loadNews();
+                } else {
+                    alert('发布失败');
+                }
+            } catch (error) {
+                alert('发布失败: ' + error.message);
+            }
+        });
+        
+        // 删除新闻
+        async function deleteNews(id) {
+            if (!confirm('确定要删除这条新闻吗？')) return;
+            
+            try {
+                const response = await fetch(`/admin/news/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('删除成功');
+                    loadNews();
+                } else {
+                    alert('删除失败');
+                }
+            } catch (error) {
+                alert('删除失败: ' + error.message);
+            }
+        }
+        
+        // 回复留言
+        async function replyMessage(id) {
+            const reply = prompt('请输入回复内容:');
+            if (!reply) return;
+            
+            try {
+                const response = await fetch(`/admin/messages/${id}/reply`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reply })
+                });
+                
+                if (response.ok) {
+                    alert('回复成功');
+                    loadMessages();
+                } else {
+                    alert('回复失败');
+                }
+            } catch (error) {
+                alert('回复失败: ' + error.message);
+            }
+        }
+        
+        // 退出登录
+        async function logout() {
+            try {
+                await fetch('/admin/logout', { method: 'POST' });
+                window.location.href = '/admin/login';
+            } catch (error) {
+                console.error('退出登录失败:', error);
+            }
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+        });
+    </script>
+</body>
+</html>

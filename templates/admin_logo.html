@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logo管理 - 乡村信息平台</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .logo-preview {
+            max-width: 200px;
+            max-height: 100px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 10px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo-preview img {
+            max-width: 100%;
+            max-height: 80px;
+            object-fit: contain;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .current-logo {
+            background: rgba(0, 113, 227, 0.05);
+            border: 1px solid rgba(0, 113, 227, 0.2);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(0, 113, 227, 0.02);
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background: rgba(0, 113, 227, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <header class="apple-navbar">
+        <a href="/admin" class="apple-logo">管理后台</a>
+        <nav>
+            <a href="/admin" class="apple-nav-link">仪表板</a>
+            <a href="/admin/logo" class="apple-nav-link">Logo管理</a>
+            <a href="/admin/carousel" class="apple-nav-link">轮播图管理</a>
+            <a href="/admin/logout" class="apple-nav-link" onclick="logout(); return false;">退出</a>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <div class="apple-card" style="max-width: 800px; margin: 0 auto;">
+            <h1 class="apple-page-title">乡村Logo管理</h1>
+            <p class="apple-page-subtitle">管理乡村网站的Logo展示</p>
+            
+            <div id="alert-container"></div>
+            
+            <!-- 当前Logo展示 -->
+            <div class="form-section">
+                <h2 class="apple-page-title" style="font-size: 24px;">当前Logo</h2>
+                <div id="currentLogoContainer">
+                    <div class="apple-alert apple-alert-info">
+                        <span>正在加载Logo信息...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Logo编辑表单 -->
+            <div class="form-section">
+                <h2 class="apple-page-title" style="font-size: 24px;">编辑Logo</h2>
+                <form id="logoForm">
+                    <div class="apple-form-group">
+                        <label for="name" class="apple-form-label">乡村名称</label>
+                        <input type="text" class="apple-form-control" id="name" placeholder="请输入乡村名称" required>
+                    </div>
+                    
+                    <div class="apple-form-group">
+                        <label for="logoUrl" class="apple-form-label">Logo图片URL</label>
+                        <input type="text" class="apple-form-control" id="logoUrl" placeholder="请输入Logo图片URL">
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 10px;"></i>
+                            <p>点击或拖拽图片到此处上传</p>
+                            <p style="font-size: 13px; color: var(--text-secondary);">支持 JPG、PNG、GIF 格式，建议尺寸不超过 200x100 像素</p>
+                        </div>
+                        <input type="file" id="logoFile" accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <div class="apple-form-group">
+                        <label for="description" class="apple-form-label">Logo描述</label>
+                        <textarea class="apple-form-control" id="description" rows="3" placeholder="请输入Logo描述（可选）"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="apple-btn apple-btn-primary" id="saveBtn">
+                        <i class="fas fa-save"></i> 保存Logo
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentLogo = null;
+        
+        // 页面加载时获取当前Logo
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCurrentLogo();
+            setupUploadArea();
+        });
+        
+        // 加载当前Logo
+        function loadCurrentLogo() {
+            fetch('/admin/logo')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.msg && data.msg.includes('暂无Logo')) {
+                        showNoLogo();
+                    } else {
+                        showCurrentLogo(data);
+                    }
+                })
+                .catch(error => {
+                    console.error('加载Logo失败:', error);
+                    showAlert('加载Logo失败', 'error');
+                });
+        }
+        
+        // 显示当前Logo
+        function showCurrentLogo(logo) {
+            currentLogo = logo;
+            document.getElementById('name').value = logo.name;
+            document.getElementById('logoUrl').value = logo.logo_url;
+            document.getElementById('description').value = logo.description || '';
+            
+            const container = document.getElementById('currentLogoContainer');
+            container.innerHTML = `
+                <div class="current-logo">
+                    <h3 style="margin-top: 0; color: var(--primary-color);">当前使用的Logo</h3>
+                    <div class="logo-preview">
+                        <img src="${logo.logo_url}" alt="${logo.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div style="display: none; color: var(--text-secondary);">
+                            <i class="fas fa-image"></i>
+                            <p>图片加载失败</p>
+                        </div>
+                    </div>
+                    <p><strong>乡村名称:</strong> ${logo.name}</p>
+                    <p><strong>描述:</strong> ${logo.description || '无'}</p>
+                    <p><strong>更新时间:</strong> ${new Date(logo.update_time).toLocaleString()}</p>
+                </div>
+            `;
+        }
+        
+        // 显示无Logo状态
+        function showNoLogo() {
+            const container = document.getElementById('currentLogoContainer');
+            container.innerHTML = `
+                <div class="apple-alert apple-alert-warning">
+                    <span>暂未设置Logo，请上传新的Logo</span>
+                </div>
+            `;
+        }
+        
+        // 设置上传区域
+        function setupUploadArea() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('logoFile');
+            
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadFile(file);
+                }
+            });
+            
+            // 拖拽上传
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    uploadFile(files[0]);
+                }
+            });
+        }
+        
+        // 上传文件
+        function uploadFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showAlert('请选择图片文件', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            showAlert('正在上传图片...', 'info');
+            
+            fetch('/api/upload/image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.msg && data.msg.includes('成功')) {
+                    document.getElementById('logoUrl').value = data.url;
+                    showAlert('图片上传成功', 'success');
+                } else {
+                    showAlert(data.msg || '上传失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('上传失败:', error);
+                showAlert('上传失败，请重试', 'error');
+            });
+        }
+        
+        // 保存Logo
+        document.getElementById('logoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const logoUrl = document.getElementById('logoUrl').value;
+            const description = document.getElementById('description').value;
+            
+            if (!name || !logoUrl) {
+                showAlert('请填写乡村名称和Logo图片URL', 'error');
+                return;
+            }
+            
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+            saveBtn.disabled = true;
+            
+            fetch('/admin/logo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    logo_url: logoUrl,
+                    description: description
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.msg && data.msg.includes('成功')) {
+                    showAlert(data.msg, 'success');
+                    loadCurrentLogo(); // 重新加载Logo
+                } else {
+                    showAlert(data.msg || '保存失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存失败:', error);
+                showAlert('保存失败，请重试', 'error');
+            })
+            .finally(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            });
+        });
+        
+        // 显示提示信息
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            const alertClass = type === 'success' ? 'apple-alert-success' : 
+                              type === 'error' ? 'apple-alert-error' : 'apple-alert-info';
+            const alertHtml = `
+                <div class="apple-alert ${alertClass}">
+                    <span>${message}</span>
+                    <button type="button" class="alert-close">&times;</button>
+                </div>
+            `;
+            alertContainer.innerHTML = alertHtml;
+            
+            // 添加关闭按钮事件
+            const closeBtn = alertContainer.querySelector('.alert-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    alertContainer.innerHTML = '';
+                });
+            }
+            
+            // 自动隐藏成功和消息提示
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    alertContainer.innerHTML = '';
+                }, 3000);
+            }
+        }
+        
+        // 退出登录
+        function logout() {
+            fetch('/admin/logout', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.msg && data.msg.includes('成功')) {
+                    window.location.href = '/admin/login';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

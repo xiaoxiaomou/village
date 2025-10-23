@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 乡村信息平台</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .register-container {
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+        }
+        
+        .register-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .register-title {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .register-subtitle {
+            font-size: 17px;
+        }
+        
+        .password-strength {
+            margin-top: 8px;
+            height: 4px;
+            background: #f0f0f0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        
+        .strength-weak {
+            width: 33%;
+            background-color: var(--error-color);
+        }
+        
+        .strength-medium {
+            width: 66%;
+            background-color: var(--warning-color);
+        }
+        
+        .strength-strong {
+            width: 100%;
+            background-color: var(--success-color);
+        }
+        
+        .password-requirements {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .requirement {
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .requirement-icon {
+            margin-right: 6px;
+            font-size: 12px;
+        }
+        
+        .requirement.met {
+            color: var(--success-color);
+        }
+        
+        #passwordMatch {
+            font-size: 13px;
+            margin-top: 5px;
+        }
+        
+        .social-login {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .social-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .social-btn:hover {
+            background: #f5f5f7;
+            transform: translateY(-1px);
+        }
+        
+        .social-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 15px;
+        }
+        
+        .terms {
+            margin-top: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        
+        @media (max-width: 480px) {
+            .register-container {
+                padding: 30px 20px;
+            }
+            
+            .register-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="apple-navbar">
+        <a href="/" class="apple-logo">乡村信息平台</a>
+        <nav>
+            <a href="/" class="apple-nav-link">首页</a>
+            <a href="/contact" class="apple-nav-link">联系我们</a>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <div class="apple-card register-container apple-slide-up">
+            <div class="register-header">
+                <h1 class="apple-page-title register-title">创建账户</h1>
+                <p class="apple-page-subtitle register-subtitle">加入我们，开启乡村信息之旅</p>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="apple-alert apple-alert-error">
+                            <span>{{ message }}</span>
+                            <button class="alert-close">&times;</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" action="{{ url_for('register') }}" id="registerForm">
+                <div class="apple-form-group">
+                    <label for="username" class="apple-form-label">用户名</label>
+                    <input type="text" class="apple-form-control" id="username" name="username" required autocomplete="username">
+                </div>
+
+                <div class="apple-form-group">
+                    <label for="password" class="apple-form-label">密码</label>
+                    <input type="password" class="apple-form-control" id="password" name="password" required autocomplete="new-password">
+                    <div class="password-strength">
+                        <div class="password-strength-bar" id="passwordStrength"></div>
+                    </div>
+                    <div class="password-requirements">
+                        <div class="requirement" id="lengthReq">
+                            <span class="requirement-icon">○</span>
+                            至少8个字符
+                        </div>
+                        <div class="requirement" id="caseReq">
+                            <span class="requirement-icon">○</span>
+                            包含大小写字母
+                        </div>
+                        <div class="requirement" id="numberReq">
+                            <span class="requirement-icon">○</span>
+                            包含数字
+                        </div>
+                    </div>
+                </div>
+
+                <div class="apple-form-group">
+                    <label for="confirm_password" class="apple-form-label">确认密码</label>
+                    <input type="password" class="apple-form-control" id="confirm_password" name="confirm_password" required autocomplete="new-password">
+                    <div id="passwordMatch"></div>
+                </div>
+
+                <button type="submit" class="apple-btn apple-btn-primary" id="submitBtn" disabled>创建账户</button>
+            </form>
+
+            <div class="apple-divider">
+                <span>或</span>
+            </div>
+
+            <div class="social-login">
+                <div class="social-btn" onclick="alert('微信注册暂未开放')">
+                    <svg class="social-icon" viewBox="0 0 24 24" fill="#07C160">
+                        <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"/>
+                    </svg>
+                    微信
+                </div>
+                <div class="social-btn" onclick="alert('QQ注册暂未开放')">
+                    <svg class="social-icon" viewBox="0 0 24 24" fill="#12B7F5">
+                        <path d="M21.395 15.035a39.39 39.39 0 0 0-.803-2.264l-1.079-2.695-.001-.003c-.024-.06-.048-.12-.074-.178A8.963 8.963 0 0 0 12 4.001a8.964 8.964 0 0 0-7.438 3.894 2.747 2.747 0 0 0-.074.178l-.001.003-1.079 2.695a39.39 39.39 0 0 0-.803 2.264C1.201 17.266 1.433 19.479 3.07 20.5h.001c.812.51 1.898.799 3.064.799 1.575 0 2.892-.492 3.865-1.451l.012-.012.012.012c.973.959 2.29 1.451 3.865 1.451 1.166 0 2.252-.289 3.064-.799h.001c1.637-1.021 1.869-3.234 1.465-5.465zM8.707 18.673c-.629.617-1.478.925-2.572.925-.875 0-1.639-.212-2.203-.569-.534-.338-.942-.822-1.191-1.416-.299-.71-.34-1.539-.122-2.424.218-.885.642-1.879 1.266-2.949A6.952 6.952 0 0 1 12 6.001a6.952 6.952 0 0 1 8.115 6.239c.624 1.07 1.048 2.064 1.266 2.949.218.885.177 1.714-.122 2.424-.249.594-.657 1.078-1.191 1.416-.564.357-1.328.569-2.203.569-1.094 0-1.943-.308-2.572-.925a3.48 3.48 0 0 1-1.293-2.718c0-1.062.523-2.004 1.293-2.718a3.48 3.48 0 0 1 2.572-.925c1.094 0 1.943.308 2.572.925A3.48 3.48 0 0 1 12 15.93a3.48 3.48 0 0 1-1.293-2.718c0-1.062.523-2.004 1.293-2.718z"/>
+                    </svg>
+                    QQ
+                </div>
+            </div>
+
+            <div class="login-link">
+                已有账号？<a href="{{ url_for('login') }}">立即登录</a>
+            </div>
+
+            <div class="terms">
+                注册即表示您同意我们的<a href="#" onclick="alert('服务条款页面暂未开放')">服务条款</a>和<a href="#" onclick="alert('隐私政策页面暂未开放')">隐私政策</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 关闭提示框
+        document.querySelectorAll('.alert-close').forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.style.display = 'none';
+            });
+        });
+
+        // 密码强度检测
+        const passwordInput = document.getElementById('password');
+        const passwordStrength = document.getElementById('passwordStrength');
+        const confirmPasswordInput = document.getElementById('confirm_password');
+        const passwordMatch = document.getElementById('passwordMatch');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // 密码要求元素
+        const lengthReq = document.getElementById('lengthReq');
+        const caseReq = document.getElementById('caseReq');
+        const numberReq = document.getElementById('numberReq');
+
+        // 检查密码强度
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            
+            // 长度检查
+            const hasLength = password.length >= 8;
+            if (hasLength) {
+                strength++;
+                lengthReq.classList.add('met');
+                lengthReq.querySelector('.requirement-icon').textContent = '✓';
+            } else {
+                lengthReq.classList.remove('met');
+                lengthReq.querySelector('.requirement-icon').textContent = '○';
+            }
+            
+            // 大小写检查
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasCase = hasUpperCase && hasLowerCase;
+            if (hasCase) {
+                strength++;
+                caseReq.classList.add('met');
+                caseReq.querySelector('.requirement-icon').textContent = '✓';
+            } else {
+                caseReq.classList.remove('met');
+                caseReq.querySelector('.requirement-icon').textContent = '○';
+            }
+            
+            // 数字检查
+            const hasNumber = /[0-9]/.test(password);
+            if (hasNumber) {
+                strength++;
+                numberReq.classList.add('met');
+                numberReq.querySelector('.requirement-icon').textContent = '✓';
+            } else {
+                numberReq.classList.remove('met');
+                numberReq.querySelector('.requirement-icon').textContent = '○';
+            }
+            
+            // 更新强度条
+            passwordStrength.className = 'password-strength-bar';
+            if (strength === 1) {
+                passwordStrength.classList.add('strength-weak');
+            } else if (strength === 2) {
+                passwordStrength.classList.add('strength-medium');
+            } else if (strength === 3) {
+                passwordStrength.classList.add('strength-strong');
+            }
+            
+            return strength;
+        }
+
+        // 检查密码匹配
+        function checkPasswordMatch() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (confirmPassword === '') {
+                passwordMatch.textContent = '';
+                passwordMatch.className = '';
+                return false;
+            }
+            
+            if (password === confirmPassword) {
+                passwordMatch.textContent = '✓ 密码匹配';
+                passwordMatch.className = 'password-match-success';
+                return true;
+            } else {
+                passwordMatch.textContent = '✗ 密码不匹配';
+                passwordMatch.className = 'password-match-error';
+                return false;
+            }
+        }
+
+        // 检查表单是否可以提交
+        function checkFormValidity() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            const username = document.getElementById('username').value;
+            
+            const passwordStrong = checkPasswordStrength(password) >= 2;
+            const passwordsMatch = password === confirmPassword && password !== '';
+            const usernameValid = username.length >= 3;
+            
+            if (passwordStrong && passwordsMatch && usernameValid) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+
+        // 监听输入变化
+        passwordInput.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+            checkFormValidity();
+        });
+
+        confirmPasswordInput.addEventListener('input', function() {
+            checkPasswordMatch();
+            checkFormValidity();
+        });
+
+        document.getElementById('username').addEventListener('input', checkFormValidity);
+
+        // 表单提交动画
+        document.getElementById('registerForm').addEventListener('submit', function() {
+            submitBtn.textContent = '创建中...';
+            submitBtn.disabled = true;
+        });
+
+        // 输入框焦点效果
+        document.querySelectorAll('.apple-form-control').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+    </script>
+</body>
+</html>

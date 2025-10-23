@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}互动交流 - 乡村信息平台{% endblock %}
+
+{% block head %}
+<style>
+    .message-form {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border: 1px solid #e9ecef;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #333;
+    }
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    .form-control:focus {
+        border-color: #2d8cf0;
+        outline: none;
+        box-shadow: 0 0 5px rgba(45, 140, 240, 0.3);
+    }
+    .btn-primary {
+        background: #2d8cf0;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.3s;
+    }
+    .btn-primary:hover {
+        background: #1a6fb3;
+    }
+    .message-item {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .message-author {
+        font-weight: bold;
+        color: #2d8cf0;
+    }
+    .message-time {
+        color: #666;
+        font-size: 12px;
+    }
+    .message-content {
+        line-height: 1.6;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    .message-reply {
+        background: #f0f8ff;
+        border-left: 4px solid #2d8cf0;
+        padding: 15px;
+        margin-top: 15px;
+        border-radius: 0 4px 4px 0;
+    }
+    .reply-header {
+        font-weight: bold;
+        color: #2d8cf0;
+        margin-bottom: 8px;
+    }
+    .contact-info {
+        background: #e8f5e8;
+        border: 1px solid #c3e6c3;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+    .contact-title {
+        color: #2d8cf0;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+    .contact-item {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+    .contact-icon {
+        width: 20px;
+        margin-right: 10px;
+        color: #2d8cf0;
+    }
+    .alert {
+        padding: 12px 20px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+    .alert-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    .alert-error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+    .no-messages {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        padding: 40px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 style="color: #2d8cf0; margin-bottom: 30px;">💬 互动交流</h2>
+    
+    <!-- Flash消息显示 -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- 留言表单 -->
+    <div class="message-form">
+        <h3 style="color: #333; margin-bottom: 20px;">📝 发表留言</h3>
+        <form method="POST" action="/message">
+            <div class="form-group">
+                <label for="name">姓名 *</label>
+                <input type="text" id="name" name="name" class="form-control" required 
+                       placeholder="请输入您的姓名" maxlength="50">
+            </div>
+            
+            <div class="form-group">
+                <label for="contact">联系方式</label>
+                <input type="text" id="contact" name="contact" class="form-control" 
+                       placeholder="手机号码或邮箱（选填）" maxlength="100">
+            </div>
+            
+            <div class="form-group">
+                <label for="content">留言内容 *</label>
+                <textarea id="content" name="content" class="form-control" rows="5" required 
+                          placeholder="请输入您的留言内容，我们会尽快回复您..." maxlength="1000"></textarea>
+            </div>
+            
+            <button type="submit" class="btn-primary">提交留言</button>
+        </form>
+    </div>
+    
+    <!-- 留言列表 -->
+    <div class="messages-list">
+        <h3 style="color: #333; margin-bottom: 20px;">💭 留言列表</h3>
+        
+        {% if messages and messages|length > 0 %}
+            {% for msg in messages %}
+            <div class="message-item">
+                <div class="message-header">
+                    <span class="message-author">{{ msg.name or '匿名用户' }}</span>
+                    <span class="message-time">{{ msg.create_time.strftime('%Y-%m-%d %H:%M') if msg.create_time else '' }}</span>
+                </div>
+                
+                <div class="message-content">
+                    {{ msg.content }}
+                </div>
+                
+                {% if msg.contact %}
+                <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                    联系方式: {{ msg.contact }}
+                </div>
+                {% endif %}
+                
+                {% if msg.reply %}
+                <div class="message-reply">
+                    <div class="reply-header">🏛️ 管理员回复:</div>
+                    <div>{{ msg.reply }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-messages">
+                <p>暂无留言，欢迎您成为第一个留言的用户！</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- 联系我们信息 -->
+    <div class="contact-info">
+        <div class="contact-title">📞 联系我们</div>
+        <div class="contact-item">
+            <span class="contact-icon">🏛️</span>
+            <span><strong>村委会地址:</strong> 美丽乡村示范村村委会</span>
+        </div>
+        <div class="contact-item">
+            <span class="contact-icon">📞</span>
+            <span><strong>联系电话:</strong> 0123-12345678</span>
+        </div>
+        <div class="contact-item">
+            <span class="contact-icon">📧</span>
+            <span><strong>电子邮箱:</strong> village@example.com</span>
+        </div>
+        <div class="contact-item">
+            <span class="contact-icon">🕒</span>
+            <span><strong>办公时间:</strong> 周一至周五 8:30-17:30</span>
+        </div>
+        <div class="contact-item">
+            <span class="contact-icon">🚌</span>
+            <span><strong>交通指引:</strong> 乘坐123路公交车到村委会站下车</span>
+        </div>
+    </div>
+</div>
+
+<script>
+// 表单验证
+document.querySelector('form').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const content = document.getElementById('content').value.trim();
+    
+    if (!name) {
+        alert('请输入您的姓名');
+        e.preventDefault();
+        return;
+    }
+    
+    if (!content) {
+        alert('请输入留言内容');
+        e.preventDefault();
+        return;
+    }
+    
+    if (content.length > 1000) {
+        alert('留言内容不能超过1000个字符');
+        e.preventDefault();
+        return;
+    }
+});
+
+// 字符计数
+document.getElementById('content').addEventListener('input', function() {
+    const maxLength = 1000;
+    const currentLength = this.value.length;
+    const remaining = maxLength - currentLength;
+    
+    // 创建或更新字符计数显示
+    let counter = document.getElementById('char-counter');
+    if (!counter) {
+        counter = document.createElement('div');
+        counter.id = 'char-counter';
+        counter.style.cssText = 'font-size: 12px; color: #666; text-align: right; margin-top: 5px;';
+        this.parentNode.appendChild(counter);
+    }
+    
+    counter.textContent = `${currentLength}/${maxLength} 字符`;
+    counter.style.color = remaining < 50 ? '#e74c3c' : '#666';
+});
+</script>
+{% endblock %}

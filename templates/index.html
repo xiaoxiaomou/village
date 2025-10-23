@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}美丽乡村信息平台 - 首页{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .carousel-item {
+        height: 400px;
+        background-size: cover;
+        background-position: center;
+    }
+    .carousel-caption {
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 10px;
+        padding: 20px;
+    }
+    .feature-card {
+        transition: transform 0.3s;
+        margin-bottom: 20px;
+        height: 100%;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        color: #2d8cf0;
+    }
+    .news-card {
+        transition: all 0.3s;
+        height: 100%;
+    }
+    .news-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .section-title {
+        position: relative;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        text-align: center;
+        color: #2d8cf0;
+    }
+    .section-title:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 3px;
+        background-color: #2d8cf0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 轮播图部分 -->
+<div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="2"></button>
+    </div>
+    <div class="carousel-inner rounded shadow">
+        <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');">
+            <div class="carousel-caption">
+                <h3>美丽乡村风光</h3>
+                <p>探索自然风光，感受乡村魅力</p>
+            </div>
+        </div>
+        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1332&q=80');">
+            <div class="carousel-caption">
+                <h3>乡村振兴计划</h3>
+                <p>推动乡村发展，建设美好家园</p>
+            </div>
+        </div>
+        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1332&q=80');">
+            <div class="carousel-caption">
+                <h3>农业科技创新</h3>
+                <p>科技助力农业，提升产业效益</p>
+            </div>
+        </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+</div>
+
+<!-- 特色服务部分 -->
+<section class="mb-5">
+    <h2 class="section-title">特色服务</h2>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <h4>生态农业</h4>
+                    <p>推广绿色种植技术，发展有机农业，保护生态环境，提供健康农产品。</p>
+                    <a href="/services" class="btn btn-outline-primary">了解更多</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <h4>乡村旅游</h4>
+                    <p>开发特色民宿，打造乡村旅游路线，让游客体验纯正的乡村生活和文化。</p>
+                    <a href="/services" class="btn btn-outline-primary">了解更多</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-hands-helping"></i>
+                    </div>
+                    <h4>便民服务</h4>
+                    <p>提供政务咨询、医疗服务、教育资源等便民服务，解决村民生活难题。</p>
+                    <a href="/services" class="btn btn-outline-primary">了解更多</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 最新动态部分 -->
+<section class="mb-5">
+    <h2 class="section-title">最新动态</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card news-card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">乡村振兴政策解读</h5>
+                    <p class="card-text text-muted"><small><i class="far fa-calendar-alt"></i> 2023-06-15</small></p>
+                    <p class="card-text">最新乡村振兴政策出台，为农村发展提供新动力，包括产业扶持、人才引进等多项措施。</p>
+                    <a href="/news" class="btn btn-sm btn-primary">阅读全文</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card news-card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">农产品展销会圆满结束</h5>
+                    <p class="card-text text-muted"><small><i class="far fa-calendar-alt"></i> 2023-06-10</small></p>
+                    <p class="card-text">本次展销会吸引了周边地区众多游客，农产品销售额创历史新高，农民收入显著提升。</p>
+                    <a href="/news" class="btn btn-sm btn-primary">阅读全文</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card news-card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">乡村文化节即将举办</h5>
+                    <p class="card-text text-muted"><small><i class="far fa-calendar-alt"></i> 2023-06-05</small></p>
+                    <p class="card-text">第三届乡村文化节将于下月举行，届时将有传统手工艺展示、民俗表演等丰富活动。</p>
+                    <a href="/news" class="btn btn-sm btn-primary">阅读全文</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card news-card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">农村基础设施改造工程启动</h5>
+                    <p class="card-text text-muted"><small><i class="far fa-calendar-alt"></i> 2023-06-01</small></p>
+                    <p class="card-text">新一轮农村基础设施改造工程正式启动，将对道路、供水、网络等进行全面升级。</p>
+                    <a href="/news" class="btn btn-sm btn-primary">阅读全文</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="text-center mt-4">
+        <a href="/news" class="btn btn-outline-primary">查看更多动态</a>
+    </div>
+</section>
+
+<!-- 数据统计部分 -->
+<section>
+    <h2 class="section-title">乡村发展数据</h2>
+    <div class="row text-center">
+        <div class="col-md-3 col-6 mb-4">
+            <div class="card shadow-sm py-3">
+                <div class="card-body">
+                    <h3 class="text-primary">2500+</h3>
+                    <p class="text-muted mb-0">常住人口</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-4">
+            <div class="card shadow-sm py-3">
+                <div class="card-body">
+                    <h3 class="text-primary">15km²</h3>
+                    <p class="text-muted mb-0">乡村面积</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-4">
+            <div class="card shadow-sm py-3">
+                <div class="card-body">
+                    <h3 class="text-primary">1200万</h3>
+                    <p class="text-muted mb-0">年农业产值</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-4">
+            <div class="card shadow-sm py-3">
+                <div class="card-body">
+                    <h3 class="text-primary">98%</h3>
+                    <p class="text-muted mb-0">村民满意度</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
