@@ -1,7 +1,0 @@
-# 数据库配置
-MYSQL_HOST = "39.101.133.26"
-MYSQL_USER = "root"
-MYSQL_PASSWORD = "123QWEasd"
-MYSQL_DB = "xiangcun"
-MYSQL_PORT = 3306
-
