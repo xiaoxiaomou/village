@@ -1,228 +1,770 @@
-{% extends "base.html" %}
-{% block title %}美丽乡村信息平台 - 首页{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% extends "base.html" %} {% block title %}美丽乡村信息平台 - 首页{% endblock %} {% block head %}
 <style>
-    .carousel-item {
-        height: 400px;
-        background-size: cover;
-        background-position: center;
-    }
-    .carousel-caption {
-        background-color: rgba(0, 0, 0, 0.5);
-        border-radius: 10px;
-        padding: 20px;
-    }
-    .feature-card {
-        transition: transform 0.3s;
-        margin-bottom: 20px;
-        height: 100%;
-    }
-    .feature-card:hover {
-        transform: translateY(-5px);
-    }
-    .feature-icon {
-        font-size: 2.5rem;
-        margin-bottom: 15px;
-        color: #2d8cf0;
-    }
-    .news-card {
-        transition: all 0.3s;
-        height: 100%;
-    }
-    .news-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    }
-    .section-title {
-        position: relative;
-        margin-bottom: 30px;
-        padding-bottom: 15px;
-        text-align: center;
-        color: #2d8cf0;
-    }
-    .section-title:after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80px;
-        height: 3px;
-        background-color: #2d8cf0;
-    }
-</style>
-{% endblock %}
+  /* ===== 轮播图 ===== */
+  .carousel {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 48px;
+    height: 480px;
+  }
 
-{% block content %}
-<!-- 轮播图部分 -->
-<div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
-    <div class="carousel-indicators">
-        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="0" class="active"></button>
-        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="1"></button>
-        <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="2"></button>
+  .carousel-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .carousel-item {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .carousel-item.active {
+    opacity: 1;
+  }
+
+  /* 背景图片层 */
+  .carousel-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+  }
+
+  /* 轮播控制按钮 */
+  .carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+  }
+
+  .carousel-control:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  .carousel-prev {
+    left: 24px;
+  }
+  .carousel-next {
+    right: 24px;
+  }
+
+  /* 轮播指示器 */
+  .carousel-indicators {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 3;
+  }
+
+  .indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.4s;
+    border: 2px solid transparent;
+  }
+
+  .indicator:hover {
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .indicator.active {
+    background: var(--cinnabar);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.2);
+  }
+
+  /* ===== 特色服务 ===== */
+  .section-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .section-header h2 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    margin: 0 0 12px 0;
+    letter-spacing: 2px;
+  }
+
+  .section-header p {
+    color: var(--ink-muted);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .section-divider {
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cinnabar), var(--gold));
+    border-radius: 2px;
+    margin: 16px auto 0;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 64px;
+  }
+
+  .feature-card {
+    background: white;
+    border-radius: 20px;
+    padding: 36px 28px;
+    border: 1px solid var(--paper-deep);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--cinnabar), var(--gold));
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 48px var(--shadow-medium);
+  }
+
+  .feature-card:hover::before {
+    opacity: 1;
+  }
+
+  .feature-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .feature-icon.red {
+    background: linear-gradient(135deg, var(--cinnabar-pale), #fff);
+    color: var(--cinnabar);
+  }
+
+  .feature-icon.jade {
+    background: linear-gradient(135deg, var(--jade-pale), #fff);
+    color: var(--jade);
+  }
+
+  .feature-icon.gold {
+    background: linear-gradient(135deg, var(--gold-pale), #fff);
+    color: var(--gold);
+  }
+
+  .feature-card h3 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink-dark);
+    margin: 0 0 10px 0;
+  }
+
+  .feature-card p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.7;
+    margin: 0 0 20px 0;
+  }
+
+  .feature-link {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--cinnabar);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .feature-link:hover {
+    gap: 10px;
+  }
+
+  /* ===== 最新动态 ===== */
+  .news-section {
+    margin-bottom: 64px;
+  }
+
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .news-card {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    border: 1px solid var(--paper-deep);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  .news-card:hover {
+    box-shadow: 0 12px 36px var(--shadow-soft);
+    transform: translateY(-3px);
+  }
+
+  .news-card .date {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .news-card h4 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ink-dark);
+    margin: 0 0 10px 0;
+    line-height: 1.5;
+  }
+
+  .news-card p {
+    font-size: 14px;
+    color: var(--ink-light);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  .news-card .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--gold-pale);
+    color: var(--gold);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 16px;
+  }
+
+  .news-footer {
+    text-align: center;
+    margin-top: 28px;
+  }
+
+  /* ===== 数据统计 ===== */
+  .stats-section {
+    background: linear-gradient(135deg, var(--ink-dark) 0%, var(--ink) 100%);
+    border-radius: 20px;
+    padding: 48px 40px;
+    margin-bottom: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stats-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 30% 70%, rgba(196, 92, 72, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 70% 30%, rgba(90, 138, 127, 0.08) 0%, transparent 50%);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: "Noto Serif SC", serif;
+    font-size: 36px;
+    font-weight: 900;
+    color: white;
+    margin: 0 0 8px 0;
+    letter-spacing: 1px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+  }
+
+  .stat-divider {
+    width: 30px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--cinnabar), var(--gold));
+    border-radius: 1px;
+    margin: 12px auto;
+  }
+
+  /* ===== 快速入口 ===== */
+  .quick-links {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .quick-link {
+    background: white;
+    border-radius: 16px;
+    padding: 24px 16px;
+    text-align: center;
+    border: 1px solid var(--paper-deep);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--ink);
+  }
+
+  .quick-link:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px var(--shadow-soft);
+    border-color: var(--gold);
+  }
+
+  .quick-link i {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .quick-link span {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .quick-link.red i {
+    color: var(--cinnabar);
+  }
+  .quick-link.jade i {
+    color: var(--jade);
+  }
+  .quick-link.gold i {
+    color: var(--gold);
+  }
+  .quick-link.ink i {
+    color: var(--ink-light);
+  }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 1024px) {
+    .features-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .quick-links {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .carousel {
+      height: 400px;
+    }
+    .carousel-content h1 {
+      font-size: 28px;
+      letter-spacing: 2px;
+    }
+    .carousel-content {
+      padding: 40px 24px;
+    }
+    .carousel-control {
+      width: 40px;
+      height: 40px;
+      font-size: 14px;
+    }
+    .carousel-prev {
+      left: 12px;
+    }
+    .carousel-next {
+      right: 12px;
+    }
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+    .news-grid {
+      grid-template-columns: 1fr;
+    }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .quick-links {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .stat-number {
+      font-size: 28px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .carousel {
+      height: 360px;
+      border-radius: 16px;
+    }
+    .carousel-content h1 {
+      font-size: 24px;
+    }
+    .carousel-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+    .carousel-btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .stats-section {
+      padding: 32px 20px;
+    }
+  }
+</style>
+{% endblock %} {% block scripts %}
+<script>
+  // 轮播逻辑
+  (function () {
+    let currentSlide = 0;
+    let items = [];
+    let total = 0;
+    let autoPlayTimer;
+
+    function showSlide(index) {
+      const carouselItems = document.querySelectorAll(".carousel-item");
+      const indicators = document.querySelectorAll(".indicator");
+      carouselItems.forEach((item, i) => {
+        item.classList.toggle("active", i === index);
+      });
+      indicators.forEach((ind, i) => {
+        ind.classList.toggle("active", i === index);
+      });
+      currentSlide = index;
+    }
+
+    window.nextSlide = function () {
+      showSlide((currentSlide + 1) % total);
+      resetAutoPlay();
+    };
+
+    window.prevSlide = function () {
+      showSlide((currentSlide - 1 + total) % total);
+      resetAutoPlay();
+    };
+
+    window.goToSlide = function (index) {
+      showSlide(index);
+      resetAutoPlay();
+    };
+
+    function resetAutoPlay() {
+      clearInterval(autoPlayTimer);
+      autoPlayTimer = setInterval(() => showSlide((currentSlide + 1) % total), 3000);
+    }
+
+    // 加载轮播图
+    async function loadCarousel() {
+      try {
+        const res = await fetch("/api/carousel");
+        const data = await res.json();
+        const carouselInner = document.querySelector(".carousel-inner");
+        const indicatorsDiv = document.querySelector(".carousel-indicators");
+
+        if (data.length === 0) {
+          // 无数据时使用默认硬编码图片
+          return;
+        }
+
+        // 清空并重建轮播项
+        carouselInner.innerHTML = "";
+        indicatorsDiv.innerHTML = "";
+
+        data.forEach((c, i) => {
+          const item = document.createElement("div");
+          item.className = `carousel-item${i === 0 ? " active" : ""}`;
+          item.innerHTML = `<div class="carousel-bg" style="background-image: url('${c.image_url}')"></div>`;
+          carouselInner.appendChild(item);
+
+          const ind = document.createElement("span");
+          ind.className = `indicator${i === 0 ? " active" : ""}`;
+          ind.onclick = () => goToSlide(i);
+          indicatorsDiv.appendChild(ind);
+        });
+
+        items = document.querySelectorAll(".carousel-item");
+        total = items.length;
+
+        // 自动播放
+        clearInterval(autoPlayTimer);
+        autoPlayTimer = setInterval(() => showSlide((currentSlide + 1) % total), 3000);
+      } catch (e) {
+        console.error("加载轮播图失败:", e);
+      }
+    }
+
+    // 加载统计数据
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/home/stats");
+        const data = await res.json();
+        const statNumbers = document.querySelectorAll(".stat-number");
+        if (statNumbers.length >= 4) {
+          if (data.population) statNumbers[0].textContent = data.population;
+          if (data.area) statNumbers[1].textContent = data.area;
+          if (data.output) statNumbers[2].textContent = data.output;
+          if (data.satisfaction) statNumbers[3].textContent = data.satisfaction;
+        }
+      } catch (e) {
+        console.error("加载统计数据失败:", e);
+      }
+    }
+
+    // 页面加载完成后初始化
+    document.addEventListener("DOMContentLoaded", function () {
+      loadCarousel();
+      loadStats();
+    });
+
+    // 触摸滑动支持
+    let touchStartX = 0;
+    const carousel = document.getElementById("homeCarousel");
+
+    carousel.addEventListener(
+      "touchstart",
+      function (e) {
+        touchStartX = e.changedTouches[0].screenX;
+      },
+      { passive: true },
+    );
+
+    carousel.addEventListener(
+      "touchend",
+      function (e) {
+        const touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 50) {
+          if (diff > 0) nextSlide();
+          else prevSlide();
+        }
+      },
+      { passive: true },
+    );
+  })();
+</script>
+{% endblock %} {% block content %}
+<!-- 轮播图区域 -->
+<div class="carousel" id="homeCarousel">
+  <div class="carousel-inner">
+    <div class="carousel-item active">
+      <div
+        class="carousel-bg"
+        style="
+          background-image: url(&quot;https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&auto=format&fit=crop&w=1332&q=80&quot;);
+        "
+      ></div>
     </div>
-    <div class="carousel-inner rounded shadow">
-        <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');">
-            <div class="carousel-caption">
-                <h3>美丽乡村风光</h3>
-                <p>探索自然风光，感受乡村魅力</p>
-            </div>
-        </div>
-        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1332&q=80');">
-            <div class="carousel-caption">
-                <h3>乡村振兴计划</h3>
-                <p>推动乡村发展，建设美好家园</p>
-            </div>
-        </div>
-        <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1332&q=80');">
-            <div class="carousel-caption">
-                <h3>农业科技创新</h3>
-                <p>科技助力农业，提升产业效益</p>
-            </div>
-        </div>
+    <div class="carousel-item">
+      <div
+        class="carousel-bg"
+        style="
+          background-image: url(&quot;https://images.unsplash.com/photo-1464226184884-fa280b87c399?ixlib=rb-4.0.3&auto=format&fit=crop&w=1332&q=80&quot;);
+        "
+      ></div>
     </div>
-    <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon"></span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon"></span>
-    </button>
+    <div class="carousel-item">
+      <div
+        class="carousel-bg"
+        style="
+          background-image: url(&quot;https://images.unsplash.com/photo-1523741543316-beb7fc7023d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1332&q=80&quot;);
+        "
+      ></div>
+    </div>
+  </div>
+  <button class="carousel-control carousel-prev" onclick="prevSlide()" aria-label="上一张">
+    <i class="fas fa-chevron-left"></i>
+  </button>
+  <button class="carousel-control carousel-next" onclick="nextSlide()" aria-label="下一张">
+    <i class="fas fa-chevron-right"></i>
+  </button>
+  <div class="carousel-indicators">
+    <span class="indicator active" onclick="goToSlide(0)"></span>
+    <span class="indicator" onclick="goToSlide(1)"></span>
+    <span class="indicator" onclick="goToSlide(2)"></span>
+  </div>
 </div>
 
-<!-- 特色服务部分 -->
-<section class="mb-5">
-    <h2 class="section-title">特色服务</h2>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card feature-card shadow-sm">
-                <div class="card-body text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-leaf"></i>
-                    </div>
-                    <h4>生态农业</h4>
-                    <p>推广绿色种植技术，发展有机农业，保护生态环境，提供健康农产品。</p>
-                    <a href="/services" class="btn btn-outline-primary">了解更多</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card feature-card shadow-sm">
-                <div class="card-body text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-home"></i>
-                    </div>
-                    <h4>乡村旅游</h4>
-                    <p>开发特色民宿，打造乡村旅游路线，让游客体验纯正的乡村生活和文化。</p>
-                    <a href="/services" class="btn btn-outline-primary">了解更多</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card feature-card shadow-sm">
-                <div class="card-body text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-hands-helping"></i>
-                    </div>
-                    <h4>便民服务</h4>
-                    <p>提供政务咨询、医疗服务、教育资源等便民服务，解决村民生活难题。</p>
-                    <a href="/services" class="btn btn-outline-primary">了解更多</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<!-- 快速入口 -->
+<div class="quick-links">
+  <a href="/news" class="quick-link red">
+    <i class="fas fa-newspaper"></i>
+    <span>新闻动态</span>
+  </a>
+  <a href="/village" class="quick-link jade">
+    <i class="fas fa-map-marked-alt"></i>
+    <span>村情概况</span>
+  </a>
+  <a href="/government" class="quick-link gold">
+    <i class="fas fa-landmark"></i>
+    <span>政务公开</span>
+  </a>
+  <a href="/services" class="quick-link ink">
+    <i class="fas fa-concierge-bell"></i>
+    <span>便民服务</span>
+  </a>
+  <a href="/message" class="quick-link red">
+    <i class="fas fa-comments"></i>
+    <span>留言互动</span>
+  </a>
+</div>
 
-<!-- 最新动态部分 -->
-<section class="mb-5">
-    <h2 class="section-title">最新动态</h2>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card news-card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">乡村振兴政策解读</h5>
-                    <p class="card-text text-muted"><small><i class="far fa-calendar-alt"></i> 2023-06-15</small></p>
-                    <p class="card-text">最新乡村振兴政策出台，为农村发展提供新动力，包括产业扶持、人才引进等多项措施。</p>
-                    <a href="/news" class="btn btn-sm btn-primary">阅读全文</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card news-card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">农产品展销会圆满结束</h5>
-                    <p class="card-text text-muted"><small><i class="far fa-calendar-alt"></i> 2023-06-10</small></p>
-                    <p class="card-text">本次展销会吸引了周边地区众多游客，农产品销售额创历史新高，农民收入显著提升。</p>
-                    <a href="/news" class="btn btn-sm btn-primary">阅读全文</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card news-card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">乡村文化节即将举办</h5>
-                    <p class="card-text text-muted"><small><i class="far fa-calendar-alt"></i> 2023-06-05</small></p>
-                    <p class="card-text">第三届乡村文化节将于下月举行，届时将有传统手工艺展示、民俗表演等丰富活动。</p>
-                    <a href="/news" class="btn btn-sm btn-primary">阅读全文</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card news-card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">农村基础设施改造工程启动</h5>
-                    <p class="card-text text-muted"><small><i class="far fa-calendar-alt"></i> 2023-06-01</small></p>
-                    <p class="card-text">新一轮农村基础设施改造工程正式启动，将对道路、供水、网络等进行全面升级。</p>
-                    <a href="/news" class="btn btn-sm btn-primary">阅读全文</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="text-center mt-4">
-        <a href="/news" class="btn btn-outline-primary">查看更多动态</a>
-    </div>
-</section>
-
-<!-- 数据统计部分 -->
+<!-- 特色服务 -->
 <section>
-    <h2 class="section-title">乡村发展数据</h2>
-    <div class="row text-center">
-        <div class="col-md-3 col-6 mb-4">
-            <div class="card shadow-sm py-3">
-                <div class="card-body">
-                    <h3 class="text-primary">2500+</h3>
-                    <p class="text-muted mb-0">常住人口</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-6 mb-4">
-            <div class="card shadow-sm py-3">
-                <div class="card-body">
-                    <h3 class="text-primary">15km²</h3>
-                    <p class="text-muted mb-0">乡村面积</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-6 mb-4">
-            <div class="card shadow-sm py-3">
-                <div class="card-body">
-                    <h3 class="text-primary">1200万</h3>
-                    <p class="text-muted mb-0">年农业产值</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-6 mb-4">
-            <div class="card shadow-sm py-3">
-                <div class="card-body">
-                    <h3 class="text-primary">98%</h3>
-                    <p class="text-muted mb-0">村民满意度</p>
-                </div>
-            </div>
-        </div>
+  <div class="section-header">
+    <h2>特色服务</h2>
+    <p>为乡村发展提供全方位支持与服务</p>
+    <div class="section-divider"></div>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon red">
+        <i class="fas fa-leaf"></i>
+      </div>
+      <h3>生态农业</h3>
+      <p>推广绿色种植技术，发展有机农业，保护生态环境，提供健康农产品。</p>
+      <a href="/services" class="feature-link">
+        了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
+      </a>
     </div>
+    <div class="feature-card">
+      <div class="feature-icon jade">
+        <i class="fas fa-home"></i>
+      </div>
+      <h3>乡村旅游</h3>
+      <p>开发特色民宿，打造乡村旅游路线，让游客体验纯正的乡村生活和文化。</p>
+      <a href="/services" class="feature-link">
+        了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
+      </a>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon gold">
+        <i class="fas fa-hands-helping"></i>
+      </div>
+      <h3>便民服务</h3>
+      <p>提供政务咨询、医疗服务、教育资源等便民服务，解决村民生活难题。</p>
+      <a href="/services" class="feature-link">
+        了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
+      </a>
+    </div>
+  </div>
 </section>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- 最新动态 -->
+<section class="news-section">
+  <div class="section-header">
+    <h2>最新动态</h2>
+    <p>了解美丽乡村的最新资讯与发展动态</p>
+    <div class="section-divider"></div>
+  </div>
+  <div class="news-grid">
+    <div class="news-card">
+      <div class="date"><i class="far fa-calendar-alt"></i> 2023-06-15</div>
+      <h4>乡村振兴政策解读</h4>
+      <p>最新乡村振兴政策出台，为农村发展提供新动力，包括产业扶持、人才引进等多项措施。</p>
+      <span class="tag">政策</span>
+    </div>
+    <div class="news-card">
+      <div class="date"><i class="far fa-calendar-alt"></i> 2023-06-10</div>
+      <h4>农产品展销会圆满结束</h4>
+      <p>本次展销会吸引了周边地区众多游客，农产品销售额创历史新高，农民收入显著提升。</p>
+      <span class="tag">经济</span>
+    </div>
+    <div class="news-card">
+      <div class="date"><i class="far fa-calendar-alt"></i> 2023-06-05</div>
+      <h4>乡村文化节即将举办</h4>
+      <p>第三届乡村文化节将于下月举行，届时将有传统手工艺展示、民俗表演等丰富活动。</p>
+      <span class="tag">文化</span>
+    </div>
+    <div class="news-card">
+      <div class="date"><i class="far fa-calendar-alt"></i> 2023-06-01</div>
+      <h4>农村基础设施改造工程启动</h4>
+      <p>新一轮农村基础设施改造工程正式启动，将对道路、供水、网络等进行全面升级。</p>
+      <span class="tag">建设</span>
+    </div>
+  </div>
+  <div class="news-footer">
+    <a href="/news" class="btn btn-secondary">
+      查看更多动态 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
+    </a>
+  </div>
+</section>
+
+<!-- 数据统计 -->
+<section class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-item">
+      <div class="stat-number">2500+</div>
+      <div class="stat-divider"></div>
+      <div class="stat-label">常住人口</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">15km²</div>
+      <div class="stat-divider"></div>
+      <div class="stat-label">乡村面积</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">1200万</div>
+      <div class="stat-divider"></div>
+      <div class="stat-label">年农业产值</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">98%</div>
+      <div class="stat-divider"></div>
+      <div class="stat-label">村民满意度</div>
+    </div>
+  </div>
+</section>
 {% endblock %}

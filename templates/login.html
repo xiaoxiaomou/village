@@ -1,198 +1,402 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 乡村信息平台</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-style.css') }}">
-    <style>
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .main-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .login-container {
-            width: 100%;
-            max-width: 400px;
-            padding: 40px;
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .login-title {
-            font-size: 28px;
-            margin-bottom: 8px;
-        }
-        
-        .login-subtitle {
-            font-size: 17px;
-        }
-        
-        .social-login {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        
-        .social-btn {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .social-btn:hover {
-            background: #f5f5f7;
-            transform: translateY(-1px);
-        }
-        
-        .social-icon {
-            width: 20px;
-            height: 20px;
-            margin-right: 8px;
-        }
-        
-        .register-link {
-            text-align: center;
-            margin-top: 25px;
-            font-size: 15px;
-        }
-        
-        .forgot-password {
-            text-align: right;
-            margin-top: -10px;
-            margin-bottom: 20px;
-        }
-        
-        .forgot-password a {
-            font-size: 15px;
-        }
-        
-        @media (max-width: 480px) {
-            .login-container {
-                padding: 30px 20px;
-            }
-            
-            .login-title {
-                font-size: 24px;
-            }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>登录 - 乡村记忆系统</title>
+<link rel="stylesheet" href="/static/font-awesome/css/all.min.css" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --ink-dark: #1a1a2e;
+  --ink: #2d2d44;
+  --ink-light: #4a4a6a;
+  --ink-muted: #7a7a9a;
+  --paper: #faf8f3;
+  --paper-warm: #f5f0e8;
+  --paper-deep: #ebe5d9;
+  --cinnabar: #c45c48;
+  --cinnabar-light: #d97b6a;
+  --cinnabar-pale: #f5e0dc;
+  --jade: #5a8a7f;
+  --jade-light: #7ab5a8;
+  --gold: #b8956a;
+  --gold-light: #d4b896;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--paper);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(184,149,106,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(196,92,72,0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 顶部导航 */
+.auth-header {
+  background: rgba(250,248,243,0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--paper-deep);
+  position: relative;
+  z-index: 10;
+}
+
+.auth-header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-logo {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-dark);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 2px;
+}
+
+.auth-logo i { color: var(--cinnabar); font-size: 20px; }
+
+.auth-nav a {
+  color: var(--ink-light);
+  text-decoration: none;
+  font-size: 14px;
+  margin-left: 24px;
+  transition: color 0.3s;
+}
+
+.auth-nav a:hover { color: var(--cinnabar); }
+
+/* 主内容区 */
+.auth-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-card {
+  background: white;
+  border-radius: 24px;
+  padding: 48px 40px;
+  border: 1px solid var(--paper-deep);
+  box-shadow: 0 8px 40px rgba(26,26,46,0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--cinnabar), var(--gold));
+}
+
+.auth-header-text {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-header-text h1 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink-dark);
+  margin: 0 0 8px 0;
+  letter-spacing: 2px;
+}
+
+.auth-header-text p {
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+/* 表单 */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--paper-deep);
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--ink);
+  background: white;
+  transition: all 0.3s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--jade);
+  box-shadow: 0 0 0 4px rgba(90,138,127,0.1);
+}
+
+.form-group input::placeholder {
+  color: var(--ink-muted);
+}
+
+/* 按钮 */
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, var(--cinnabar) 0%, var(--cinnabar-light) 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(196,92,72,0.3);
+  transition: all 0.3s;
+  margin-top: 8px;
+}
+
+.btn-submit:hover {
+  box-shadow: 0 6px 20px rgba(196,92,72,0.4);
+  transform: translateY(-1px);
+}
+
+/* 底部链接 */
+.auth-footer-link {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.auth-footer-link a {
+  color: var(--cinnabar);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.auth-footer-link a:hover {
+  color: var(--cinnabar-light);
+}
+
+/* Flash 消息 */
+.flash-msg {
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  background: var(--cinnabar-pale);
+  color: var(--cinnabar);
+  border: 1px solid rgba(196,92,72,0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.flash-msg::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--cinnabar);
+}
+
+.pending-status {
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pending-status.pending {
+  background: var(--gold-pale);
+  color: var(--gold);
+  border: 1px solid rgba(184,149,106,0.3);
+}
+
+.pending-status.pending::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--gold);
+}
+
+.pending-status.rejected {
+  background: var(--cinnabar-pale);
+  color: var(--cinnabar);
+  border: 1px solid rgba(196,92,72,0.2);
+}
+
+.pending-status.rejected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--cinnabar);
+}
+
+.pending-status.approved {
+  background: var(--jade-pale);
+  color: var(--jade);
+  border: 1px solid rgba(90,138,127,0.2);
+}
+
+.pending-status.approved::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--jade);
+}
+
+/* 装饰元素 */
+.deco-circle {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.deco-circle-1 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(196,92,72,0.04) 0%, transparent 70%);
+  top: -100px;
+  right: -100px;
+}
+
+.deco-circle-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(90,138,127,0.03) 0%, transparent 70%);
+  bottom: -150px;
+  left: -150px;
+}
+
+@media (max-width: 480px) {
+  .auth-card { padding: 36px 24px; border-radius: 20px; }
+  .auth-header-inner { padding: 0 20px; }
+}
+</style>
 </head>
 <body>
-    <header class="apple-navbar">
-        <a href="/" class="apple-logo">乡村信息平台</a>
-        <nav>
-            <a href="/" class="apple-nav-link">首页</a>
-            <a href="/contact" class="apple-nav-link">联系我们</a>
-        </nav>
-    </header>
+<div class="deco-circle deco-circle-1"></div>
+<div class="deco-circle deco-circle-2"></div>
 
-    <main class="main-container">
-        <div class="apple-card login-container apple-slide-up">
-            <div class="login-header">
-                <h1 class="apple-page-title login-title">欢迎回来</h1>
-                <p class="apple-page-subtitle login-subtitle">登录您的账户以继续</p>
-            </div>
+<header class="auth-header">
+  <div class="auth-header-inner">
+    <a href="/" class="auth-logo"><i class="fas fa-mountain"></i> 乡村记忆</a>
+    <nav class="auth-nav">
+      <a href="/">首页</a>
+      <a href="/register">注册</a>
+    </nav>
+  </div>
+</header>
 
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="apple-alert apple-alert-info">
-                            <span>{{ message }}</span>
-                            <button class="alert-close">&times;</button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+<main class="auth-main">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header-text">
+        <h1>欢迎回来</h1>
+        <p>登录您的乡村记忆账户</p>
+      </div>
 
-            <form method="post" action="{{ url_for('login') }}">
-                <div class="apple-form-group">
-                    <label for="username" class="apple-form-label">用户名</label>
-                    <input type="text" class="apple-form-control" id="username" name="username" required autocomplete="username">
-                </div>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+          <div class="flash-msg">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
 
-                <div class="apple-form-group">
-                    <label for="password" class="apple-form-label">密码</label>
-                    <input type="password" class="apple-form-control" id="password" name="password" required autocomplete="current-password">
-                </div>
+      <div id="pendingStatus" style="display:none" class="pending-status pending"></div>
 
-                <div class="forgot-password">
-                    <a href="#" onclick="alert('请联系管理员重置密码')">忘记密码？</a>
-                </div>
-
-                <button type="submit" class="apple-btn apple-btn-primary">登录</button>
-            </form>
-
-            <div class="apple-divider">
-                <span>或</span>
-            </div>
-
-            <div class="social-login">
-                <div class="social-btn" onclick="alert('微信登录暂未开放')">
-                    <svg class="social-icon" viewBox="0 0 24 24" fill="#07C160">
-                        <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"/>
-                    </svg>
-                    微信
-                </div>
-                <div class="social-btn" onclick="alert('QQ登录暂未开放')">
-                    <svg class="social-icon" viewBox="0 0 24 24" fill="#12B7F5">
-                        <path d="M21.395 15.035a39.39 39.39 0 0 0-.803-2.264l-1.079-2.695-.001-.003c-.024-.06-.048-.12-.074-.178A8.963 8.963 0 0 0 12 4.001a8.964 8.964 0 0 0-7.438 3.894 2.747 2.747 0 0 0-.074.178l-.001.003-1.079 2.695a39.39 39.39 0 0 0-.803 2.264C1.201 17.266 1.433 19.479 3.07 20.5h.001c.812.51 1.898.799 3.064.799 1.575 0 2.892-.492 3.865-1.451l.012-.012.012.012c.973.959 2.29 1.451 3.865 1.451 1.166 0 2.252-.289 3.064-.799h.001c1.637-1.021 1.869-3.234 1.465-5.465zM8.707 18.673c-.629.617-1.478.925-2.572.925-.875 0-1.639-.212-2.203-.569-.534-.338-.942-.822-1.191-1.416-.299-.71-.34-1.539-.122-2.424.218-.885.642-1.879 1.266-2.949A6.952 6.952 0 0 1 12 6.001a6.952 6.952 0 0 1 8.115 6.239c.624 1.07 1.048 2.064 1.266 2.949.218.885.177 1.714-.122 2.424-.249.594-.657 1.078-1.191 1.416-.564.357-1.328.569-2.203.569-1.094 0-1.943-.308-2.572-.925a3.48 3.48 0 0 1-1.293-2.718c0-1.062.523-2.004 1.293-2.718a3.48 3.48 0 0 1 2.572-.925c1.094 0 1.943.308 2.572.925A3.48 3.48 0 0 1 12 15.93a3.48 3.48 0 0 1-1.293-2.718c0-1.062.523-2.004 1.293-2.718z"/>
-                    </svg>
-                    QQ
-                </div>
-            </div>
-
-            <div class="register-link">
-                还没有账号？<a href="{{ url_for('register') }}">立即注册</a>
-            </div>
+      <form method="post" action="{{ url_for('auth.login') }}" id="loginForm">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" name="username" required placeholder="请输入用户名" />
         </div>
-    </main>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" name="password" required placeholder="请输入密码" />
+        </div>
+        <button type="submit" class="btn-submit">登录</button>
+      </form>
+      <div class="auth-footer-link">还没有账号？<a href="/register">立即注册</a></div>
+    </div>
+  </div>
+</main>
 
-    <script>
-        // 关闭提示框
-        document.querySelectorAll('.alert-close').forEach(button => {
-            button.addEventListener('click', function() {
-                this.parentElement.style.display = 'none';
-            });
-        });
-
-        // 表单提交动画
-        document.querySelector('form').addEventListener('submit', function() {
-            const submitBtn = this.querySelector('.btn-primary');
-            submitBtn.textContent = '登录中...';
-            submitBtn.disabled = true;
-        });
-
-        // 输入框焦点效果
-        document.querySelectorAll('.form-control').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.style.transform = 'translateY(-2px)';
-            });
-
-            input.addEventListener('blur', function() {
-                this.parentElement.style.transform = 'translateY(0)';
-            });
-        });
-    </script>
+<script>
+fetch("/api/pending-status")
+  .then(r => r.json())
+  .then(data => {
+    const el = document.getElementById("pendingStatus");
+    if (data.status === "pending") {
+      el.className = "pending-status pending";
+      el.innerHTML = '<i class="fas fa-clock"></i> 您的注册申请还在审核中，请耐心等待';
+      el.style.display = "block";
+    } else if (data.status === "rejected" && data.review_comment) {
+      el.className = "pending-status rejected";
+      el.innerHTML = '<i class="fas fa-times-circle"></i> 注册申请已被拒绝：' + data.review_comment;
+      el.style.display = "block";
+    } else if (data.status === "active") {
+      el.className = "pending-status approved";
+      el.innerHTML = '<i class="fas fa-check-circle"></i> 您的账号已激活';
+      el.style.display = "block";
+    }
+  })
+  .catch(() => {});
+</script>
 </body>
 </html>

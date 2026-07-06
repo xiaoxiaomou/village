@@ -1,54 +1,739 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}乡村网站{% endblock %}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#faf8f3" />
+    <title>{% block title %}乡村记忆系统{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='font-awesome/css/all.min.css') }}"
+    />
+    <link rel="stylesheet" href="/static/css/style.css" />
     <style>
-        body { font-family: 'Microsoft YaHei', Arial, sans-serif; margin: 0; padding: 0; background: #f7f7f7; }
-        header { background: #2d8cf0; color: #fff; padding: 20px 0; }
-        nav { display: flex; justify-content: center; gap: 40px; }
-        nav a { color: #fff; text-decoration: none; font-size: 18px; padding: 8px 16px; border-radius: 4px; }
-        nav a:hover { background: #1a6fb3; }
-        .container { max-width: 1000px; margin: 30px auto 40px auto; background: #fff; padding: 30px 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        footer { background: #222; color: #aaa; text-align: center; padding: 18px 0; position: fixed; left: 0; right: 0; bottom: 0; }
-        @media (max-width: 600px) {
-            .container { padding: 10px; }
-            nav { flex-direction: column; gap: 10px; }
+      @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap");
+
+      /* 全局样式见 /static/css/style.css — 以下仅首页专属/覆盖样式 */
+
+      /* ===== 宣纸纹理背景 ===== */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image:
+          radial-gradient(ellipse at 20% 50%, rgba(184, 149, 106, 0.03) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 20%, rgba(196, 92, 72, 0.02) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 80%, rgba(90, 138, 127, 0.02) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ===== 顶部导航 ===== */
+      .site-header {
+        background: linear-gradient(
+          180deg,
+          rgba(250, 248, 243, 0.98) 0%,
+          rgba(250, 248, 243, 0.95) 100%
+        );
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--paper-deep);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .header-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        height: 68px;
+      }
+
+      .logo-area {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: "Noto Serif SC", serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--ink-dark);
+        letter-spacing: 2px;
+      }
+
+      .logo-area i {
+        font-size: 24px;
+        color: var(--cinnabar);
+      }
+
+      .logo-area span {
+        position: relative;
+      }
+
+      .logo-area span::after {
+        content: "";
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, var(--cinnabar), transparent);
+        border-radius: 1px;
+      }
+
+      /* 桌面导航 */
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .nav-links li a {
+        display: block;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--ink-light);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
+        position: relative;
+      }
+
+      .nav-links li a:hover {
+        color: var(--cinnabar);
+        background: var(--gold-pale);
+      }
+
+      .nav-links li a i {
+        margin-right: 5px;
+        font-size: 13px;
+        opacity: 0.7;
+      }
+
+      .nav-links li a.active {
+        color: var(--cinnabar);
+        background: var(--cinnabar-pale);
+      }
+
+      /* 汉堡菜单按钮 */
+      .menu-toggle {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 22px;
+        cursor: pointer;
+        padding: 8px;
+        color: var(--ink);
+        border-radius: 8px;
+        transition: all 0.3s;
+      }
+
+      .menu-toggle:hover {
+        background: var(--paper-deep);
+      }
+
+      /* ===== 主容器 ===== */
+      .container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 32px;
+        flex: 1;
+        width: 100%;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* ===== 页脚 ===== */
+      footer {
+        background: linear-gradient(180deg, var(--ink-dark) 0%, var(--ink) 100%);
+        color: var(--paper-deep);
+        padding: 48px 32px 24px;
+        margin-top: auto;
+        position: relative;
+        z-index: 1;
+      }
+
+      footer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--cinnabar), var(--gold), var(--jade));
+      }
+
+      .footer-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        gap: 40px;
+      }
+
+      .footer-brand {
+        font-family: "Noto Serif SC", serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--paper);
+        margin-bottom: 12px;
+        letter-spacing: 2px;
+      }
+
+      .footer-desc {
+        font-size: 13px;
+        color: var(--ink-muted);
+        line-height: 1.8;
+      }
+
+      .footer-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gold-light);
+        margin-bottom: 16px;
+        letter-spacing: 1px;
+      }
+
+      .footer-links {
+        list-style: none;
+      }
+
+      .footer-links li {
+        margin-bottom: 10px;
+      }
+
+      .footer-links a {
+        color: var(--ink-muted);
+        font-size: 13px;
+        transition: all 0.3s;
+      }
+
+      .footer-links a:hover {
+        color: var(--gold-light);
+        padding-left: 4px;
+      }
+
+      .footer-bottom {
+        max-width: 1280px;
+        margin: 32px auto 0;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: center;
+        font-size: 12px;
+        color: var(--ink-muted);
+      }
+
+      /* ===== Flash 消息 ===== */
+      .flash-messages {
+        margin-bottom: 24px;
+      }
+
+      .flash {
+        padding: 14px 24px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        background: var(--jade-pale);
+        color: var(--jade);
+        border: 1px solid rgba(90, 138, 127, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .flash::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--jade);
+      }
+
+      .flash.error {
+        background: var(--cinnabar-pale);
+        color: var(--cinnabar);
+        border-color: rgba(196, 92, 72, 0.2);
+      }
+
+      .flash.error::before {
+        background: var(--cinnabar);
+      }
+
+      /* ===== 通用组件 ===== */
+      .badge {
+        background: var(--cinnabar);
+        color: white;
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+
+      .text-center {
+        text-align: center;
+      }
+      .mt-2 {
+        margin-top: 8px;
+      }
+      .mt-3 {
+        margin-top: 16px;
+      }
+      .mt-4 {
+        margin-top: 24px;
+      }
+      .mb-3 {
+        margin-bottom: 16px;
+      }
+      .mb-4 {
+        margin-bottom: 24px;
+      }
+
+      /* 表格响应式 */
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 12px;
+        border: 1px solid var(--paper-deep);
+      }
+
+      .table-responsive table {
+        min-width: 500px;
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .table-responsive th {
+        background: var(--paper-warm);
+        padding: 14px 16px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-light);
+        border-bottom: 2px solid var(--paper-deep);
+      }
+
+      .table-responsive td {
+        padding: 14px 16px;
+        font-size: 14px;
+        border-bottom: 1px solid var(--paper-deep);
+      }
+
+      .table-responsive tr:hover td {
+        background: var(--paper-warm);
+      }
+
+      /* 卡片通用样式 */
+      .card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--paper-deep);
+        box-shadow: 0 2px 12px var(--shadow-soft);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+      }
+
+      .card:hover {
+        box-shadow: 0 8px 32px var(--shadow-medium);
+        transform: translateY(-2px);
+      }
+
+      /* 按钮样式 */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        outline: none;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--cinnabar) 0%, var(--cinnabar-light) 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(196, 92, 72, 0.3);
+      }
+
+      .btn-primary:hover {
+        box-shadow: 0 6px 20px rgba(196, 92, 72, 0.4);
+        transform: translateY(-1px);
+        color: white;
+      }
+
+      .btn-secondary {
+        background: var(--paper-warm);
+        color: var(--ink-light);
+        border: 1px solid var(--paper-deep);
+      }
+
+      .btn-secondary:hover {
+        background: var(--paper-deep);
+        color: var(--ink);
+      }
+
+      .btn-jade {
+        background: linear-gradient(135deg, var(--jade) 0%, var(--jade-light) 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(90, 138, 127, 0.3);
+      }
+
+      .btn-jade:hover {
+        box-shadow: 0 6px 20px rgba(90, 138, 127, 0.4);
+        transform: translateY(-1px);
+        color: white;
+      }
+
+      /* 表单输入 */
+      .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--paper-deep);
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: inherit;
+        background: white;
+        color: var(--ink);
+        transition: all 0.3s;
+      }
+
+      .form-control:focus {
+        border-color: var(--jade);
+        box-shadow: 0 0 0 4px rgba(90, 138, 127, 0.1);
+        outline: none;
+      }
+
+      .form-control::placeholder {
+        color: var(--ink-muted);
+      }
+
+      /* 分页 */
+      .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 32px;
+      }
+
+      .pagination a,
+      .pagination span {
+        padding: 10px 16px;
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--ink-light);
+        font-size: 14px;
+        font-weight: 500;
+        border: 1px solid var(--paper-deep);
+        background: white;
+        transition: all 0.3s;
+      }
+
+      .pagination a:hover {
+        background: var(--paper-warm);
+        border-color: var(--gold);
+        color: var(--ink);
+      }
+
+      .pagination .current {
+        background: linear-gradient(135deg, var(--cinnabar) 0%, var(--cinnabar-light) 100%);
+        color: white;
+        border-color: var(--cinnabar);
+        box-shadow: 0 4px 12px rgba(196, 92, 72, 0.25);
+      }
+
+      .pagination .disabled {
+        color: var(--ink-muted);
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      /* 空状态 */
+      .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: var(--ink-muted);
+      }
+
+      .empty-state i {
+        font-size: 56px;
+        margin-bottom: 20px;
+        color: var(--paper-deep);
+      }
+
+      .empty-state p {
+        font-size: 15px;
+      }
+
+      /* 页面标题 */
+      .page-header {
+        margin-bottom: 32px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--paper-deep);
+        position: relative;
+      }
+
+      .page-header::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 80px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--cinnabar), var(--gold));
+      }
+
+      .page-header h1 {
+        font-family: "Noto Serif SC", serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--ink-dark);
+        margin: 0 0 8px 0;
+        letter-spacing: 1px;
+      }
+
+      .page-header p {
+        color: var(--ink-muted);
+        font-size: 14px;
+        margin: 0;
+      }
+
+      /* ===== 移动端响应式 ===== */
+      @media (max-width: 1024px) {
+        .footer-inner {
+          grid-template-columns: 1fr 1fr;
+          gap: 32px;
         }
+      }
+
+      @media (max-width: 900px) {
+        .menu-toggle {
+          display: block;
+        }
+
+        .nav-links {
+          display: none;
+          position: absolute;
+          top: 68px;
+          left: 0;
+          right: 0;
+          background: rgba(250, 248, 243, 0.98);
+          backdrop-filter: blur(20px);
+          box-shadow: 0 8px 32px var(--shadow-medium);
+          flex-direction: column;
+          padding: 16px;
+          gap: 4px;
+          z-index: 99;
+          border-bottom: 1px solid var(--paper-deep);
+        }
+
+        .nav-links.open {
+          display: flex;
+        }
+
+        .nav-links li {
+          width: 100%;
+        }
+
+        .nav-links li a {
+          display: block;
+          padding: 12px 16px;
+          border-radius: 10px;
+          font-size: 15px;
+        }
+
+        .nav-links li a:hover {
+          background: var(--gold-pale);
+        }
+
+        .nav-links li:last-child {
+          border-top: 1px solid var(--paper-deep);
+          margin-top: 8px;
+          padding-top: 8px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .header-inner {
+          padding: 0 16px;
+          height: 60px;
+        }
+
+        .container {
+          padding: 20px 16px;
+        }
+
+        .logo-area {
+          font-size: 17px;
+        }
+
+        .logo-area i {
+          font-size: 20px;
+        }
+
+        .footer-inner {
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+
+        .page-header h1 {
+          font-size: 22px;
+        }
+      }
     </style>
     {% block head %}{% endblock %}
-</head>
-<body>
-    <header>
-        <div style="text-align:center;font-size:2em;font-weight:bold;letter-spacing:2px;">美丽乡村信息平台</div>
-        <nav>
-            <a href="/">首页</a>
-            <a href="/village">乡村概况</a>
-            <a href="/news">新闻动态</a>
-            <a href="/government">政务公开</a>
-            <a href="/services">便民服务</a>
-            <a href="/message">互动交流</a>
-            <a href="/contact">联系我们</a>
-            
-            <!-- 用户登录状态显示 -->
-            {% if session['user'] %}
-                <span style="color: #fff;">欢迎，{{ session['user'] }}</span>
-                {% if session['role'] == 'admin' %}
-                    <a href="/admin">后台管理</a>
-                {% endif %}
-                <a href="/logout">注销</a>
-            {% else %}
-                <a href="/login">登录</a>
-                <a href="/register">注册</a>
-            {% endif %}
-        </nav>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a href="/" class="logo-area">
+          <i class="fas fa-mountain"></i>
+          <span>乡村记忆</span>
+        </a>
+        <button class="menu-toggle" onclick="toggleMenu()" aria-label="菜单">
+          <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links" id="navLinks">
+          <li>
+            <a href="/"><i class="fas fa-home"></i> 首页</a>
+          </li>
+          <li>
+            <a href="/news"><i class="fas fa-newspaper"></i> 新闻</a>
+          </li>
+          <li>
+            <a href="/village"><i class="fas fa-map-marked-alt"></i> 村情</a>
+          </li>
+          <li>
+            <a href="/government"><i class="fas fa-landmark"></i> 政务</a>
+          </li>
+          <li>
+            <a href="/services"><i class="fas fa-concierge-bell"></i> 服务</a>
+          </li>
+          <li>
+            <a href="/message"><i class="fas fa-comments"></i> 留言</a>
+          </li>
+          <li>
+            <a href="/contact"><i class="fas fa-phone-alt"></i> 联系</a>
+          </li>
+          <li>
+            <a href="/timeline"><i class="fas fa-clock"></i> 时间轴</a>
+          </li>
+          <li>
+            <a href="/memories"><i class="fas fa-images"></i> 怀旧</a>
+          </li>
+          {% if session['user'] %}
+          <li>
+            <a href="/dashboard"><i class="fas fa-user"></i> {{ session['user'] }}</a>
+          </li>
+          {% if session['role'] == 'admin' %}
+          <li>
+            <a href="/admin"><i class="fas fa-cog"></i> 后台</a>
+          </li>
+          {% endif %}
+          <li>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> 退出</a>
+          </li>
+          {% else %}
+          <li>
+            <a href="/login"><i class="fas fa-sign-in-alt"></i> 登录</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
     </header>
+
     <main class="container">
-        {% block content %}{% endblock %}
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <div class="flash-messages">
+        {% for message in messages %}
+        <div class="flash">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %} {% block content %}{% endblock %}
     </main>
+
     <footer>
-        &copy; 2024 美丽乡村信息平台 | 技术支持：乡村开发团队
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand">
+            <i class="fas fa-mountain" style="margin-right: 8px; color: var(--cinnabar)"></i
+            >乡村记忆
+          </div>
+          <p class="footer-desc">
+            记录乡村的点滴变化，传承乡土文化记忆。<br />让每一份乡愁都有处安放，让每一个故事都被铭记。
+          </p>
+        </div>
+        <div>
+          <div class="footer-title">快速导航</div>
+          <ul class="footer-links">
+            <li><a href="/news">新闻动态</a></li>
+            <li><a href="/village">村情概况</a></li>
+            <li><a href="/government">政务公开</a></li>
+            <li><a href="/services">便民服务</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-title">记忆空间</div>
+          <ul class="footer-links">
+            <li><a href="/timeline">时间轴</a></li>
+            <li><a href="/memories">怀旧记录</a></li>
+            <li><a href="/message">留言互动</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-title">关于我们</div>
+          <ul class="footer-links">
+            <li><a href="/contact">联系我们</a></li>
+            <li><a href="/login">用户登录</a></li>
+            <li><a href="/register">注册账户</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 乡村记忆系统 | 用心的记录，留住温暖的回忆</p>
+      </div>
     </footer>
-</body>
+
+    <script src="/static/js/main.js"></script>
+    <script>
+      function toggleMenu() {
+        document.getElementById("navLinks").classList.toggle("open");
+      }
+      // 点击导航链接后自动关闭菜单（移动端）
+      document.getElementById("navLinks").addEventListener("click", function (e) {
+        if (e.target.tagName === "A") {
+          this.classList.remove("open");
+        }
+      });
+      // 点击菜单外关闭
+      document.addEventListener("click", function (e) {
+        const nav = document.getElementById("navLinks");
+        const toggle = document.querySelector(".menu-toggle");
+        if (!nav.contains(e.target) && !toggle.contains(e.target)) {
+          nav.classList.remove("open");
+        }
+      });
+      // 高亮当前页导航
+      document.querySelectorAll(".nav-links a").forEach((link) => {
+        if (link.href === window.location.origin + window.location.pathname) {
+          link.classList.add("active");
+        }
+      });
+    </script>
+    {% block scripts %}{% endblock %}
+  </body>
 </html>
