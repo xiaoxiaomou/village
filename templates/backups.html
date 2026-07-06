@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}数据备份 - 乡村记忆系统{% endblock %}
+
+{% block head %}
+<style>
+    .backup-card { 
+        background: #fff; 
+        border: 1px solid var(--secondary); 
+        border-radius: 10px; 
+        padding: 20px; 
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .backup-info h4 { margin: 0 0 8px 0; color: var(--primary); }
+    .backup-actions { display: flex; gap: 10px; }
+    .export-section { background: var(--bg-warm); padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="section-title"><i class="fas fa-database"></i> 数据备份</h2>
+
+<div class="export-section">
+    <h3 style="color:var(--primary);margin-top:0;"><i class="fas fa-file-export"></i> 导出备份</h3>
+    <p>导出所有记忆、人物、标签数据为 ZIP 文件</p>
+    <button class="btn-primary" onclick="exportBackup()" style="padding:12px 40px;font-size:16px;">
+        <i class="fas fa-download"></i> 立即导出
+    </button>
+</div>
+
+<h3 style="color:var(--primary);margin-bottom:20px;"><i class="fas fa-history"></i> 历史备份</h3>
+
+<div id="backupsContainer">
+    {% for backup in backups %}
+    <div class="backup-card">
+        <div class="backup-info">
+            <h4>备份 {{ backup.created_at[:10] }}</h4>
+            <small style="color:#999;">{{ backup.file_size }} | 包含 {{ backup.record_count }} 条记录</small>
+        </div>
+        <div class="backup-actions">
+            <a href="/api/backups/download/{{ backup.filename }}" class="btn-primary" style="padding:6px 15px;font-size:13px;">
+                <i class="fas fa-download"></i> 下载
+            </a>
+            <button class="btn-secondary" onclick="deleteBackup({{ backup.id }})" style="padding:6px 15px;font-size:13px;">
+                <i class="fas fa-trash"></i> 删除
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function exportBackup() {
+    try {
+        const response = await fetch('/api/backups/export', { method: 'POST' });
+        if (!response.ok) throw new Error('Export failed');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '乡村记忆备份_' + new Date().toISOString().split('T')[0] + '.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        showMessage('备份导出成功！', 'success');
+    } catch (error) {
+        alert('导出失败: ' + error.message);
+    }
+}
+
+async function deleteBackup(id) {
+    if (!confirm('确定删除这个备份吗？')) return;
+    try {
+        const response = await fetch('/api/backups/' + id, { method: 'DELETE' });
+        if (response.ok) {
+            showMessage('备份已删除', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            alert('删除失败');
+        }
+    } catch (error) {
+        alert('删除失败: ' + error.message);
+    }
+}
+</script>
+{% endblock %}

@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 加载留言数据
 function loadMessages() {
-    fetch('/admin/messages')
+    fetch('/admin/messages/data')
         .then(response => response.json())
         .then(data => {
             allMessages = data;
@@ -355,7 +355,7 @@ function submitReply(messageId) {
         return;
     }
     
-    fetch(`/admin/messages/${messageId}/reply`, {
+    fetch(`/admin/messages/data/${messageId}/reply`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -379,7 +379,7 @@ function submitReply(messageId) {
 function editReply(messageId, currentReply) {
     const newReply = prompt('修改回复内容:', currentReply);
     if (newReply !== null && newReply.trim() !== '') {
-        fetch(`/admin/messages/${messageId}/reply`, {
+        fetch(`/admin/messages/data/${messageId}/reply`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -403,7 +403,7 @@ function editReply(messageId, currentReply) {
 // 删除回复
 function deleteReply(messageId) {
     if (confirm('确定要删除这条回复吗？')) {
-        fetch(`/admin/messages/${messageId}/reply`, {
+        fetch(`/admin/messages/data/${messageId}/reply`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

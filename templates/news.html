@@ -1,15 +1,375 @@
-{% extends "base.html" %}
-{% block title %}新闻动态{% endblock %}
-{% block content %}
-<h2>新闻动态</h2>
-<ul>
-    {% for item in news_list %}
-    <li>
-        <strong>{{ item.title }}</strong> <span style="color:#888;">{{ item.date }}</span><br>
-        <div>{{ item.content }}</div>
-    </li>
-    {% else %}
-    <li>暂无新闻</li>
+{% extends "base.html" %} {% block title %}新闻动态 - 美丽乡村{% endblock %} {% block head %}
+<style>
+  .news-hero {
+    background: linear-gradient(135deg, var(--ink-dark) 0%, var(--ink) 100%);
+    color: white;
+    padding: 48px 32px;
+    border-radius: 20px;
+    margin-bottom: 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .news-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 30% 70%, rgba(196, 92, 72, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 70% 30%, rgba(90, 138, 127, 0.1) 0%, transparent 50%);
+  }
+
+  .news-hero h2 {
+    font-family: "Noto Serif SC", serif;
+    margin: 0 0 10px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .news-hero p {
+    margin: 0;
+    opacity: 0.65;
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 搜索栏 */
+  .search-bar {
+    background: white;
+    padding: 20px 24px;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px var(--shadow-soft);
+    margin-bottom: 28px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    border: 1px solid var(--paper-deep);
+  }
+
+  .search-bar input,
+  .search-bar select {
+    padding: 12px 16px;
+    border: 2px solid var(--paper-deep);
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s;
+    font-family: inherit;
+    color: var(--ink);
+  }
+
+  .search-bar input:focus,
+  .search-bar select:focus {
+    border-color: var(--jade);
+    box-shadow: 0 0 0 4px rgba(90, 138, 127, 0.1);
+  }
+
+  .search-bar input {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .search-bar select {
+    min-width: 140px;
+    background: white;
+  }
+
+  .search-bar button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--cinnabar) 0%, var(--cinnabar-light) 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    transition: all 0.3s;
+    box-shadow: 0 4px 14px rgba(196, 92, 72, 0.3);
+  }
+
+  .search-bar button:hover {
+    box-shadow: 0 6px 20px rgba(196, 92, 72, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .search-bar .clear-link {
+    padding: 12px 16px;
+    color: var(--ink-muted);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s;
+  }
+
+  .search-bar .clear-link:hover {
+    color: var(--cinnabar);
+  }
+
+  /* 新闻卡片 */
+  .news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .news-card {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 2px 12px var(--shadow-soft);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--paper-deep);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .news-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--cinnabar), var(--gold));
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+  }
+
+  .news-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 36px var(--shadow-medium);
+  }
+
+  .news-card:hover::before {
+    opacity: 1;
+  }
+
+  .news-card h3 {
+    margin: 0 0 10px;
+    font-family: "Noto Serif SC", serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink-dark);
+  }
+
+  .news-card .meta {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 12px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .news-card .meta .tag {
+    background: var(--gold-pale);
+    color: var(--gold);
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .news-card .summary {
+    color: var(--ink-light);
+    font-size: 14px;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .news-card .read-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    color: var(--cinnabar);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    transition: gap 0.3s;
+    position: relative;
+    z-index: 10;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .news-card .read-more:hover {
+    gap: 10px;
+  }
+
+  /* 分页 */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 32px 0 10px;
+  }
+
+  .pagination a,
+  .pagination span {
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--ink-light);
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid var(--paper-deep);
+    background: white;
+    transition: all 0.3s;
+  }
+
+  .pagination a:hover {
+    background: var(--paper-warm);
+    border-color: var(--gold);
+    color: var(--ink);
+  }
+
+  .pagination .current {
+    background: linear-gradient(135deg, var(--cinnabar) 0%, var(--cinnabar-light) 100%);
+    color: white;
+    border-color: var(--cinnabar);
+    box-shadow: 0 4px 12px rgba(196, 92, 72, 0.25);
+  }
+
+  .pagination .disabled {
+    color: var(--ink-muted);
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--ink-muted);
+  }
+
+  .empty-state i {
+    font-size: 56px;
+    margin-bottom: 20px;
+    color: var(--paper-deep);
+  }
+
+  .empty-state p {
+    font-size: 15px;
+  }
+
+  @media (max-width: 640px) {
+    .news-hero {
+      padding: 28px 16px;
+    }
+    .news-hero h2 {
+      font-size: 22px;
+    }
+    .search-bar {
+      padding: 14px;
+      flex-direction: column;
+    }
+    .search-bar input {
+      min-width: auto;
+      width: 100%;
+    }
+    .search-bar select {
+      width: 100%;
+    }
+    .search-bar button {
+      width: 100%;
+    }
+    .news-card {
+      padding: 18px;
+    }
+    .pagination {
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .pagination a,
+    .pagination span {
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="news-hero">
+  <h2>新闻动态</h2>
+  <p>了解美丽乡村的最新资讯与发展动态</p>
+</div>
+
+<!-- 搜索栏 -->
+<form class="search-bar" method="GET" action="{{ url_for('main.news_page') }}">
+  <input type="text" name="search" placeholder="搜索新闻标题或内容..." value="{{ search or '' }}" />
+  <select name="category_id">
+    <option value="">全部分类</option>
+    {% for cat in categories %}
+    <option value="{{ cat.id }}" {% if category_id == cat.id %}selected{% endif %}>
+      {{ cat.name }}
+    </option>
     {% endfor %}
-</ul>
-{% endblock %}
+  </select>
+  <button type="submit"><i class="fas fa-search"></i> 搜索</button>
+  {% if search or category_id %}
+  <a href="{{ url_for('main.news_page') }}" class="clear-link">清除筛选</a>
+  {% endif %}
+</form>
+
+<!-- 新闻列表 -->
+{% if news_list %}
+<div class="news-list">
+  {% for item in news_list %}
+  <div class="news-card">
+    <h3>{{ item.title }}</h3>
+    <div class="meta">
+      <span><i class="far fa-calendar-alt"></i> {{ item.date[:10] if item.date else '' }}</span>
+      {% if item.author %}<span><i class="far fa-user"></i> {{ item.author }}</span>{% endif %}
+      {% if item.category_id %}<span class="tag">{{ item.category_name or '分类' }}</span>{% endif %}
+    </div>
+    <div class="summary">
+      {{ item.content[:200] }}{% if item.content|length > 200 %}...{% endif %}
+    </div>
+    <a href="{{ url_for('main.news_detail', news_id=item.id) }}" class="read-more">
+      阅读全文 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- 分页 -->
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="{{ url_for('main.news_page', page=page-1, search=search, category_id=category_id) }}"
+    >← 上一页</a
+  >
+  {% else %}
+  <span class="disabled">← 上一页</span>
+  {% endif %} {% for p in range(1, total_pages + 1) %} {% if p == page %}
+  <span class="current">{{ p }}</span>
+  {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 2 and p <= page + 2) %}
+  <a href="{{ url_for('main.news_page', page=p, search=search, category_id=category_id) }}"
+    >{{ p }}</a
+  >
+  {% elif p == 4 and page > 5 or p == total_pages - 3 and page < total_pages - 4 %}
+  <span>...</span>
+  {% endif %} {% endfor %} {% if page < total_pages %}
+  <a href="{{ url_for('main.news_page', page=page+1, search=search, category_id=category_id) }}"
+    >下一页 →</a
+  >
+  {% else %}
+  <span class="disabled">下一页 →</span>
+  {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="far fa-newspaper"></i>
+  <p>暂无新闻{% if search %}，试试其他关键词{% endif %}</p>
+</div>
+{% endif %} {% endblock %}

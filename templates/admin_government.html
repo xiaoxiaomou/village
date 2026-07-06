@@ -1,99 +1,132 @@
-{% extends 'base.html' %}
-{% block content %}
+{% extends 'base.html' %} {% block content %}
 <div class="container mt-4">
-    <h2>政务管理</h2>
-    <form method="post" action="{{ url_for('admin_government') }}" class="mb-4">
-        <div class="mb-3">
-            <label for="title" class="form-label">标题</label>
-            <input type="text" class="form-control" id="title" name="title" required>
-        </div>
-        <div class="mb-3">
-            <label for="content" class="form-label">内容</label>
-            <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">添加政务信息</button>
-    </form>
-    <table class="table table-bordered">
-        <thead><tr><th>ID</th><th>标题</th><th>内容</th><th>创建时间</th><th>操作</th></tr></thead>
-        <tbody>
-        {% for gov in government_list %}
-        <tr>
-            <td>{{ gov.id }}</td>
-            <td>{{ gov.title }}</td>
-            <td>{{ gov.content }}</td>
-            <td>{{ gov.create_time }}</td>
-            <td>
-                <button class="btn btn-sm btn-warning" onclick="editGov({{ gov.id }}, '{{ gov.title }}', '{{ gov.content }}')">编辑</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteGov({{ gov.id }})">删除</button>
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <!-- 编辑模态框 -->
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <form id="editForm">
-            <div class="modal-header">
-              <h5 class="modal-title" id="editModalLabel">编辑政务信息</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <h2>政务管理</h2>
+  <form method="post" action="{{ url_for('admin.admin_government') }}" class="mb-4">
+    <div class="mb-3">
+      <label for="title" class="form-label">标题</label>
+      <input type="text" class="form-control" id="title" name="title" required />
+    </div>
+    <div class="mb-3">
+      <label for="content" class="form-label">内容</label>
+      <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">添加政务信息</button>
+  </form>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>标题</th>
+        <th>内容</th>
+        <th>创建时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for gov in government_list %}
+      <tr>
+        <td>{{ gov.id }}</td>
+        <td>{{ gov.title }}</td>
+        <td>{{ gov.content }}</td>
+        <td>{{ gov.create_time }}</td>
+        <td>
+          <button
+            class="btn btn-sm btn-warning"
+            onclick="editGov({{ gov.id }}, '{{ gov.title }}', '{{ gov.content }}')"
+          >
+            编辑
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="deleteGov({{ gov.id }})">删除</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <!-- 编辑模态框 -->
+  <div
+    class="modal fade"
+    id="editModal"
+    tabindex="-1"
+    aria-labelledby="editModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editModalLabel">编辑政务信息</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edit_id" name="id" />
+            <div class="mb-3">
+              <label for="edit_title" class="form-label">标题</label>
+              <input type="text" class="form-control" id="edit_title" name="title" required />
             </div>
-            <div class="modal-body">
-              <input type="hidden" id="edit_id" name="id">
-              <div class="mb-3">
-                <label for="edit_title" class="form-label">标题</label>
-                <input type="text" class="form-control" id="edit_title" name="title" required>
-              </div>
-              <div class="mb-3">
-                <label for="edit_content" class="form-label">内容</label>
-                <textarea class="form-control" id="edit_content" name="content" rows="4" required></textarea>
-              </div>
+            <div class="mb-3">
+              <label for="edit_content" class="form-label">内容</label>
+              <textarea
+                class="form-control"
+                id="edit_content"
+                name="content"
+                rows="4"
+                required
+              ></textarea>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-              <button type="submit" class="btn btn-primary">保存修改</button>
-            </div>
-          </form>
-        </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            <button type="submit" class="btn btn-primary">保存修改</button>
+          </div>
+        </form>
       </div>
     </div>
+  </div>
 </div>
 <script>
-function editGov(id, title, content) {
-    document.getElementById('edit_id').value = id;
-    document.getElementById('edit_title').value = title;
-    document.getElementById('edit_content').value = content;
-    var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+  function editGov(id, title, content) {
+    document.getElementById("edit_id").value = id;
+    document.getElementById("edit_title").value = title;
+    document.getElementById("edit_content").value = content;
+    var editModal = new bootstrap.Modal(document.getElementById("editModal"));
     editModal.show();
-}
-document.getElementById('editForm').onsubmit = function(e) {
+  }
+  document.getElementById("editForm").onsubmit = function (e) {
     e.preventDefault();
-    var id = document.getElementById('edit_id').value;
-    var title = document.getElementById('edit_title').value;
-    var content = document.getElementById('edit_content').value;
-    fetch('/admin/government/' + id, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({title: title, content: content})
-    }).then(res => res.json()).then(data => {
-        if(data.msg && data.msg.includes('成功')) {
-            location.reload();
+    var id = document.getElementById("edit_id").value;
+    var title = document.getElementById("edit_title").value;
+    var content = document.getElementById("edit_content").value;
+    fetch("/admin/government/" + id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title, content: content }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.msg && data.msg.includes("成功")) {
+          location.reload();
         } else {
-            alert(data.msg || '修改失败');
+          alert(data.msg || "修改失败");
         }
-    });
-};
-function deleteGov(id) {
-    if(confirm('确定要删除该政务信息吗？')) {
-        fetch('/admin/government/' + id, {method: 'DELETE'}).then(res => res.json()).then(data => {
-            if(data.msg && data.msg.includes('删除')) {
-                location.reload();
-            } else {
-                alert(data.msg || '删除失败');
-            }
+      });
+  };
+  function deleteGov(id) {
+    if (confirm("确定要删除该政务信息吗？")) {
+      fetch("/admin/government/" + id, { method: "DELETE" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.msg && data.msg.includes("删除")) {
+            location.reload();
+          } else {
+            alert(data.msg || "删除失败");
+          }
         });
     }
-}
+  }
 </script>
 {% endblock %}

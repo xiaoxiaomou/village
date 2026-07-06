@@ -1,0 +1,326 @@
+{% extends "base.html" %} {% block title %}标签管理 - 管理后台{% endblock %} {% block head %}
+<style>
+  body {
+    background: #f5f5f7;
+  }
+  .admin-wrap {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 20px;
+  }
+  h2 {
+    margin-bottom: 20px;
+    color: #1d1d1f;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  .card h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+  }
+  .form-group {
+    margin-bottom: 12px;
+  }
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: #007aff;
+    outline: none;
+  }
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .btn-primary {
+    background: #007aff;
+    color: white;
+  }
+  .btn-warning {
+    background: #ff9500;
+    color: white;
+  }
+  .btn-danger {
+    background: #ff3b30;
+    color: white;
+  }
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+  }
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+  }
+  tr:hover {
+    background: #f8f9ff;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+  }
+  .color-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 6px;
+    border: 1px solid #ddd;
+  }
+  /* 模态框 */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    min-width: 400px;
+    z-index: 1001;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+  .modal h3 {
+    margin-top: 0;
+    color: #1d1d1f;
+  }
+  .modal .close-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #999;
+  }
+  .modal .buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 15px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="admin-wrap">
+  <h2>🏷️ 标签管理</h2>
+
+  <div class="card">
+    <h3>添加标签</h3>
+    <form id="addForm">
+      <div class="form-group"><label>名称</label><input type="text" id="name" required /></div>
+      <div class="form-group">
+        <label>分类</label>
+        <select id="category">
+          <option value="general">通用</option>
+          <option value="person">人物</option>
+          <option value="place">地点</option>
+          <option value="event">事件</option>
+          <option value="emotion">情感</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>颜色</label><input type="color" id="color" value="#4a90d9" />
+      </div>
+      <button type="submit" class="btn btn-primary">添加标签</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>标签列表</h3>
+    <div id="tagsList"><p class="empty-state">加载中...</p></div>
+  </div>
+</div>
+
+<!-- 编辑模态框 -->
+<div class="modal-backdrop" id="modalBackdrop"></div>
+<div class="modal" id="editModal">
+  <button class="close-modal" onclick="closeModal()">×</button>
+  <h3>✏️ 编辑标签</h3>
+  <form id="editForm">
+    <input type="hidden" id="edit_id" />
+    <div class="form-group">
+      <label>名称</label>
+      <input type="text" id="edit_name" required />
+    </div>
+    <div class="form-group">
+      <label>分类</label>
+      <select id="edit_category">
+        <option value="general">通用</option>
+        <option value="person">人物</option>
+        <option value="place">地点</option>
+        <option value="event">事件</option>
+        <option value="emotion">情感</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>颜色</label>
+      <input type="color" id="edit_color" />
+    </div>
+    <div class="buttons">
+      <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button type="submit" class="btn btn-primary">保存</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  let allTags = [];
+
+  document.getElementById("addForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const name = document.getElementById("name").value;
+    const category = document.getElementById("category").value;
+    const color = document.getElementById("color").value;
+    try {
+      const res = await fetch("/api/admin/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, category, color }),
+      });
+      if (res.ok) {
+        document.getElementById("addForm").reset();
+        loadTags();
+      } else {
+        const d = await res.json();
+        alert(d.msg || "添加失败");
+      }
+    } catch (e) {
+      alert("网络错误");
+    }
+  });
+
+  async function loadTags() {
+    try {
+      const res = await fetch("/api/admin/tags");
+      const data = await res.json();
+      allTags = data || [];
+      const div = document.getElementById("tagsList");
+      if (!allTags.length) {
+        div.innerHTML = '<p class="empty-state">暂无标签</p>';
+        return;
+      }
+      let html =
+        "<table><thead><tr><th>名称</th><th>分类</th><th>颜色</th><th>记忆数</th><th>操作</th></tr></thead><tbody>";
+      allTags.forEach((t) => {
+        html += `<tr>
+                    <td><strong>${t.name}</strong></td>
+                    <td>${t.category || "general"}</td>
+                    <td><span class="color-dot" style="background:${t.color};"></span>${t.color}</td>
+                    <td>${t.memory_count || 0}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editTag(${t.id})">编辑</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteTag(${t.id})">删除</button>
+                    </td>
+                </tr>`;
+      });
+      html += "</tbody></table>";
+      div.innerHTML = html;
+    } catch (e) {
+      document.getElementById("tagsList").innerHTML = '<p class="empty-state">加载失败</p>';
+    }
+  }
+
+  function editTag(id) {
+    const tag = allTags.find((t) => t.id === id);
+    if (!tag) return;
+    document.getElementById("edit_id").value = id;
+    document.getElementById("edit_name").value = tag.name || "";
+    document.getElementById("edit_category").value = tag.category || "general";
+    document.getElementById("edit_color").value = tag.color || "#4a90d9";
+    document.getElementById("modalBackdrop").style.display = "block";
+    document.getElementById("editModal").style.display = "block";
+  }
+
+  function closeModal() {
+    document.getElementById("modalBackdrop").style.display = "none";
+    document.getElementById("editModal").style.display = "none";
+  }
+
+  document.getElementById("editForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const id = document.getElementById("edit_id").value;
+    const body = {
+      name: document.getElementById("edit_name").value,
+      category: document.getElementById("edit_category").value,
+      color: document.getElementById("edit_color").value,
+    };
+    try {
+      const res = await fetch("/api/admin/tags/" + id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        closeModal();
+        loadTags();
+      } else {
+        alert(data.msg || "保存失败");
+      }
+    } catch (e) {
+      alert("网络错误");
+    }
+  });
+
+  async function deleteTag(id) {
+    if (!confirm("确定删除此标签？")) return;
+    try {
+      const res = await fetch("/api/admin/tags/" + id, { method: "DELETE" });
+      if (res.ok) loadTags();
+      else alert("删除失败");
+    } catch (e) {
+      alert("网络错误");
+    }
+  }
+
+  document.getElementById("modalBackdrop").addEventListener("click", closeModal);
+
+  loadTags();
+</script>
+{% endblock %}

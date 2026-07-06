@@ -1,18 +1,142 @@
-{% extends "base.html" %}
-{% block title %}政务公开{% endblock %}
-{% block content %}
-<h2>政务公开</h2>
-<ul>
-    {% for item in government_list %}
-    <li>
-        <strong>{{ item.title }}</strong>
-        {% if item.file_url %}
-        <a href="{{ item.file_url }}" target="_blank">下载附件</a>
-        {% endif %}
-        <div>{{ item.content }}</div>
-    </li>
-    {% else %}
-    <li>暂无政务信息</li>
-    {% endfor %}
-</ul>
-{% endblock %}
+{% extends "base.html" %} {% block title %}政务公开 - 美丽乡村{% endblock %} {% block head %}
+<style>
+  .gov-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  .gov-hero h2 {
+    margin: 0 0 8px;
+    font-size: 28px;
+  }
+  .gov-hero p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 15px;
+  }
+
+  .gov-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .gov-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
+    border: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .gov-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateX(4px);
+  }
+  .gov-card .info {
+    flex: 1;
+  }
+  .gov-card h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: #1d1d1f;
+  }
+  .gov-card .date {
+    font-size: 13px;
+    color: #999;
+  }
+  .gov-card .actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .gov-card .btn-download {
+    padding: 8px 16px;
+    background: #667eea;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .gov-card .btn-download:hover {
+    background: #5a6fd6;
+  }
+  .gov-card .btn-view {
+    padding: 8px 16px;
+    background: #f0f0f0;
+    color: #333;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    transition: background 0.2s;
+  }
+  .gov-card .btn-view:hover {
+    background: #e0e0e0;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+  }
+  .empty-state i {
+    font-size: 48px;
+    margin-bottom: 12px;
+    color: #ddd;
+  }
+
+  @media (max-width: 600px) {
+    .gov-card {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .gov-card .actions {
+      justify-content: flex-end;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="gov-hero">
+  <h2>🏛️ 政务公开</h2>
+  <p>透明行政，阳光村务 — 让权力在阳光下运行</p>
+</div>
+
+{% if government_list %}
+<div class="gov-list">
+  {% for item in government_list %}
+  <div class="gov-card">
+    <div class="info">
+      <h3>{{ item.title }}</h3>
+      {% if item.content %}
+      <p style="margin: 4px 0 0; font-size: 13px; color: #666">
+        {{ item.content[:100] }}{% if item.content|length > 100 %}...{% endif %}
+      </p>
+      {% endif %}
+    </div>
+    <div class="actions">
+      {% if item.file_url %}
+      <a href="{{ item.file_url }}" class="btn-download" target="_blank">
+        <i class="fas fa-download"></i> 下载附件
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fas fa-folder-open"></i>
+  <p>暂无政务公开信息</p>
+</div>
+{% endif %} {% endblock %}

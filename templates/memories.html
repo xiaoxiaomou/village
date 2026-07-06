@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}怀旧记录 - 乡村记忆系统{% endblock %}
+
+{% block head %}
+<style>
+    .memory-grid { display: grid; gap: 20px; }
+    .memory-header { display: flex; justify-content: space-between; align-items: center; }
+    .memory-actions { display: flex; gap: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="section-title"><i class="fas fa-images"></i> 怀旧记录</h2>
+
+<div class="filter-bar">
+    <input type="text" id="searchInput" placeholder="搜索记忆..." style="flex:1; min-width:200px;">
+    <button class="btn-primary" id="searchBtn"><i class="fas fa-search"></i> 搜索</button>
+    <select id="tagFilter">
+        <option value="">所有标签</option>
+        {% for tag in tags %}
+        <option value="{{ tag.name }}">{{ tag.name }}</option>
+        {% endfor %}
+    </select>
+    <a href="/memories/new" class="btn-primary" style="padding:8px 20px;"><i class="fas fa-plus"></i> 新建记忆</a>
+</div>
+
+<div class="tag-cloud">
+    <a href="/memories" class="tag-badge">全部</a>
+    {% for tag in tags %}
+    <a href="/memories?tag={{ tag.name }}" class="tag-badge">{{ tag.name }}</a>
+    {% endfor %}
+</div>
+
+<div class="memory-grid" id="memoriesContainer">
+    {% for memory in memories %}
+    <div class="memory-card">
+        <div class="memory-header">
+            <h3 class="memory-title"><a href="/memories/{{ memory.id }}" style="color:inherit;text-decoration:none;">{{ memory.title }}</a></h3>
+            <div class="memory-actions">
+                <small style="color:#999;">{{ memory.date }}</small>
+            </div>
+        </div>
+        <div class="memory-meta">
+            {% if memory.people %}
+            <span><i class="fas fa-user"></i> {{ memory.people }}</span>
+            {% endif %}
+            {% if memory.type == 'photo' %}
+            <span><i class="fas fa-camera"></i> 照片</span>
+            {% elif memory.type == 'video' %}
+            <span><i class="fas fa-video"></i> 视频</span>
+            {% elif memory.type == 'audio' %}
+            <span><i class="fas fa-microphone"></i> 语音</span>
+            {% endif %}
+        </div>
+        <div class="memory-content">{{ memory.content[:200] }}{% if memory.content|length > 200 %}...{% endif %}</div>
+        {% if memory.photo_urls %}
+        <div class="memory-media">
+            <div class="image-grid">
+                {% for url in memory.photo_urls_list[:3] %}
+                <img src="{{ url }}" alt="照片" onclick="window.location.href='/memories/{{ memory.id }}'">
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if memory.tags %}
+        <div class="memory-tags">
+            {% for tag_name in memory.tag_names %}
+            <a href="/memories?tag={{ tag_name }}" class="tag-badge">{{ tag_name }}</a>
+            <a href="/memories?tag={{ tag.name }}" class="tag-badge">{{ tag.name }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}{% if tag %}&tag={{ tag }}{% endif %}">上一页</a>
+    {% endif %}
+    <span class="active">{{ page }}</span>
+    {% if page < total_pages %}
+    <a href="?page={{ page + 1 }}{% if tag %}&tag={{ tag }}{% endif %}">下一页</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('tagFilter').addEventListener('change', function() {
+    const tag = this.value;
+    window.location.href = '/memories' + (tag ? '?tag=' + encodeURIComponent(tag) : '');
+});
+</script>
+{% endblock %}

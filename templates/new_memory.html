@@ -1,0 +1,307 @@
+{% extends "base.html" %} {% block title %}新建记忆 - 乡村记忆系统{% endblock %} {% block head %}
+<style>
+  .simple-form {
+    max-width: 560px;
+    margin: 2rem auto;
+  }
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 1.5px solid var(--paper-deep);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
+    background: white;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: var(--jade);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(90, 138, 127, 0.12);
+  }
+  .form-group textarea {
+    min-height: 140px;
+    resize: vertical;
+  }
+
+  .tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag-chip {
+    padding: 4px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--paper-deep);
+    background: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .tag-chip:hover {
+    border-color: var(--jade-light);
+  }
+  .tag-chip.on {
+    background: var(--jade-pale);
+    border-color: var(--jade);
+    color: var(--jade);
+    font-weight: 600;
+  }
+
+  .photo-upload {
+    border: 2px dashed var(--paper-deep);
+    border-radius: 10px;
+    padding: 1.75rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--paper-warm);
+  }
+  .photo-upload:hover {
+    border-color: var(--cinnabar-light);
+    background: var(--cinnabar-pale);
+  }
+  .photo-upload i {
+    font-size: 1.75rem;
+    color: var(--ink-muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .photo-upload p {
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    margin: 0;
+  }
+
+  .photo-preview {
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 200px;
+    box-shadow: var(--shadow-sm);
+  }
+  .photo-preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 1.75rem;
+    align-items: center;
+  }
+  .form-actions .btn-primary {
+    flex: 1;
+  }
+  .form-actions .btn-secondary {
+    flex-shrink: 0;
+  }
+
+  .field-error {
+    font-size: 0.8rem;
+    color: var(--cinnabar);
+    margin-top: 4px;
+    display: none;
+  }
+  .field-error.show {
+    display: block;
+  }
+  .form-group.invalid input,
+  .form-group.invalid textarea {
+    border-color: var(--cinnabar-light);
+    box-shadow: 0 0 0 3px rgba(196, 92, 72, 0.1);
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="simple-form">
+  <h2 class="page-header" style="border: none; padding: 0; margin-bottom: 1.75rem">
+    <i class="fas fa-plus-circle" style="color: var(--cinnabar); margin-right: 8px"></i>新建记忆
+  </h2>
+
+  <form id="memoryForm" novalidate>
+    <div class="form-group" id="fgTitle">
+      <label>记忆标题 <span style="color: var(--cinnabar)">*</span></label>
+      <input type="text" id="memoryTitle" placeholder="给这段记忆起个名字" autofocus />
+      <div class="field-error" id="errTitle">请输入标题</div>
+    </div>
+
+    <div class="form-group" id="fgDate">
+      <label>记忆日期 <span style="color: var(--cinnabar)">*</span></label>
+      <input type="date" id="memoryDate" />
+      <div class="field-error" id="errDate">请选择日期</div>
+    </div>
+
+    <div class="form-group" id="fgContent">
+      <label>记忆内容 <span style="color: var(--cinnabar)">*</span></label>
+      <textarea id="memoryContent" placeholder="详细记录这段记忆…"></textarea>
+      <div class="field-error" id="errContent">请输入内容</div>
+    </div>
+
+    <div class="form-group">
+      <label>标签（选填）</label>
+      <div class="tag-chips" id="tagChips">
+        {% for tag in tags %}
+        <span class="tag-chip" data-id="{{ tag.id }}">{{ tag.name }}</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>配图（选填）</label>
+      <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+        <i class="fas fa-camera"></i>
+        <p>点击上传一张照片</p>
+      </div>
+      <input
+        type="file"
+        id="photoInput"
+        accept="image/*"
+        style="display: none"
+        onchange="previewPhoto(this)"
+      />
+      <div class="photo-preview" id="photoPreview" style="display: none"></div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" id="submitBtn">
+        <i class="fas fa-save"></i> <span>保存记忆</span>
+      </button>
+      <a href="/memories" class="btn btn-secondary">取消</a>
+    </div>
+  </form>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  let selectedTags = [];
+
+  // ── 标签切换 ──
+  document.querySelectorAll(".tag-chip").forEach((el) => {
+    el.addEventListener("click", () => {
+      el.classList.toggle("on");
+      const id = el.dataset.id;
+      if (selectedTags.includes(id)) {
+        selectedTags = selectedTags.filter((t) => t !== id);
+      } else {
+        selectedTags.push(id);
+      }
+    });
+  });
+
+  // ── 图片预览 ──
+  function previewPhoto(input) {
+    const box = document.getElementById("photoPreview");
+    box.innerHTML = "";
+    if (input.files && input.files[0]) {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(input.files[0]);
+      box.appendChild(img);
+      box.style.display = "block";
+    }
+  }
+
+  // ── 默认日期 ──
+  document.getElementById("memoryDate").valueAsDate = new Date();
+
+  // ── 校验辅助 ──
+  function clearErrors() {
+    document.querySelectorAll(".field-error").forEach((e) => e.classList.remove("show"));
+    document.querySelectorAll(".form-group").forEach((g) => g.classList.remove("invalid"));
+  }
+
+  function showError(id) {
+    document.getElementById(id)?.classList.add("show");
+    const fg = id.replace("err", "fg");
+    document.getElementById(fg)?.classList.add("invalid");
+  }
+
+  // ── 提交 ──
+  document.getElementById("memoryForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    clearErrors();
+
+    const title = document.getElementById("memoryTitle").value.trim();
+    const content = document.getElementById("memoryContent").value.trim();
+    const date = document.getElementById("memoryDate").value;
+    let valid = true;
+    if (!title) {
+      showError("errTitle");
+      valid = false;
+    }
+    if (!date) {
+      showError("errDate");
+      valid = false;
+    }
+    if (!content) {
+      showError("errContent");
+      valid = false;
+    }
+    if (!valid) return;
+
+    const btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.querySelector("span").textContent = "保存中…";
+
+    // ── 上传图片（如果有）─
+    let photoUrl = null;
+    const fileInput = document.getElementById("photoInput");
+    if (fileInput.files && fileInput.files[0]) {
+      const fd = new FormData();
+      fd.append("file", fileInput.files[0]);
+      try {
+        const res = await fetch("/api/media", { method: "POST", body: fd });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.media && data.media.file_url) photoUrl = data.media.file_url;
+        } else {
+          // upload failed but we can still save the text
+          console.warn("photo upload skipped");
+        }
+      } catch (_) {}
+    }
+
+    // ── 保存 ──
+    try {
+      const res = await fetch("/api/memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          content,
+          date,
+          tag_ids: selectedTags,
+          photo_urls: photoUrl ? [photoUrl] : [],
+        }),
+      });
+      if (res.ok) {
+        window.location.href = "/memories";
+      } else {
+        const d = await res.json();
+        alert(d.msg || "保存失败，请重试");
+        btn.disabled = false;
+        btn.querySelector("span").textContent = "保存记忆";
+      }
+    } catch (_) {
+      alert("网络错误，请重试");
+      btn.disabled = false;
+      btn.querySelector("span").textContent = "保存记忆";
+    }
+  });
+</script>
+{% endblock %}

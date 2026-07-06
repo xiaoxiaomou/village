@@ -1,0 +1,156 @@
+{% extends "base.html" %} {% block title %}{{ news.title }} - 新闻详情{% endblock %} {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+  .news-detail-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .news-detail-header {
+    margin-bottom: 32px;
+  }
+
+  .news-detail-header h1 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--ink-dark, #1a1a1a);
+    margin: 0 0 16px;
+    line-height: 1.4;
+  }
+
+  .news-detail-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    color: var(--ink-muted, #666);
+  }
+
+  .news-detail-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .news-detail-meta .tag {
+    background: var(--gold-pale, #fdf6e3);
+    color: var(--gold, #c9a227);
+    padding: 3px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .news-detail-meta .views {
+    color: var(--ink-muted, #666);
+  }
+
+  .news-detail-cover {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 16px;
+    margin-bottom: 32px;
+    box-shadow: 0 4px 20px var(--shadow-soft, rgba(0,0,0,0.08));
+  }
+
+  .news-detail-content {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--ink, #333);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .news-detail-content p {
+    margin-bottom: 16px;
+  }
+
+  .news-detail-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin: 16px 0;
+  }
+
+  .news-detail-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 40px;
+    padding: 12px 24px;
+    background: var(--paper-warm, #faf8f5);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--ink, #333);
+    font-weight: 500;
+    transition: all 0.3s;
+    border: 1px solid var(--paper-deep, #eee);
+  }
+
+  .news-detail-back:hover {
+    background: var(--gold-pale, #fdf6e3);
+    border-color: var(--gold, #c9a227);
+    color: var(--cinnabar, #c45c48);
+  }
+
+  .news-categories-nav {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .news-categories-nav a {
+    padding: 8px 18px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 14px;
+    background: white;
+    color: var(--ink, #333);
+    border: 1px solid var(--paper-deep, #eee);
+    transition: all 0.3s;
+  }
+
+  .news-categories-nav a:hover,
+  .news-categories-nav a.active {
+    background: var(--gold-pale, #fdf6e3);
+    border-color: var(--gold, #c9a227);
+    color: var(--cinnabar, #c45c48);
+  }
+</style>
+{% endblock %} {% block content %}
+
+<div class="news-detail-container">
+  <!-- 文章标题 -->
+  <div class="news-detail-header">
+    <h1>{{ news.title }}</h1>
+    <div class="news-detail-meta">
+      {% if news.category %}
+      <span class="tag">{{ news.category }}</span>
+      {% endif %}
+      {% if news.author %}
+      <span>👤 {{ news.author }}</span>
+      {% endif %}
+      <span>📅 {{ news.create_time }}</span>
+      <span class="views">👁 {{ news.view_count }} 阅读</span>
+    </div>
+  </div>
+
+  <!-- 封面图 -->
+  {% if news.image_url %}
+  <img src="{{ news.image_url }}" alt="{{ news.title }}" class="news-detail-cover">
+  {% endif %}
+
+  <!-- 正文内容 -->
+  <div class="news-detail-content">
+    {{ news.content | safe }}
+  </div>
+
+  <!-- 返回列表 -->
+  <a href="{{ url_for('main.news_page') }}" class="news-detail-back">← 返回新闻列表</a>
+</div>
+
+{% endblock %}

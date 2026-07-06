@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D 时间轴 - 乡村记忆系统</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="/static/font-awesome/css/all.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        overflow: hidden;
+        background: #1a1a2e;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: white;
+      }
+      #canvas-container {
+        width: 100vw;
+        height: 100vh;
+        display: block;
+      }
+
+      /* 顶部覆盖 UI */
+      #ui-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        pointer-events: none;
+        background: linear-gradient(180deg, rgba(26, 26, 46, 0.8) 0%, transparent 100%);
+      }
+      #ui-overlay > * {
+        pointer-events: auto;
+      }
+
+      .ui-title {
+        font-size: 20px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .ui-title i {
+        color: #c45c48;
+        font-size: 22px;
+      }
+      .ui-title span {
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 400;
+        font-size: 13px;
+      }
+
+      .ui-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .ui-btn {
+        padding: 8px 18px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.08);
+        color: white;
+        cursor: pointer;
+        font-size: 13px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ui-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-1px);
+      }
+
+      /* 底部提示 */
+      #hint {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.35);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 10px 20px;
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      #hint i {
+        font-size: 14px;
+      }
+
+      /* 加载状态 */
+      #loading {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 20;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.6);
+      }
+      #loading .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #c45c48;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* 空状态 */
+      #empty-state {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 20;
+        text-align: center;
+      }
+      #empty-state i {
+        font-size: 48px;
+        color: rgba(255, 255, 255, 0.15);
+        margin-bottom: 16px;
+        display: block;
+      }
+      #empty-state p {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 15px;
+      }
+      #empty-state a {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 24px;
+        background: #c45c48;
+        color: white;
+        border-radius: 10px;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ui-overlay">
+      <div class="ui-title">
+        <i class="fas fa-clock"></i> 3D 时间轴
+        <span>· 拖拽旋转 · 滚轮缩放</span>
+      </div>
+      <div class="ui-controls">
+        <a href="/memories/new" class="ui-btn"><i class="fas fa-plus"></i> 添加记忆</a>
+        <a href="/" class="ui-btn"><i class="fas fa-home"></i> 首页</a>
+      </div>
+    </div>
+
+    <div id="loading">
+      <div class="spinner"></div>
+      <p>加载记忆数据...</p>
+    </div>
+
+    <div id="empty-state">
+      <i class="fas fa-clock"></i>
+      <p>还没有记忆记录</p>
+      <a href="/memories/new">添加第一条记忆</a>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div id="hint">
+      <i class="fas fa-mouse"></i> 拖拽旋转 <i class="fas fa-search-plus"></i> 滚轮缩放
+      <i class="fas fa-hand-pointer"></i> 点击记忆查看详情
+    </div>
+
+    <script>
+      // ========== 数据加载 ==========
+      var memoriesData = [];
+      var sceneReady = false;
+
+      async function loadData() {
+        try {
+          var res = await fetch("/api/memories/timeline");
+          var data = await res.json();
+          if (!data.memories || data.memories.length === 0) {
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("empty-state").style.display = "block";
+            return;
+          }
+          memoriesData = data.memories;
+          document.getElementById("loading").style.display = "none";
+          if (typeof initScene === "function") initScene();
+        } catch (e) {
+          document.getElementById("loading").innerHTML =
+            '<p style="color:#c45c48;">加载失败，请刷新重试</p>';
+        }
+      }
+
+      // ========== Three.js 场景 ==========
+      function initScene() {
+        if (sceneReady) return;
+        sceneReady = true;
+
+        var container = document.getElementById("canvas-container");
+        var W = window.innerWidth,
+          H = window.innerHeight;
+
+        // 渲染器
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(W, H);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x1a1a2e, 1);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // 场景
+        var scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x1a1a2e, 0.008);
+
+        // 相机
+        var camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 200);
+        camera.position.set(12, 8, 16);
+        camera.lookAt(0, 0, 0);
+
+        // ======== 灯光 ========
+        var ambient = new THREE.AmbientLight(0x554c42, 0.6);
+        scene.add(ambient);
+
+        var sun = new THREE.DirectionalLight(0xffeedd, 1.0);
+        sun.position.set(15, 20, 10);
+        sun.castShadow = true;
+        scene.add(sun);
+
+        var fill = new THREE.DirectionalLight(0x8899bb, 0.3);
+        fill.position.set(-10, 5, -10);
+        scene.add(fill);
+
+        var rim = new THREE.DirectionalLight(0xc45c48, 0.2);
+        rim.position.set(-5, 0, 15);
+        scene.add(rim);
+
+        // ======== 地面 ========
+        var groundGeo = new THREE.PlaneGeometry(80, 80);
+        groundGeo.rotateX(-Math.PI / 2);
+        var groundMat = new THREE.MeshStandardMaterial({
+          color: 0x1e1e36,
+          roughness: 1,
+          metalness: 0,
+          transparent: true,
+          opacity: 0.5,
+        });
+        var ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.position.y = -1.5;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // 网格
+        var grid = new THREE.GridHelper(60, 30, 0x3a3a5e, 0x2a2a4e);
+        grid.position.y = -1.4;
+        scene.add(grid);
+
+        // ======== 布局计算 ========
+        var yearSpacing = 8;
+        var totalYears = memoriesData.length;
+        var startX = (-(totalYears - 1) * yearSpacing) / 2;
+
+        // 存储所有可点击的对象
+        var clickableObjects = [];
+
+        // 颜色方案
+        var yearColors = [0x5a8a7f, 0xc45c48, 0xd4a352, 0x6b8e5a, 0x8b6b4a, 0x4a7a9a];
+        var monthColor = 0x3a3a5e;
+
+        // ======== 遍历年/月/记忆 ========
+        memoriesData.forEach(function (yearGroup, yi) {
+          var year = yearGroup.year;
+          var months = yearGroup.months || [];
+          var yx = startX + yi * yearSpacing;
+          var yearColor = yearColors[yi % yearColors.length];
+
+          // 年平台 (圆柱体)
+          var platformRadius = 1.2 + months.length * 0.15;
+          var platformHeight = 0.15;
+          var platGeo = new THREE.CylinderGeometry(
+            platformRadius,
+            platformRadius * 1.1,
+            platformHeight,
+            32,
+          );
+          var platMat = new THREE.MeshStandardMaterial({
+            color: yearColor,
+            roughness: 0.7,
+            metalness: 0.1,
+            emissive: yearColor,
+            emissiveIntensity: 0.08,
+          });
+          var platform = new THREE.Mesh(platGeo, platMat);
+          platform.position.set(yx, -1.5 + platformHeight / 2, 0);
+          platform.receiveShadow = true;
+          platform.castShadow = true;
+          scene.add(platform);
+
+          // 年份标签 (Sprite)
+          var yearLabel = makeTextSprite(String(year) + "年", {
+            fontSize: 40,
+            color: "#ffffff",
+            bold: true,
+          });
+          yearLabel.position.set(yx, -1.5 + platformHeight + 0.4, 0);
+          yearLabel.scale.set(3, 1.2, 1);
+          scene.add(yearLabel);
+
+          // 月份和记忆
+          months.forEach(function (monthGroup, mi) {
+            var month = monthGroup.month;
+            var mems = monthGroup.memories || [];
+            var angle = (mi / months.length) * Math.PI * 2;
+            var radius = platformRadius * 0.7;
+            var mx = yx + Math.cos(angle) * radius;
+            var mz = Math.sin(angle) * radius;
+
+            // 月份标签 (小)
+            var monthLabel = makeTextSprite(month + "月", { fontSize: 24, color: "#aaaacc" });
+            monthLabel.position.set(mx, -1.4, mz);
+            monthLabel.scale.set(1.2, 0.5, 1);
+            scene.add(monthLabel);
+
+            // 记忆卡片
+            mems.forEach(function (mem, ci) {
+              var spread = 1.2;
+              var cx = mx + (Math.random() - 0.5) * spread;
+              var cz = mz + (Math.random() - 0.5) * spread;
+              var cy = -1.2 + ci * 0.01;
+
+              // 记忆标题卡片 (canvas纹理)
+              var card = makeMemoryCard(mem.title, yearColor);
+              card.position.set(cx, cy + 0.5, cz);
+              card.scale.set(1.6, 0.8, 0.05);
+              card.userData = { memoryId: mem.id };
+              scene.add(card);
+              clickableObjects.push(card);
+
+              // 连接线 (从卡片到平台)
+              var lineMat = new THREE.LineBasicMaterial({
+                color: yearColor,
+                transparent: true,
+                opacity: 0.15,
+              });
+              var points = [new THREE.Vector3(cx, -1.4, cz), new THREE.Vector3(cx, cy + 0.05, cz)];
+              var lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+              var line = new THREE.Line(lineGeo, lineMat);
+              scene.add(line);
+            });
+          });
+        });
+
+        // ======== 粒子背景 ========
+        var starCount = 800;
+        var starGeo = new THREE.BufferGeometry();
+        var starPos = new Float32Array(starCount * 3);
+        for (var i = 0; i < starCount; i++) {
+          starPos[i * 3] = (Math.random() - 0.5) * 100;
+          starPos[i * 3 + 1] = (Math.random() - 0.5) * 60 + 5;
+          starPos[i * 3 + 2] = (Math.random() - 0.5) * 100 - 20;
+        }
+        starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
+        var starMat = new THREE.PointsMaterial({
+          color: 0xaabbdd,
+          size: 0.08,
+          transparent: true,
+          opacity: 0.6,
+          blending: THREE.AdditiveBlending,
+        });
+        var stars = new THREE.Points(starGeo, starMat);
+        scene.add(stars);
+
+        // ======== 交互控制 ========
+        var isDragging = false;
+        var prevMouse = { x: 0, y: 0 };
+        var targetRotation = { x: 0, y: 0 };
+        var currentRotation = { x: 0.4, y: 0 };
+        var targetDistance = 22;
+        var currentDistance = 22;
+        var autoRotate = true;
+        var autoRotateTimeout = null;
+        var hoveredObject = null;
+
+        function getMemoryId(intersect) {
+          var obj = intersect.object;
+          while (obj) {
+            if (obj.userData && obj.userData.memoryId !== undefined) {
+              return obj.userData.memoryId;
+            }
+            obj = obj.parent;
+          }
+          return null;
+        }
+
+        // Raycaster
+        var raycaster = new THREE.Raycaster();
+        var mouse = new THREE.Vector2();
+
+        renderer.domElement.addEventListener("mousedown", function (e) {
+          isDragging = true;
+          prevMouse.x = e.clientX;
+          prevMouse.y = e.clientY;
+          autoRotate = false;
+          clearTimeout(autoRotateTimeout);
+        });
+
+        window.addEventListener("mousemove", function (e) {
+          if (isDragging) {
+            var dx = e.clientX - prevMouse.x;
+            var dy = e.clientY - prevMouse.y;
+            targetRotation.y += dx * 0.005;
+            targetRotation.x = Math.max(-1, Math.min(1, targetRotation.x - dy * 0.005));
+            prevMouse.x = e.clientX;
+            prevMouse.y = e.clientY;
+          }
+
+          // Hover
+          mouse.x = (e.clientX / W) * 2 - 1;
+          mouse.y = -(e.clientY / H) * 2 + 1;
+        });
+
+        window.addEventListener("mouseup", function () {
+          isDragging = false;
+          autoRotateTimeout = setTimeout(function () {
+            autoRotate = true;
+          }, 5000);
+        });
+
+        renderer.domElement.addEventListener(
+          "wheel",
+          function (e) {
+            e.preventDefault();
+            targetDistance = Math.max(8, Math.min(50, targetDistance + e.deltaY * 0.03));
+            autoRotate = false;
+            clearTimeout(autoRotateTimeout);
+            autoRotateTimeout = setTimeout(function () {
+              autoRotate = true;
+            }, 5000);
+          },
+          { passive: false },
+        );
+
+        renderer.domElement.addEventListener("click", function (e) {
+          // Check if this was a drag (not a click)
+          if (Math.abs(e.clientX - prevMouse.x) > 5 || Math.abs(e.clientY - prevMouse.y) > 5)
+            return;
+
+          mouse.x = (e.clientX / W) * 2 - 1;
+          mouse.y = -(e.clientY / H) * 2 + 1;
+          raycaster.setFromCamera(mouse, camera);
+          var intersects = raycaster.intersectObjects(clickableObjects);
+          if (intersects.length > 0) {
+            var id = getMemoryId(intersects[0]);
+            if (id !== null) {
+              window.location.href = "/memories/" + id;
+            }
+          }
+        });
+
+        // 触摸支持
+        var touchStart = { x: 0, y: 0, dist: 0 };
+        renderer.domElement.addEventListener(
+          "touchstart",
+          function (e) {
+            if (e.touches.length === 1) {
+              touchStart.x = e.touches[0].clientX;
+              touchStart.y = e.touches[0].clientY;
+              isDragging = true;
+              prevMouse.x = e.touches[0].clientX;
+              prevMouse.y = e.touches[0].clientY;
+              autoRotate = false;
+              clearTimeout(autoRotateTimeout);
+            }
+          },
+          { passive: true },
+        );
+
+        renderer.domElement.addEventListener(
+          "touchmove",
+          function (e) {
+            if (e.touches.length === 1 && isDragging) {
+              var dx = e.touches[0].clientX - prevMouse.x;
+              var dy = e.touches[0].clientY - prevMouse.y;
+              targetRotation.y += dx * 0.005;
+              targetRotation.x = Math.max(-0.8, Math.min(0.8, targetRotation.x - dy * 0.005));
+              prevMouse.x = e.touches[0].clientX;
+              prevMouse.y = e.touches[0].clientY;
+            }
+            // Pinch zoom
+            if (e.touches.length === 2) {
+              var dx = e.touches[0].clientX - e.touches[1].clientX;
+              var dy = e.touches[0].clientY - e.touches[1].clientY;
+              var dist = Math.sqrt(dx * dx + dy * dy);
+              if (touchStart.dist) {
+                targetDistance = Math.max(
+                  8,
+                  Math.min(50, targetDistance + (touchStart.dist - dist) * 0.05),
+                );
+              }
+              touchStart.dist = dist;
+            }
+          },
+          { passive: true },
+        );
+
+        renderer.domElement.addEventListener(
+          "touchend",
+          function () {
+            isDragging = false;
+            touchStart.dist = 0;
+            autoRotateTimeout = setTimeout(function () {
+              autoRotate = true;
+            }, 5000);
+          },
+          { passive: true },
+        );
+
+        // 响应式
+        window.addEventListener("resize", function () {
+          W = window.innerWidth;
+          H = window.innerHeight;
+          camera.aspect = W / H;
+          camera.updateProjectionMatrix();
+          renderer.setSize(W, H);
+        });
+
+        // ======== 工具函数 ========
+
+        // 创建文字 Sprite
+        function makeTextSprite(text, opts) {
+          opts = opts || {};
+          var canvas = document.createElement("canvas");
+          var size = opts.fontSize || 32;
+          canvas.width = size * text.length * 0.8;
+          canvas.height = size * 1.4;
+          var ctx = canvas.getContext("2d");
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.font =
+            (opts.bold ? "bold " : "") + size + 'px "PingFang SC", "Microsoft YaHei", sans-serif';
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = opts.color || "#ffffff";
+          ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+          var texture = new THREE.CanvasTexture(canvas);
+          texture.needsUpdate = true;
+          var mat = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false,
+            depthTest: true,
+          });
+          return new THREE.Sprite(mat);
+        }
+
+        // 创建记忆卡片 (canvas纹理平面)
+        function makeMemoryCard(title, colorHex) {
+          var canvas = document.createElement("canvas");
+          canvas.width = 400;
+          canvas.height = 180;
+          var ctx = canvas.getContext("2d");
+
+          // 背景圆角矩形
+          var r = 16;
+          var w = 400,
+            h = 180;
+          ctx.beginPath();
+          ctx.moveTo(r, 0);
+          ctx.lineTo(w - r, 0);
+          ctx.quadraticCurveTo(w, 0, w, r);
+          ctx.lineTo(w, h - r);
+          ctx.quadraticCurveTo(w, h, w - r, h);
+          ctx.lineTo(r, h);
+          ctx.quadraticCurveTo(0, h, 0, h - r);
+          ctx.lineTo(0, r);
+          ctx.quadraticCurveTo(0, 0, r, 0);
+          ctx.closePath();
+
+          // 填充
+          var c = new THREE.Color(colorHex);
+          var bg =
+            "rgba(" +
+            Math.floor(c.r * 255) +
+            "," +
+            Math.floor(c.g * 255) +
+            "," +
+            Math.floor(c.b * 255) +
+            ",0.85)";
+          ctx.fillStyle = bg;
+          ctx.fill();
+
+          // 边框
+          ctx.strokeStyle = "rgba(255,255,255,0.15)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // 左上角装饰线
+          ctx.fillStyle = "rgba(255,255,255,0.1)";
+          ctx.fillRect(0, 0, 4, h);
+
+          // 标题文字
+          var maxChars = 18;
+          var displayText = title.length > maxChars ? title.slice(0, maxChars) + "..." : title;
+          ctx.font = '28px "PingFang SC", "Microsoft YaHei", sans-serif';
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText(displayText, w / 2, h / 2 - 8);
+
+          // 提示文字
+          ctx.font = "18px sans-serif";
+          ctx.fillStyle = "rgba(255,255,255,0.4)";
+          ctx.fillText("点击查看", w / 2, h / 2 + 36);
+
+          var texture = new THREE.CanvasTexture(canvas);
+          texture.needsUpdate = true;
+          var mat = new THREE.MeshStandardMaterial({
+            map: texture,
+            transparent: true,
+            roughness: 0.3,
+            metalness: 0.1,
+            side: THREE.DoubleSide,
+          });
+          var geo = new THREE.PlaneGeometry(1, 1);
+          var mesh = new THREE.Mesh(geo, mat);
+          mesh.castShadow = true;
+          return mesh;
+        }
+
+        // ======== 动画循环 ========
+        function animate() {
+          requestAnimationFrame(animate);
+
+          // 自动旋转
+          if (autoRotate) {
+            targetRotation.y += 0.0015;
+          }
+
+          // 平滑插值
+          currentRotation.y += (targetRotation.y - currentRotation.y) * 0.05;
+          currentRotation.x += (targetRotation.x - currentRotation.x) * 0.05;
+          currentDistance += (targetDistance - currentDistance) * 0.05;
+
+          // 相机球面坐标
+          var cx = Math.sin(currentRotation.y) * Math.cos(currentRotation.x) * currentDistance;
+          var cy = Math.sin(currentRotation.x) * currentDistance * 0.8 + 2;
+          var cz = Math.cos(currentRotation.y) * Math.cos(currentRotation.x) * currentDistance;
+          camera.position.set(cx, cy, cz);
+          camera.lookAt(0, -0.5, 0);
+
+          // 星空缓慢旋转
+          stars.rotation.y += 0.0001;
+
+          // Hover 效果
+          raycaster.setFromCamera(mouse, camera);
+          var intersects = raycaster.intersectObjects(clickableObjects);
+          if (intersects.length > 0) {
+            var obj = intersects[0].object;
+            if (hoveredObject !== obj) {
+              if (hoveredObject) {
+                hoveredObject.scale.set(1.6, 0.8, 0.05);
+              }
+              hoveredObject = obj;
+              obj.scale.set(1.8, 0.9, 0.06);
+            }
+            renderer.domElement.style.cursor = "pointer";
+          } else {
+            if (hoveredObject) {
+              hoveredObject.scale.set(1.6, 0.8, 0.05);
+              hoveredObject = null;
+            }
+            renderer.domElement.style.cursor = "default";
+          }
+
+          renderer.render(scene, camera);
+        }
+
+        animate();
+      }
+
+      // ========== 启动 ==========
+      loadData();
+    </script>
+  </body>
+</html>

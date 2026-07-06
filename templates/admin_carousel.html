@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>轮播图管理 - 乡村信息平台</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-style.css') }}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/all.min.css') }}" rel="stylesheet">
     <style>
         .carousel-item {
             display: flex;
@@ -275,7 +275,7 @@
         
         // 加载轮播图列表
         function loadCarousels() {
-            fetch('/admin/carousel')
+            fetch('/api/carousel')
                 .then(response => response.json())
                 .then(data => {
                     carousels = data;
@@ -393,7 +393,7 @@
                 carouselOrders.push({ id: id, sort_order: index });
             });
             
-            fetch('/admin/carousel/reorder', {
+            fetch('/api/carousel/reorder', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -472,7 +472,7 @@
                 is_active: isActive
             };
             
-            const url = id ? `/admin/carousel/${id}` : '/admin/carousel';
+            const url = id ? `/api/carousel/${id}` : '/api/carousel';
             const method = id ? 'PUT' : 'POST';
             
             fetch(url, {
@@ -505,7 +505,7 @@
             
             const newStatus = !carousel.is_active;
             
-            fetch(`/admin/carousel/${id}`, {
+            fetch(`/api/carousel/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -531,7 +531,7 @@
         function deleteCarousel(id) {
             if (!confirm('确定要删除这张轮播图吗？')) return;
             
-            fetch(`/admin/carousel/${id}`, {
+            fetch(`/api/carousel/${id}`, {
                 method: 'DELETE'
             })
             .then(response => response.json())

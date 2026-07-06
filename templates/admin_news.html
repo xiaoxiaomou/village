@@ -1,101 +1,288 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="container mt-4">
-    <h2>新闻管理</h2>
-    <form method="post" action="{{ url_for('admin_news') }}" class="mb-4">
-        <div class="mb-3">
-            <label for="title" class="form-label">标题</label>
-            <input type="text" class="form-control" id="title" name="title" required>
-        </div>
-        <div class="mb-3">
-            <label for="content" class="form-label">内容</label>
-            <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">添加新闻</button>
+{% extends 'base.html' %} {% block title %}新闻管理 - 管理后台{% endblock %} {% block head %}
+<script
+  src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js"
+  referrerpolicy="origin"
+></script>
+<style>
+  body {
+    background: #f5f5f7;
+  }
+  .admin-wrap {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 0 20px;
+  }
+  .admin-wrap h2 {
+    margin-bottom: 20px;
+    color: #1d1d1f;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  .card h3 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    color: #333;
+  }
+  .form-group {
+    margin-bottom: 14px;
+  }
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 14px;
+    color: #333;
+  }
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #007aff;
+    outline: none;
+  }
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: #007aff;
+    color: white;
+  }
+  .btn-primary:hover {
+    background: #0062cc;
+  }
+  .btn-warning {
+    background: #ff9500;
+    color: white;
+  }
+  .btn-warning:hover {
+    background: #e08600;
+  }
+  .btn-danger {
+    background: #ff3b30;
+    color: white;
+  }
+  .btn-danger:hover {
+    background: #d63429;
+  }
+  .table-wrap {
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+  }
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #555;
+  }
+  tr:hover {
+    background: #f8f9ff;
+  }
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.show {
+    display: flex;
+  }
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 28px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .modal-content h3 {
+    margin: 0 0 16px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="admin-wrap">
+  <h2>📰 新闻管理</h2>
+
+  <!-- 添加新闻 -->
+  <div class="card">
+    <h3>添加新闻</h3>
+    <form method="post" action="{{ url_for('admin.admin_news') }}">
+      <div class="form-group">
+        <label for="title">标题</label>
+        <input type="text" id="title" name="title" required placeholder="请输入新闻标题" />
+      </div>
+      <div class="form-group">
+        <label for="adminContent">内容</label>
+        <textarea id="adminContent" name="content" rows="8"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">发布新闻</button>
     </form>
-    <table class="table table-bordered">
-        <thead><tr><th>ID</th><th>标题</th><th>内容</th><th>创建时间</th><th>操作</th></tr></thead>
+  </div>
+
+  <!-- 新闻列表 -->
+  <div class="card">
+    <h3>已发布新闻</h3>
+    {% if news_list %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>标题</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
         <tbody>
-        {% for news in news_list %}
-        <tr>
-            <td>{{ news.id }}</td>
-            <td>{{ news.title }}</td>
-            <td>{{ news.content }}</td>
+          {% for news in news_list %}
+          <tr>
+            <td><strong>{{ news.title }}</strong></td>
             <td>{{ news.create_time }}</td>
             <td>
-                <button class="btn btn-sm btn-warning" onclick="editNews({{ news.id }}, '{{ news.title }}', '{{ news.content }}')">编辑</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteNews({{ news.id }})">删除</button>
+              <button
+                class="btn btn-warning btn-sm"
+                onclick="editNews({{ news.id }}, '{{ news.title|e }}', '{{ news.content|e }}')"
+              >
+                编辑
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="deleteNews({{ news.id }})">
+                删除
+              </button>
             </td>
-        </tr>
-        {% endfor %}
+          </tr>
+          {% endfor %}
         </tbody>
-    </table>
-    <!-- 编辑模态框 -->
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <form id="editForm">
-            <div class="modal-header">
-              <h5 class="modal-title" id="editModalLabel">编辑新闻</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <input type="hidden" id="edit_id" name="id">
-              <div class="mb-3">
-                <label for="edit_title" class="form-label">标题</label>
-                <input type="text" class="form-control" id="edit_title" name="title" required>
-              </div>
-              <div class="mb-3">
-                <label for="edit_content" class="form-label">内容</label>
-                <textarea class="form-control" id="edit_content" name="content" rows="4" required></textarea>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-              <button type="submit" class="btn btn-primary">保存修改</button>
-            </div>
-          </form>
-        </div>
-      </div>
+      </table>
     </div>
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 20px">暂无新闻，请添加</p>
+    {% endif %}
+  </div>
 </div>
+
+<!-- 编辑模态框 -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-content">
+    <h3>编辑新闻</h3>
+    <form id="editForm">
+      <div class="form-group">
+        <label for="editTitle">标题</label>
+        <input type="text" id="editTitle" required />
+      </div>
+      <div class="form-group">
+        <label for="editContent">内容</label>
+        <textarea id="editContent" rows="8"></textarea>
+      </div>
+      <div style="display: flex; gap: 10px">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="button" class="btn" style="background: #f0f0f0" onclick="closeEdit()">
+          取消
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
-function editNews(id, title, content) {
-    document.getElementById('edit_id').value = id;
-    document.getElementById('edit_title').value = title;
-    document.getElementById('edit_content').value = content;
-    var editModal = new bootstrap.Modal(document.getElementById('editModal'));
-    editModal.show();
-}
+  let currentEditId = null;
 
-document.getElementById('editForm').onsubmit = function(e) {
+  // 初始化 TinyMCE
+  tinymce.init({
+    selector: "#adminContent, #editContent",
+    height: 350,
+    plugins:
+      "advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount",
+    toolbar:
+      "undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image link | code | help",
+    menubar: false,
+    statusbar: true,
+    branding: false,
+  });
+
+  function editNews(id, title, content) {
+    currentEditId = id;
+    document.getElementById("editTitle").value = title;
+    const editor = tinymce.get("editContent");
+    if (editor) editor.setContent(content || "");
+    document.getElementById("editModal").classList.add("show");
+  }
+
+  function closeEdit() {
+    document.getElementById("editModal").classList.remove("show");
+    currentEditId = null;
+  }
+
+  document.getElementById("editForm").addEventListener("submit", async function (e) {
     e.preventDefault();
-    var id = document.getElementById('edit_id').value;
-    var title = document.getElementById('edit_title').value;
-    var content = document.getElementById('edit_content').value;
-    fetch('/admin/news/' + id, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({title: title, content: content})
-    }).then(res => res.json()).then(data => {
-        if(data.msg && data.msg.includes('成功')) {
-            location.reload();
-        } else {
-            alert(data.msg || '修改失败');
-        }
-    });
-};
-
-function deleteNews(id) {
-    if(confirm('确定要删除该新闻吗？')) {
-        fetch('/admin/news/' + id, {method: 'DELETE'}).then(res => res.json()).then(data => {
-            if(data.msg && data.msg.includes('删除')) {
-                location.reload();
-            } else {
-                alert(data.msg || '删除失败');
-            }
-        });
+    if (!currentEditId) return;
+    const title = document.getElementById("editTitle").value;
+    const editor = tinymce.get("editContent");
+    const content = editor ? editor.getContent() : "";
+    try {
+      const res = await fetch("/admin/news/" + currentEditId, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content }),
+      });
+      if (res.ok) {
+        location.reload();
+      } else {
+        alert("更新失败");
+      }
+    } catch (e) {
+      alert("网络错误");
     }
-}
+  });
+
+  async function deleteNews(id) {
+    if (!confirm("确定删除这条新闻吗？")) return;
+    try {
+      const res = await fetch("/admin/news/" + id, { method: "DELETE" });
+      if (res.ok) {
+        location.reload();
+      } else {
+        alert("删除失败");
+      }
+    } catch (e) {
+      alert("网络错误");
+    }
+  }
+
+  // 在编辑模态框关闭时销毁/重建编辑器
+  document.getElementById("editModal").addEventListener("click", function (e) {
+    if (e.target === this) closeEdit();
+  });
 </script>
 {% endblock %}

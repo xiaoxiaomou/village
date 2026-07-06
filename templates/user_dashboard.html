@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的空间 - 乡村记忆系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/all.min.css') }}">
+    <style>
+        body { background: #f5f5f7; min-height: 100vh; display: flex; flex-direction: column; }
+        .dashboard-header { background: white; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .dashboard-header h1 { margin: 0; font-size: 24px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; width: 100%; box-sizing: border-box; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        .tab { padding: 10px 20px; cursor: pointer; border-radius: 8px; transition: all 0.3s; font-weight: 500; }
+        .tab.active { background: #007aff; color: white; }
+        .tab:hover:not(.active) { background: #f0f0f0; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; }
+        .upload-area { border: 2px dashed #ccc; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { border-color: #007aff; background: #f8f9ff; }
+        .upload-area i { font-size: 48px; color: #007aff; margin-bottom: 10px; }
+        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .media-item { border-radius: 8px; overflow: hidden; position: relative; background: #f5f5f5; }
+        .media-item img, .media-item video { width: 100%; height: 150px; object-fit: cover; }
+        .media-item .info { padding: 8px; font-size: 12px; }
+        .media-item .actions { position: absolute; top: 5px; right: 5px; display: flex; gap: 5px; }
+        .media-item .actions button { background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+        .notification-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; gap: 12px; align-items: flex-start; }
+        .notification-item.unread { background: #f0f7ff; }
+        .notification-item .icon { font-size: 20px; width: 30px; text-align: center; }
+        .notification-item .content { flex: 1; }
+        .notification-item .time { font-size: 12px; color: #999; }
+        .badge { background: #ff3b30; color: white; border-radius: 10px; padding: 2px 8px; font-size: 12px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .btn-primary { background: #007aff; color: white; }
+        .btn-danger { background: #ff3b30; color: white; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; padding: 30px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-content h3 { margin-top: 0; }
+        .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .empty-state { text-align: center; padding: 40px; color: #999; }
+        .empty-state i { font-size: 48px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
+            <div>
+                <h1>我的空间</h1>
+                <p style="margin: 5px 0 0; color: #666;">欢迎, {{ session['user'] }}</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span id="notifBadge" class="badge" style="display: none;">0</span>
+                <a href="/" style="text-decoration: none; color: #666;">返回首页</a>
+                <a href="/logout" style="text-decoration: none; color: #ff3b30;">退出</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 审核状态 -->
+        <div id="pendingBanner" class="card" style="display: none;">
+            <p id="pendingText"></p>
+        </div>
+
+        <!-- 标签页 -->
+        <div class="tabs">
+            <div class="tab active" data-tab="upload">上传媒体</div>
+            <div class="tab" data-tab="gallery">我的相册</div>
+            <div class="tab" data-tab="notifications">通知 <span id="notifCount"></span></div>
+        </div>
+
+        <!-- 上传媒体 -->
+        <div id="upload" class="tab-content active">
+            <div class="card">
+                <h3>上传新文件</h3>
+                <div class="upload-area" id="dropZone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>点击或拖拽文件到这里</p>
+                    <p style="font-size: 12px; color: #999;">支持 JPG, PNG, GIF, WEBP, MP4, WEBM (最大20MB)</p>
+                    <input type="file" id="fileInput" accept="image/*,video/*" style="display: none;">
+                </div>
+                <div id="uploadForm" style="display: none; margin-top: 15px;">
+                    <div class="form-group">
+                        <label>标题</label>
+                        <input type="text" id="mediaTitle" placeholder="文件标题">
+                    </div>
+                    <div class="form-group">
+                        <label>描述</label>
+                        <textarea id="mediaDesc" rows="3" placeholder="文件描述"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="mediaPublic" checked> 公开分享
+                        </label>
+                    </div>
+                    <button class="btn btn-primary" onclick="doUpload()">上传</button>
+                    <button class="btn" onclick="cancelUpload()" style="margin-left: 10px;">取消</button>
+                </div>
+                <div id="uploadProgress" style="display: none; margin-top: 15px;">
+                    <div style="background: #f0f0f0; border-radius: 8px; overflow: hidden; height: 8px;">
+                        <div id="progressBar" style="background: #007aff; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                    <p id="progressText" style="text-align: center; margin-top: 5px; font-size: 14px;">上传中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 我的相册 -->
+        <div id="gallery" class="tab-content">
+            <div class="card">
+                <h3>我的媒体文件</h3>
+                <div class="media-grid" id="myMediaGrid"></div>
+                <div id="galleryEmpty" class="empty-state" style="display: none;">
+                    <i class="fas fa-images"></i>
+                    <p>还没有上传任何媒体文件</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通知 -->
+        <div id="notifications" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">通知</h3>
+                    <button class="btn" onclick="markAllRead()">全部已读</button>
+                </div>
+                <div id="notifList"></div>
+                <div id="notifEmpty" class="empty-state" style="display: none;">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>暂无通知</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预览模态框 -->
+    <div class="modal" id="previewModal">
+        <div class="modal-content">
+            <button onclick="closePreview()" style="float: right; background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            <div id="previewContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+                if (tab.dataset.tab === 'gallery') loadMyMedia();
+                if (tab.dataset.tab === 'notifications') loadNotifications();
+            });
+        });
+
+        // Upload handling
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        let selectedFile = null;
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#007aff'; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#ccc'; });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ccc';
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+        function handleFile(file) {
+            const maxSize = 20 * 1024 * 1024;
+            if (file.size > maxSize) { alert('文件不能超过20MB'); return; }
+            selectedFile = file;
+            document.getElementById('uploadForm').style.display = 'block';
+            dropZone.style.display = 'none';
+            // Preview
+            if (file.type.startsWith('image/')) {
+                document.getElementById('mediaTitle').value = file.name.replace(/\.[^.]+$/, '');
+            }
+        }
+
+        function cancelUpload() {
+            selectedFile = null;
+            document.getElementById('uploadForm').style.display = 'none';
+            document.getElementById('dropZone').style.display = 'block';
+            fileInput.value = '';
+        }
+
+        async function doUpload() {
+            if (!selectedFile) return;
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('progressBar').style.width = '50%';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('title', document.getElementById('mediaTitle').value);
+            formData.append('description', document.getElementById('mediaDesc').value);
+            formData.append('is_public', document.getElementById('mediaPublic').checked ? 'true' : 'false');
+
+            try {
+                const res = await fetch('/api/media', { method: 'POST', body: formData });
+                document.getElementById('progressBar').style.width = '100%';
+                const data = await res.json();
+                if (res.ok) {
+                    alert('上传成功！');
+                    cancelUpload();
+                    document.getElementById('uploadProgress').style.display = 'none';
+                    loadMyMedia();
+                } else {
+                    alert(data.msg || '上传失败');
+                    document.getElementById('uploadProgress').style.display = 'none';
+                }
+            } catch (err) {
+                alert('上传出错: ' + err.message);
+                document.getElementById('uploadProgress').style.display = 'none';
+            }
+        }
+
+        // Load my media
+        async function loadMyMedia() {
+            try {
+                const res = await fetch('/api/media/user');
+                const data = await res.json();
+                const grid = document.getElementById('myMediaGrid');
+                const empty = document.getElementById('galleryEmpty');
+                grid.innerHTML = '';
+                if (data.data.length === 0) {
+                    empty.style.display = 'block';
+                    return;
+                }
+                empty.style.display = 'none';
+                data.data.forEach(m => {
+                    const item = document.createElement('div');
+                    item.className = 'media-item';
+                    if (m.file_type === 'image') {
+                        item.innerHTML = `<img src="${m.file_url}" onclick="previewMedia(${m.id})">
+                            <div class="actions"><button onclick="deleteMedia(${m.id})">删除</button></div>
+                            <div class="info">${m.title || m.original_name || ''}</div>`;
+                    } else {
+                        item.innerHTML = `<video src="${m.file_url}" onclick="previewMedia(${m.id})"></video>
+                            <div class="actions"><button onclick="deleteMedia(${m.id})">删除</button></div>
+                            <div class="info">${m.title || ''}</div>`;
+                    }
+                    grid.appendChild(item);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteMedia(id) {
+            if (!confirm('确定删除？')) return;
+            try {
+                const res = await fetch(`/api/media/${id}`, { method: 'DELETE' });
+                if (res.ok) { alert('已删除'); loadMyMedia(); }
+            } catch (e) { alert('删除失败'); }
+        }
+
+        function previewMedia(id) {
+            const modal = document.getElementById('previewModal');
+            const content = document.getElementById('previewContent');
+            content.innerHTML = '<p>加载中...</p>';
+            modal.classList.add('show');
+            fetch(`/api/media/${id}`).then(r => r.json()).then(m => {
+                if (m.file_type === 'image') {
+                    content.innerHTML = `<img src="${m.file_url}" style="max-width: 100%;">
+                        <p><strong>${m.title}</strong></p><p>${m.description || ''}</p><p>浏览 ${m.view_count} 次</p>`;
+                } else {
+                    content.innerHTML = `<video src="${m.file_url}" controls autoplay style="max-width: 100%;"></video>
+                        <p><strong>${m.title}</strong></p><p>${m.description || ''}</p>`;
+                }
+            }).catch(() => content.innerHTML = '<p>加载失败</p>');
+        }
+
+        function closePreview() { document.getElementById('previewModal').classList.remove('show'); }
+
+        // Notifications
+        async function loadNotifications() {
+            try {
+                const res = await fetch('/api/notifications?page=1&per_page=20');
+                const data = await res.json();
+                const list = document.getElementById('notifList');
+                const empty = document.getElementById('notifEmpty');
+                list.innerHTML = '';
+                if (data.data.length === 0) { empty.style.display = 'block'; return; }
+                empty.style.display = 'none';
+                data.data.forEach(n => {
+                    const icons = { info: 'fas fa-info-circle', success: 'fas fa-check-circle', warning: 'fas fa-exclamation-triangle', error: 'fas fa-times-circle' };
+                    const colors = { info: '#007aff', success: '#34c759', warning: '#ff9500', error: '#ff3b30' };
+                    const div = document.createElement('div');
+                    div.className = 'notification-item' + (n.is_read ? '' : ' unread');
+                    div.innerHTML = `<div class="icon" style="color: ${colors[n.type] || colors.info};"><i class="${icons[n.type] || icons.info}"></i></div>
+                        <div class="content"><strong>${n.title}</strong><br>${n.content}<br><span class="time">${new Date(n.created_at).toLocaleString('zh-CN')}</span></div>`;
+                    div.onclick = () => markRead(n.id);
+                    list.appendChild(div);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function markRead(id) {
+            await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+            loadNotifications();
+            updateNotifBadge();
+        }
+
+        async function markAllRead() {
+            await fetch('/api/notifications/read-all', { method: 'POST' });
+            loadNotifications();
+            updateNotifBadge();
+        }
+
+        async function updateNotifBadge() {
+            try {
+                const res = await fetch('/api/notifications/unread-count');
+                const data = await res.json();
+                const badge = document.getElementById('notifBadge');
+                const count = document.getElementById('notifCount');
+                if (data.count > 0) {
+                    badge.style.display = 'inline-block';
+                    badge.textContent = data.count;
+                    count.textContent = ` (${data.count})`;
+                } else {
+                    badge.style.display = 'none';
+                    count.textContent = '';
+                }
+            } catch (e) {}
+        }
+
+        // Check pending status
+        fetch('/api/pending-status').then(r => r.json()).then(data => {
+            const banner = document.getElementById('pendingBanner');
+            const text = document.getElementById('pendingText');
+            if (data.status === 'pending') {
+                banner.className = 'card';
+                banner.style.background = '#fff3cd';
+                text.innerHTML = '<span class="status-badge status-pending">⏳ 审核中</span> 您的注册申请正在等待管理员审核，请耐心等待。';
+                banner.style.display = 'block';
+                document.querySelector('[data-tab="upload"]').style.opacity = '0.5';
+                document.querySelector('[data-tab="gallery"]').style.opacity = '0.5';
+            } else if (data.status === 'rejected') {
+                banner.className = 'card';
+                banner.style.background = '#f8d7da';
+                text.innerHTML = `<span class="status-badge status-rejected">❌ 已拒绝</span> 审核意见：${data.review_comment || '未说明原因'}`;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        });
+
+        // Init
+        updateNotifBadge();
+        setInterval(updateNotifBadge, 30000);
+    </script>
+</body>
+</html>

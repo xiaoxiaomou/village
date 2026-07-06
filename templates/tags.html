@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}标签浏览 - 乡村记忆系统{% endblock %}
+
+{% block head %}
+<style>
+    .tag-category { margin-bottom: 30px; }
+    .tag-category h3 { color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 10px; }
+    .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; padding: 20px 0; }
+    .tag-cloud .tag-badge { font-size: 1.1em; padding: 10px 20px; }
+    .tag-badge { display: inline-block; padding: 8px 16px; background: var(--secondary); color: var(--primary); border-radius: 20px; text-decoration: none; transition: all 0.3s; border: 2px solid transparent; }
+    .tag-badge:hover { background: var(--primary); color: #fff; transform: scale(1.05); }
+    .tag-count { background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="section-title"><i class="fas fa-tags"></i> 标签浏览</h2>
+
+<div class="tag-cloud">
+    {% for tag in tags %}
+    <a href="/memories?tag={{ tag.name }}" class="tag-badge">
+        {{ tag.name }}
+        <span class="tag-count">{{ tag.memory_count }}</span>
+    </a>
+    {% endfor %}
+</div>
+
+<div style="margin-top:40px;">
+    <h3 style="color:var(--primary);text-align:center;">按分类浏览</h3>
+    {% set categories = {'person': '人物', 'place': '地方', 'event': '事件', 'emotion': '情感', 'general': '其他'} %}
+    {% for cat_key, cat_name in categories.items() %}
+    {% set category_tags = tags | selectattr('category', 'equalto', cat_key) | list %}
+    {% if category_tags %}
+    <div class="tag-category">
+        <h3>{{ cat_name }}</h3>
+        <div class="tag-cloud">
+            {% for tag in category_tags %}
+            <a href="/memories?tag={{ tag.name }}" class="tag-badge">{{ tag.name }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}

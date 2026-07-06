@@ -1,98 +1,138 @@
-{% extends 'base.html' %}
-{% block content %}
+{% extends 'base.html' %} {% block content %}
 <div class="container mt-4">
-    <h2>服务管理</h2>
-    <form method="post" action="{{ url_for('admin_services') }}" class="mb-4">
-        <div class="mb-3">
-            <label for="name" class="form-label">服务名称</label>
-            <input type="text" class="form-control" id="name" name="name" required>
-        </div>
-        <div class="mb-3">
-            <label for="description" class="form-label">服务描述</label>
-            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">添加服务</button>
-    </form>
-    <table class="table table-bordered">
-        <thead><tr><th>ID</th><th>服务名称</th><th>描述</th><th>操作</th></tr></thead>
-        <tbody>
-        {% for service in services %}
-        <tr>
-            <td>{{ service.id }}</td>
-            <td>{{ service.name }}</td>
-            <td>{{ service.description }}</td>
-            <td>
-                <button class="btn btn-sm btn-warning" onclick="editService({{ service.id }}, '{{ service.name }}', '{{ service.description }}')">编辑</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteService({{ service.id }})">删除</button>
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <!-- 编辑模态框 -->
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <form id="editForm">
-            <div class="modal-header">
-              <h5 class="modal-title" id="editModalLabel">编辑服务</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <h2>服务管理</h2>
+  <form method="post" action="{{ url_for('admin.admin_services') }}" class="mb-4">
+    <div class="mb-3">
+      <label for="name" class="form-label">服务名称</label>
+      <input type="text" class="form-control" id="name" name="name" required />
+    </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">服务描述</label>
+      <textarea
+        class="form-control"
+        id="description"
+        name="description"
+        rows="3"
+        required
+      ></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">添加服务</button>
+  </form>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>服务名称</th>
+        <th>描述</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for service in services %}
+      <tr>
+        <td>{{ service.id }}</td>
+        <td>{{ service.name }}</td>
+        <td>{{ service.description }}</td>
+        <td>
+          <button
+            class="btn btn-sm btn-warning"
+            onclick="editService({{ service.id }}, '{{ service.name }}', '{{ service.description }}')"
+          >
+            编辑
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="deleteService({{ service.id }})">
+            删除
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <!-- 编辑模态框 -->
+  <div
+    class="modal fade"
+    id="editModal"
+    tabindex="-1"
+    aria-labelledby="editModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editModalLabel">编辑服务</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edit_id" name="id" />
+            <div class="mb-3">
+              <label for="edit_name" class="form-label">服务名称</label>
+              <input type="text" class="form-control" id="edit_name" name="name" required />
             </div>
-            <div class="modal-body">
-              <input type="hidden" id="edit_id" name="id">
-              <div class="mb-3">
-                <label for="edit_name" class="form-label">服务名称</label>
-                <input type="text" class="form-control" id="edit_name" name="name" required>
-              </div>
-              <div class="mb-3">
-                <label for="edit_description" class="form-label">服务描述</label>
-                <textarea class="form-control" id="edit_description" name="description" rows="3" required></textarea>
-              </div>
+            <div class="mb-3">
+              <label for="edit_description" class="form-label">服务描述</label>
+              <textarea
+                class="form-control"
+                id="edit_description"
+                name="description"
+                rows="3"
+                required
+              ></textarea>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-              <button type="submit" class="btn btn-primary">保存修改</button>
-            </div>
-          </form>
-        </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            <button type="submit" class="btn btn-primary">保存修改</button>
+          </div>
+        </form>
       </div>
     </div>
+  </div>
 </div>
 <script>
-function editService(id, name, description) {
-    document.getElementById('edit_id').value = id;
-    document.getElementById('edit_name').value = name;
-    document.getElementById('edit_description').value = description;
-    var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+  function editService(id, name, description) {
+    document.getElementById("edit_id").value = id;
+    document.getElementById("edit_name").value = name;
+    document.getElementById("edit_description").value = description;
+    var editModal = new bootstrap.Modal(document.getElementById("editModal"));
     editModal.show();
-}
-document.getElementById('editForm').onsubmit = function(e) {
+  }
+  document.getElementById("editForm").onsubmit = function (e) {
     e.preventDefault();
-    var id = document.getElementById('edit_id').value;
-    var name = document.getElementById('edit_name').value;
-    var description = document.getElementById('edit_description').value;
-    fetch('/admin/services/' + id, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name: name, description: description})
-    }).then(res => res.json()).then(data => {
-        if(data.msg && data.msg.includes('成功')) {
-            location.reload();
+    var id = document.getElementById("edit_id").value;
+    var name = document.getElementById("edit_name").value;
+    var description = document.getElementById("edit_description").value;
+    fetch("/admin/services/" + id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name, description: description }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.msg && data.msg.includes("成功")) {
+          location.reload();
         } else {
-            alert(data.msg || '修改失败');
+          alert(data.msg || "修改失败");
         }
-    });
-};
-function deleteService(id) {
-    if(confirm('确定要删除该服务吗？')) {
-        fetch('/admin/services/' + id, {method: 'DELETE'}).then(res => res.json()).then(data => {
-            if(data.msg && data.msg.includes('删除')) {
-                location.reload();
-            } else {
-                alert(data.msg || '删除失败');
-            }
+      });
+  };
+  function deleteService(id) {
+    if (confirm("确定要删除该服务吗？")) {
+      fetch("/admin/services/" + id, { method: "DELETE" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.msg && data.msg.includes("删除")) {
+            location.reload();
+          } else {
+            alert(data.msg || "删除失败");
+          }
         });
     }
-}
+  }
 </script>
 {% endblock %}

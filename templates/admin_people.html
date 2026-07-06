@@ -1,0 +1,247 @@
+{% extends "base.html" %} {% block title %}人物管理 - 管理后台{% endblock %} {% block head %}
+<style>
+  body {
+    background: #f5f5f7;
+  }
+  .admin-wrap {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 20px;
+  }
+  h2 {
+    margin-bottom: 20px;
+    color: #1d1d1f;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  .card h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+  }
+  .form-group {
+    margin-bottom: 12px;
+  }
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #007aff;
+    outline: none;
+  }
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .btn-primary {
+    background: #007aff;
+    color: white;
+  }
+  .btn-danger {
+    background: #ff3b30;
+    color: white;
+  }
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+  }
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+  }
+  tr:hover {
+    background: #f8f9ff;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="admin-wrap">
+  <h2>👥 人物档案管理</h2>
+
+  <div class="card">
+    <h3>添加人物</h3>
+    <form id="addForm">
+      <div class="form-group"><label>姓名</label><input type="text" id="name" required /></div>
+      <div class="form-group">
+        <label>关系</label><input type="text" id="relation" placeholder="如：长辈、邻居" />
+      </div>
+      <div class="form-group"><label>简介</label><textarea id="bio" rows="3"></textarea></div>
+      <button type="submit" class="btn btn-primary">添加人物</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>人物列表</h3>
+    <div id="peopleList"><p class="empty-state">加载中...</p></div>
+  </div>
+</div>
+
+<!-- 编辑模态框 -->
+<div
+  class="modal"
+  id="editModal"
+  style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  "
+>
+  <div
+    class="modal-content"
+    style="background: white; border-radius: 12px; padding: 24px; max-width: 450px; width: 90%"
+  >
+    <h3>编辑人物</h3>
+    <form id="editForm">
+      <div class="form-group"><label>姓名</label><input type="text" id="editName" required /></div>
+      <div class="form-group"><label>关系</label><input type="text" id="editRelation" /></div>
+      <div class="form-group"><label>简介</label><textarea id="editBio" rows="3"></textarea></div>
+      <div style="display: flex; gap: 10px">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="button" class="btn" style="background: #f0f0f0" onclick="closeEdit()">
+          取消
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let editId = null;
+
+  document.getElementById("addForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const name = document.getElementById("name").value;
+    const relation = document.getElementById("relation").value;
+    const bio = document.getElementById("bio").value;
+    try {
+      const res = await fetch("/api/admin/people", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, relation, bio }),
+      });
+      if (res.ok) {
+        document.getElementById("addForm").reset();
+        loadPeople();
+      } else {
+        alert("添加失败");
+      }
+    } catch (e) {
+      alert("网络错误");
+    }
+  });
+
+  async function loadPeople() {
+    try {
+      const res = await fetch("/api/admin/people");
+      const data = await res.json();
+      const div = document.getElementById("peopleList");
+      if (!data.length) {
+        div.innerHTML = '<p class="empty-state">暂无人物</p>';
+        return;
+      }
+      let html =
+        "<table><thead><tr><th>姓名</th><th>关系</th><th>简介</th><th>操作</th></tr></thead><tbody>";
+      data.forEach((p) => {
+        html += `<tr><td><strong>${p.name}</strong></td><td>${p.relation || "-"}</td><td><small>${(p.bio || "").slice(0, 50)}</small></td>
+                    <td><button class="btn btn-sm" style="background:#ff9500;color:white;" onclick="editPerson(${p.id},'${p.name}','${p.relation || ""}','${p.bio || ""}')">编辑</button>
+                    <button class="btn btn-sm btn-danger" onclick="deletePerson(${p.id})">删除</button></td></tr>`;
+      });
+      html += "</tbody></table>";
+      div.innerHTML = html;
+    } catch (e) {
+      document.getElementById("peopleList").innerHTML = '<p class="empty-state">加载失败</p>';
+    }
+  }
+
+  function editPerson(id, name, relation, bio) {
+    editId = id;
+    document.getElementById("editName").value = name;
+    document.getElementById("editRelation").value = relation;
+    document.getElementById("editBio").value = bio;
+    document.getElementById("editModal").style.display = "flex";
+  }
+
+  function closeEdit() {
+    editId = null;
+    document.getElementById("editModal").style.display = "none";
+  }
+
+  document.getElementById("editForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    if (!editId) return;
+    const name = document.getElementById("editName").value;
+    const relation = document.getElementById("editRelation").value;
+    const bio = document.getElementById("editBio").value;
+    try {
+      const res = await fetch("/api/admin/people/" + editId, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, relation, bio }),
+      });
+      if (res.ok) {
+        closeEdit();
+        loadPeople();
+      } else {
+        alert("更新失败");
+      }
+    } catch (e) {
+      alert("网络错误");
+    }
+  });
+
+  async function deletePerson(id) {
+    if (!confirm("确定删除？")) return;
+    try {
+      const res = await fetch("/api/admin/people/" + id, { method: "DELETE" });
+      if (res.ok) loadPeople();
+      else alert("删除失败");
+    } catch (e) {
+      alert("网络错误");
+    }
+  }
+
+  loadPeople();
+</script>
+{% endblock %}

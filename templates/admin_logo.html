@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logo管理 - 乡村信息平台</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-style.css') }}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/all.min.css') }}" rel="stylesheet">
     <style>
         .logo-preview {
             max-width: 200px;
@@ -130,8 +130,11 @@
         
         // 加载当前Logo
         function loadCurrentLogo() {
-            fetch('/admin/logo')
-                .then(response => response.json())
+            fetch('/api/logo')
+                .then(response => {
+                    if (response.status === 404) return { msg: '暂无Logo' };
+                    return response.json();
+                })
                 .then(data => {
                     if (data.msg && data.msg.includes('暂无Logo')) {
                         showNoLogo();
@@ -265,7 +268,7 @@
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
             saveBtn.disabled = true;
             
-            fetch('/admin/logo', {
+            fetch('/api/logo', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
