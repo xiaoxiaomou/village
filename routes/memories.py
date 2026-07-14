@@ -8,6 +8,7 @@ from models import (
     db,
     Memory,
     Tag,
+    MemoryTag,
     People,
     Backup,
     MediaFile,
@@ -69,6 +70,35 @@ def _parse_date(value):
     return None
 
 
+def _filter_by_tag(query, tag_filter):
+    """按标签筛选记忆。tag_filter 可以是标签名或标签 id。"""
+    if not tag_filter:
+        return query
+    query = query.join(MemoryTag).join(Tag)
+    if str(tag_filter).isdigit():
+        return query.filter(MemoryTag.tag_id == int(tag_filter))
+    return query.filter(Tag.name == tag_filter)
+
+
+def _sync_memory_tags(memory_id, tag_ids):
+    """用 tag_ids（标签 id 列表）重建记忆与标签的关联，供筛选使用。"""
+    MemoryTag.query.filter_by(memory_id=memory_id).delete()
+    if isinstance(tag_ids, list):
+        for t in tag_ids:
+            try:
+                tid = int(t)
+            except (TypeError, ValueError):
+                continue
+            tag = Tag.query.get(tid)
+            if tag:
+                db.session.add(
+                    MemoryTag(
+                        memory_id=memory_id, tag_id=tid, tag_category=tag.category
+                    )
+                )
+    db.session.commit()
+
+
 def _memory_to_dict(memory):
     return {
         "id": memory.id,
@@ -107,8 +137,7 @@ def memories_page():
     tag_filter = request.args.get("tag", "", type=str)
     search = request.args.get("search", "", type=str)
     query = Memory.query.order_by(Memory.create_time.desc())
-    if tag_filter:
-        query = query.filter(Memory.tags.contains(tag_filter))
+    query = _filter_by_tag(query, tag_filter)
     if search:
         query = query.filter(
             db.or_(Memory.title.contains(search), Memory.content.contains(search))
@@ -116,8 +145,19 @@ def memories_page():
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     memories = pagination.items
     tags = Tag.query.all()
+    mem_ids = [m.id for m in memories]
+    tag_name_map = {}
+    if mem_ids:
+        rows = (
+            db.session.query(MemoryTag.memory_id, Tag.name)
+            .join(Tag, Tag.id == MemoryTag.tag_id)
+            .filter(MemoryTag.memory_id.in_(mem_ids))
+            .all()
+        )
+        for mid, nm in rows:
+            tag_name_map.setdefault(mid, []).append(nm)
     for m in memories:
-        m.tag_names = m.get_tags()
+        m.tag_names = tag_name_map.get(m.id, [])
         m.date = str(m.date_recorded) if m.date_recorded else ""
         m.type = m.memory_type
         m.people = ", ".join(m.get_people()) if m.get_people() else ""
@@ -301,6 +341,7 @@ def api_memories():
             new_memory.video_urls = json.dumps(video_urls)
         db.session.add(new_memory)
         db.session.commit()
+        _sync_memory_tags(new_memory.id, data.get("tag_ids", []))
         return jsonify(
             {"msg": "记忆创建成功", "memory": _memory_to_dict(new_memory)}
         ), 201
@@ -311,8 +352,7 @@ def api_memories():
     tag_filter = request.args.get("tag", "", type=str)
     search = request.args.get("search", "", type=str)
     query = Memory.query.order_by(Memory.create_time.desc())
-    if tag_filter:
-        query = query.filter(Memory.tags.contains(tag_filter))
+    query = _filter_by_tag(query, tag_filter)
     if search:
         query = query.filter(
             db.or_(Memory.title.contains(search), Memory.content.contains(search))
@@ -357,6 +397,7 @@ def api_memory_detail(mid):
             memory.video_urls = json.dumps(data["video_urls"])
         if "tag_ids" in data:
             memory.tags = json.dumps(data["tag_ids"])
+            _sync_memory_tags(memory.id, data["tag_ids"])
         memory.update_time = datetime.utcnow()
         db.session.commit()
         return jsonify({"msg": "记忆更新成功", "memory": _memory_to_dict(memory)})
@@ -536,9 +577,14 @@ def api_media_detail(mid):
         return jsonify({"msg": "无权限"}), 403
     from flask import current_app
 
-    file_path = os.path.join(
-        current_app.config["UPLOAD_FOLDER"], media.file_url.lstrip("/")
-    )
+    # 修正路径：media.file_url 形如 "/uploads/images/xxx.png"，
+    # 需去掉前缀 "/uploads/" 再拼到 UPLOAD_FOLDER，否则会变成 uploads/uploads/...
+    rel = media.file_url
+    if rel.startswith("/uploads/"):
+        rel = rel[len("/uploads/"):]
+    elif rel.startswith("/"):
+        rel = rel[1:]
+    file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], rel)
     if os.path.exists(file_path):
         os.remove(file_path)
     db.session.delete(media)

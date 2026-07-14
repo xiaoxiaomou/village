@@ -1,0 +1,38 @@
+{% extends "base.html" %} {% block title %}{{ service.name }} - 便民服务{% endblock %} {% block head
+%}
+<style>
+  .svc-detail {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 0;
+  }
+  .svc-detail h1 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 28px;
+    margin-bottom: 16px;
+    color: var(--ink-dark);
+  }
+  .svc-detail .desc {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="svc-detail">
+  <a href="/services" class="btn btn-secondary" style="margin-bottom: 20px">← 返回服务列表</a>
+  <h1>{{ service.name }}</h1>
+  <div class="desc">
+    {{ service.description|replace('\n', '<br />')|safe if service.description else '暂无详细说明'
+    }}
+  </div>
+  {% if service.file_url %}
+  <div style="margin-top: 24px">
+    <a href="{{ service.file_url }}" class="btn btn-primary" target="_blank">
+      <i class="fas fa-download"></i> 相关文件
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

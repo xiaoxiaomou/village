@@ -2,6 +2,7 @@
 记忆数据库模型
 全部使用SQLite兼容语法
 """
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,10 +19,14 @@ class User(db.Model):
     role = db.Column(db.String(20), default="user")
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
     messages = db.relationship("Message", backref="user", lazy=True)
-    replies = db.relationship("Reply", backref="admin", foreign_keys="Reply.admin_id", lazy=True)
+    replies = db.relationship(
+        "Reply", backref="admin", foreign_keys="Reply.admin_id", lazy=True
+    )
     memories = db.relationship("Memory", backref="author", lazy=True)
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
@@ -102,7 +107,9 @@ class VillageLogo(db.Model):
     description = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
-    update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    update_time = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
 
 class VillageCarousel(db.Model):
@@ -115,11 +122,14 @@ class VillageCarousel(db.Model):
     sort_order = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
-    update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    update_time = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
 
 class Memory(db.Model):
     """多媒体记忆记录 - 核心模型"""
+
     __tablename__ = "memories"
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -138,26 +148,44 @@ class Memory(db.Model):
     tags = db.Column(db.Text, default="[]")
     is_public = db.Column(db.Boolean, default=True)
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
-    update_time = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    update_time = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
     def get_photos(self):
-        try: return json.loads(self.photo_urls) or []
-        except: return []
+        try:
+            return json.loads(self.photo_urls) or []
+        except:
+            return []
+
     def get_videos(self):
-        try: return json.loads(self.video_urls) or []
-        except: return []
+        try:
+            return json.loads(self.video_urls) or []
+        except:
+            return []
+
     def get_tags(self):
-        try: return json.loads(self.tags) or []
-        except: return []
+        try:
+            return json.loads(self.tags) or []
+        except:
+            return []
+
     def get_people(self):
-        try: return json.loads(self.people_involved) or []
-        except: return []
+        try:
+            return json.loads(self.people_involved) or []
+        except:
+            return []
+
     def get_locations(self):
-        try: return json.loads(self.locations) or []
-        except: return []
+        try:
+            return json.loads(self.locations) or []
+        except:
+            return []
 
 
 class Tag(db.Model):
     """标签分类"""
+
     __tablename__ = "tags"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
@@ -168,6 +196,7 @@ class Tag(db.Model):
 
 class MemoryTag(db.Model):
     """记忆-标签关联"""
+
     __tablename__ = "memory_tags"
     memory_id = db.Column(db.Integer, db.ForeignKey("memories.id"), primary_key=True)
     tag_id = db.Column(db.Integer, db.ForeignKey("tags.id"), primary_key=True)
@@ -176,6 +205,7 @@ class MemoryTag(db.Model):
 
 class People(db.Model):
     """人物档案"""
+
     __tablename__ = "people"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -188,6 +218,7 @@ class People(db.Model):
 
 class Backup(db.Model):
     """数据备份"""
+
     __tablename__ = "backups"
     id = db.Column(db.Integer, primary_key=True)
     backup_type = db.Column(db.String(20), default="full")
@@ -200,6 +231,7 @@ class Backup(db.Model):
 
 class PendingUser(db.Model):
     """待审核用户注册申请"""
+
     __tablename__ = "pending_users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -207,14 +239,14 @@ class PendingUser(db.Model):
     phone = db.Column(db.String(20))
     nickname = db.Column(db.String(50))
     password_hash = db.Column(db.String(255), nullable=False)
-    avatar_url = db.Column(db.String(500), default='')
-    bio = db.Column(db.Text, default='')
+    avatar_url = db.Column(db.String(500), default="")
+    bio = db.Column(db.Text, default="")
     status = db.Column(db.String(20), default="pending")  # pending, approved, rejected
-    admin_note = db.Column(db.Text, default='')  # 管理员备注
+    admin_note = db.Column(db.Text, default="")  # 管理员备注
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     reviewed_at = db.Column(db.DateTime)
     reviewed_by = db.Column(db.Integer, db.ForeignKey("users.id"))
-    review_comment = db.Column(db.Text, default='')  # 审核意见
+    review_comment = db.Column(db.Text, default="")  # 审核意见
 
     reviewer = db.relationship("User", foreign_keys=[reviewed_by], backref="reviews")
 
@@ -227,48 +259,97 @@ class PendingUser(db.Model):
 
 class MediaFile(db.Model):
     """用户上传的媒体文件"""
+
     __tablename__ = "media_files"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    title = db.Column(db.String(200), default='')
+    title = db.Column(db.String(200), default="")
     file_type = db.Column(db.String(10), nullable=False)  # image or video
     file_url = db.Column(db.String(500), nullable=False)
-    thumbnail_url = db.Column(db.String(500), default='')
+    thumbnail_url = db.Column(db.String(500), default="")
     file_size = db.Column(db.Integer, default=0)  # bytes
-    original_name = db.Column(db.String(255), default='')
-    description = db.Column(db.Text, default='')
+    original_name = db.Column(db.String(255), default="")
+    description = db.Column(db.Text, default="")
     is_public = db.Column(db.Boolean, default=True)
     view_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     owner = db.relationship("User", backref="media_files")
 
 
 class Notification(db.Model):
     """系统通知"""
+
     __tablename__ = "notifications"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    notification_type = db.Column(db.String(50), default="info")  # info, success, warning, error
+    notification_type = db.Column(
+        db.String(50), default="info"
+    )  # info, success, warning, error
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    target_user = db.relationship("User", foreign_keys=[user_id], backref="notifications")
+    target_user = db.relationship(
+        "User", foreign_keys=[user_id], backref="notifications"
+    )
 
 
 class AuditLog(db.Model):
     """操作审计日志"""
+
     __tablename__ = "audit_logs"
     id = db.Column(db.Integer, primary_key=True)
     operator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    action = db.Column(db.String(50), nullable=False)  # register, approve, reject, upload
-    target_type = db.Column(db.String(50), default='')  # user, media
+    action = db.Column(
+        db.String(50), nullable=False
+    )  # register, approve, reject, upload
+    target_type = db.Column(db.String(50), default="")  # user, media
     target_id = db.Column(db.Integer, default=0)
-    detail = db.Column(db.Text, default='')
-    ip_address = db.Column(db.String(45), default='')
+    detail = db.Column(db.Text, default="")
+    ip_address = db.Column(db.String(45), default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     operator = db.relationship("User", foreign_keys=[operator_id], backref="audit_logs")
+
+
+class SiteContact(db.Model):
+    """网站联系信息（单行配置，由后台维护）"""
+
+    __tablename__ = "site_contact"
+    id = db.Column(db.Integer, primary_key=True)
+    address = db.Column(db.String(200), default="")  # 村委会地址
+    phone = db.Column(db.String(50), default="")  # 联系电话
+    mobile = db.Column(db.String(50), default="")  # 手机号码
+    email = db.Column(db.String(120), default="")  # 电子邮箱
+    website = db.Column(db.String(200), default="")  # 官方网站
+    work_hours = db.Column(db.Text, default="")  # 办公时间（多行文本）
+    work_note = db.Column(db.Text, default="")  # 特别提醒说明（多行文本）
+    public_transit = db.Column(db.Text, default="")  # 公共交通（多行文本）
+    driving_route = db.Column(db.Text, default="")  # 自驾路线（多行文本）
+    wechat = db.Column(db.String(100), default="")  # 微信号
+    map_embed = db.Column(db.Text, default="")  # 地图嵌入代码/链接
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
+class HomeFeature(db.Model):
+    """首页特色服务卡片（可由后台维护排序与显隐）"""
+
+    __tablename__ = "home_features"
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)  # 标题，如「生态农业」
+    description = db.Column(db.Text, default="")  # 描述
+    icon = db.Column(db.String(50), default="fa-leaf")  # FontAwesome 图标类名
+    icon_color = db.Column(
+        db.String(20), default="red"
+    )  # red/jade/gold/ink 对应现有配色
+    link = db.Column(db.String(200), default="/services")  # 了解更多链接
+    sort_order = db.Column(db.Integer, default=0)  # 排序（越小越靠前）
+    is_active = db.Column(db.Boolean, default=True)  # 是否在前台展示
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

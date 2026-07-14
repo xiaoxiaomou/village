@@ -503,7 +503,7 @@
 
     function resetAutoPlay() {
       clearInterval(autoPlayTimer);
-      autoPlayTimer = setInterval(() => showSlide((currentSlide + 1) % total), 3000);
+      autoPlayTimer = setInterval(() => showSlide((currentSlide + 1) % total), 2000);
     }
 
     // 加载轮播图
@@ -515,7 +515,11 @@
         const indicatorsDiv = document.querySelector(".carousel-indicators");
 
         if (data.length === 0) {
-          // 无数据时使用默认硬编码图片
+          // 无数据时使用默认硬编码图片（已在 HTML 中）
+          items = document.querySelectorAll(".carousel-item");
+          total = items.length;
+          clearInterval(autoPlayTimer);
+          autoPlayTimer = setInterval(() => showSlide((currentSlide + 1) % total), 2000);
           return;
         }
 
@@ -540,7 +544,7 @@
 
         // 自动播放
         clearInterval(autoPlayTimer);
-        autoPlayTimer = setInterval(() => showSlide((currentSlide + 1) % total), 3000);
+        autoPlayTimer = setInterval(() => showSlide((currentSlide + 1) % total), 2000);
       } catch (e) {
         console.error("加载轮播图失败:", e);
       }
@@ -669,36 +673,51 @@
     <div class="section-divider"></div>
   </div>
   <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon red">
-        <i class="fas fa-leaf"></i>
+    {% if features %}
+      {% for f in features %}
+      <div class="feature-card">
+        <div class="feature-icon {{ f.color or 'red' }}">
+          <i class="{{ f.icon or 'fas fa-leaf' }}"></i>
+        </div>
+        <h3>{{ f.title }}</h3>
+        <p>{{ f.summary }}</p>
+        <a href="{{ f.link or '/services' }}" class="feature-link">
+          了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
+        </a>
       </div>
-      <h3>生态农业</h3>
-      <p>推广绿色种植技术，发展有机农业，保护生态环境，提供健康农产品。</p>
-      <a href="/services" class="feature-link">
-        了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
-      </a>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon jade">
-        <i class="fas fa-home"></i>
+      {% endfor %}
+    {% else %}
+      <div class="feature-card">
+        <div class="feature-icon red">
+          <i class="fas fa-leaf"></i>
+        </div>
+        <h3>生态农业</h3>
+        <p>推广绿色种植技术，发展有机农业，保护生态环境，提供健康农产品。</p>
+        <a href="/services" class="feature-link">
+          了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
+        </a>
       </div>
-      <h3>乡村旅游</h3>
-      <p>开发特色民宿，打造乡村旅游路线，让游客体验纯正的乡村生活和文化。</p>
-      <a href="/services" class="feature-link">
-        了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
-      </a>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon gold">
-        <i class="fas fa-hands-helping"></i>
+      <div class="feature-card">
+        <div class="feature-icon jade">
+          <i class="fas fa-home"></i>
+        </div>
+        <h3>乡村旅游</h3>
+        <p>开发特色民宿，打造乡村旅游路线，让游客体验纯正的乡村生活和文化。</p>
+        <a href="/services" class="feature-link">
+          了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
+        </a>
       </div>
-      <h3>便民服务</h3>
-      <p>提供政务咨询、医疗服务、教育资源等便民服务，解决村民生活难题。</p>
-      <a href="/services" class="feature-link">
-        了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
-      </a>
-    </div>
+      <div class="feature-card">
+        <div class="feature-icon gold">
+          <i class="fas fa-hands-helping"></i>
+        </div>
+        <h3>便民服务</h3>
+        <p>提供政务咨询、医疗服务、教育资源等便民服务，解决村民生活难题。</p>
+        <a href="/services" class="feature-link">
+          了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
+        </a>
+      </div>
+    {% endif %}
   </div>
 </section>
 

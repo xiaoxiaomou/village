@@ -15,9 +15,19 @@ from flask import (
     send_from_directory,
     abort,
 )
-from models import db, News, Category, VillageInfo, Government, Message
+from models import (
+    db,
+    News,
+    Category,
+    VillageInfo,
+    Government,
+    Service,
+    Message,
+    SiteContact,
+    HomeFeature,
+    VillageCarousel,
+)
 from datetime import datetime
-import os
 import logging
 
 main_bp = Blueprint("main", __name__)
@@ -27,7 +37,17 @@ logger = logging.getLogger(__name__)
 @main_bp.route("/")
 def index():
     try:
-        return render_template("index.html")
+        features = (
+            HomeFeature.query.filter_by(is_active=True)
+            .order_by(HomeFeature.sort_order, HomeFeature.id)
+            .all()
+        )
+        carousel = (
+            VillageCarousel.query.filter_by(is_active=True)
+            .order_by(VillageCarousel.sort_order, VillageCarousel.id)
+            .all()
+        )
+        return render_template("index.html", features=features, carousels=carousel)
     except Exception:
         return render_template("base.html")
 
@@ -86,7 +106,7 @@ def news_detail(news_id):
     news = News.query.get(news_id)
     if not news:
         return render_template("base.html"), 404
-    
+
     # 增加访问量
     try:
         db.session.execute(
@@ -98,7 +118,7 @@ def news_detail(news_id):
         db.session.commit()
     except Exception:
         pass
-    
+
     news_data = {
         "id": news.id,
         "title": news.title,
@@ -107,10 +127,12 @@ def news_detail(news_id):
         "category_id": news.category_id,
         "image_url": news.image_url,
         "view_count": news.view_count or 0,
-        "create_time": news.create_time.strftime("%Y-%m-%d %H:%M") if news.create_time else None,
+        "create_time": news.create_time.strftime("%Y-%m-%d %H:%M")
+        if news.create_time
+        else None,
         "category": news.category.name if news.category else None,
     }
-    
+
     return render_template("news_detail.html", news=news_data)
 
 
@@ -151,12 +173,30 @@ def government_page():
     return render_template("government.html", government_list=government_list)
 
 
+@main_bp.route("/government/<int:gov_id>")
+def government_detail(gov_id):
+    """政务详情页面"""
+    gov = Government.query.get(gov_id)
+    if not gov:
+        abort(404)
+    return render_template("government_detail.html", government=gov)
+
+
 # ─── 便民服务 ───
 
 
 @main_bp.route("/services")
 def services_page():
     return render_template("services.html")
+
+
+@main_bp.route("/services/<int:service_id>")
+def service_detail(service_id):
+    """服务详情页面"""
+    svc = Service.query.get(service_id)
+    if not svc:
+        abort(404)
+    return render_template("service_detail.html", service=svc)
 
 
 # ─── 互动交流（留言板） ───
@@ -166,6 +206,9 @@ def services_page():
 def message_page():
     try:
         if request.method == "POST":
+            if "user" not in session:
+                flash("请先登录后再提交留言")
+                return redirect(url_for("auth.login"))
             name = request.form.get("name", "").strip()
             contact = request.form.get("contact", "").strip()
             content = request.form.get("content", "").strip()
@@ -228,7 +271,8 @@ def message_page():
 
 @main_bp.route("/contact")
 def contact_page():
-    return render_template("contact.html")
+    contact = SiteContact.query.first()
+    return render_template("contact.html", contact=contact)
 
 
 # ─── 测试 ───
@@ -240,11 +284,9 @@ def test_page():
     return "<h2>乡村记忆系统运行正常</h2><p><a href='/'>返回首页</a></p>"
 
 
-@main_bp.route("/message-test", methods=["GET", "POST"])
+@main_bp.route("/message-test")
 def message_test_page():
     try:
-        if request.method == "POST":
-            return "表单提交测试成功！"
         try:
             msgs = Message.query.order_by(Message.create_time.desc()).limit(10).all()
             messages = [
@@ -292,12 +334,6 @@ def uploaded_file(filename):
     return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
 
 
-# 注意：通配路由必须放在最后
-@main_bp.route("/<path:filename>")
-def serve_files(filename):
-    """提供项目根目录下的文件（如 test_pages.html）"""
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    try:
-        return send_from_directory(project_root, filename)
-    except Exception:
-        abort(404)
+# 安全说明：出于安全考虑，不再提供「项目根目录」万能文件下载路由。
+# 该路由会把 village.db、源码、cookies.txt 等任意文件暴露给未登录用户。
+# 如需提供静态测试页，请显式新增一条指向固定白名单目录的路由。

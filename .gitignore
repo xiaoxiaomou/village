@@ -1,0 +1,64 @@
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+
+# ─── 虚拟环境 ───
+venv/
+env/
+
+# ─── 应用数据与密钥（切勿提交）───
+*.db
+*.sqlite3
+village.db
+instance/
+uploads/
+backups/
+cookies.txt
+nul
+
+# ─── 日志 ───
+*.log
+server_*.log
+
+# ─── 截图 / 临时产物 ───
+final-result.png
+page-final.png
+page-full-screenshot.png
+page-result.png
+page-screenshot.png
+
+# ─── 工具 / Agent 产物 ───
+.agents/
+.playwright-mcp/
+
+# ─── 前端子项目 lithos 的构建产物 ───
+lithos/node_modules/
+lithos/dist/
+
+# ─── 编辑器 / 系统 ───
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ─── 内部交付文档（按需自行决定是否公开）───
+交付文件/
+
+# ─── 独立前端子项目（未纳入本后端仓库，按需单独开源）───
+lithos/
+
+# ─── Agent 内部记忆目录（绝不公开）───
+.workbuddy/
+
+# ─── 开发期调试 / 验证脚本（非项目源码）───
+_compat.py
+check_bom.py
+fix_*.py
+static_check.py
+verify_fixes*.py
+run_tests*.py
+test_*.py
+server_log.txt

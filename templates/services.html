@@ -1,45 +1,42 @@
-{% extends "base.html" %}
-{% block title %}便民服务{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}便民服务{% endblock %} {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">便民服务</h2>
-    <div class="row" id="services-container">
-        <!-- 服务列表将通过JavaScript动态加载 -->
-    </div>
+  <h2 class="mb-4">便民服务</h2>
+  <div class="row" id="services-container">
+    <!-- 服务列表将通过JavaScript动态加载 -->
+  </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 获取服务列表
-        fetch('/api/services')
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('services-container');
-                data.forEach(service => {
-                    const serviceCard = document.createElement('div');
-                    serviceCard.className = 'col-md-4 mb-4';
-                    serviceCard.innerHTML = `
+  document.addEventListener("DOMContentLoaded", function () {
+    // 获取服务列表
+    fetch("/api/services")
+      .then((response) => response.json())
+      .then((data) => {
+        const container = document.getElementById("services-container");
+        data.forEach((service) => {
+          const serviceCard = document.createElement("div");
+          serviceCard.className = "col-md-4 mb-4";
+          serviceCard.innerHTML = `
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">${service.name}</h5>
-                                <a href="${service.url || '#'}" class="btn btn-primary">查看详情</a>
+                                <a href="/services/${service.id}" class="btn btn-primary">查看详情</a>
                             </div>
                         </div>
                     `;
-                    container.appendChild(serviceCard);
-                });
-                
-                // 如果没有数据，显示提示信息
-                if (data.length === 0) {
-                    container.innerHTML = '<div class="col-12"><p>暂无便民服务信息</p></div>';
-                }
-            })
-            .catch(error => {
-                console.error('获取服务列表失败:', error);
-                document.getElementById('services-container').innerHTML = 
-                    '<div class="col-12"><p>获取服务列表失败，请稍后再试</p></div>';
-            });
-    });
+          container.appendChild(serviceCard);
+        });
+
+        // 如果没有数据，显示提示信息
+        if (data.length === 0) {
+          container.innerHTML = '<div class="col-12"><p>暂无便民服务信息</p></div>';
+        }
+      })
+      .catch((error) => {
+        console.error("获取服务列表失败:", error);
+        document.getElementById("services-container").innerHTML =
+          '<div class="col-12"><p>获取服务列表失败，请稍后再试</p></div>';
+      });
+  });
 </script>
 {% endblock %}

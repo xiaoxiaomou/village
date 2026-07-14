@@ -1,0 +1,40 @@
+{% extends "base.html" %} {% block title %}{{ government.title }} - 政务公开{% endblock %} {% block
+head %}
+<style>
+  .gov-detail {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 0;
+  }
+  .gov-detail h1 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 28px;
+    margin-bottom: 16px;
+    color: var(--ink-dark);
+  }
+  .gov-detail .content {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+  .gov-detail .actions {
+    margin-top: 32px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="gov-detail">
+  <a href="/government" class="btn btn-secondary" style="margin-bottom: 20px">← 返回政务列表</a>
+  <h1>{{ government.title }}</h1>
+  <div class="content">
+    {{ government.content|replace('\n', '<br />')|safe if government.content else '暂无内容' }}
+  </div>
+  <div class="actions">
+    {% if government.file_url %}
+    <a href="{{ government.file_url }}" class="btn btn-primary" target="_blank">
+      <i class="fas fa-download"></i> 下载附件
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

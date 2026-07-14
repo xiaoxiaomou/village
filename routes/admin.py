@@ -363,10 +363,10 @@ def admin_government():
         data = request.get_json(silent=True) or request.form
         title = data.get("title", "")
         if not title:
-            return jsonify({"msg": "标题不能为空"}), 400 if request.is_json else (
-                flash("标题不能为空"),
-                redirect(url_for("admin.admin_government")),
-            )
+            if request.is_json:
+                return jsonify({"msg": "标题不能为空"}), 400
+            flash("标题不能为空")
+            return redirect(url_for("admin.admin_government"))
         gov = Government(title=title, file_url=data.get("file_url", ""))
         db.session.add(gov)
         db.session.commit()

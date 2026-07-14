@@ -125,6 +125,9 @@
       {% endif %}
     </div>
     <div class="actions">
+      <a href="/government/{{ item.id }}" class="btn-view">
+        <i class="fas fa-file-alt"></i> 阅读全文
+      </a>
       {% if item.file_url %}
       <a href="{{ item.file_url }}" class="btn-download" target="_blank">
         <i class="fas fa-download"></i> 下载附件

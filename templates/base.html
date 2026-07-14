@@ -639,11 +639,13 @@
           <li>
             <a href="/dashboard"><i class="fas fa-user"></i> {{ session['user'] }}</a>
           </li>
+          {#
           {% if session['role'] == 'admin' %}
           <li>
             <a href="/admin"><i class="fas fa-cog"></i> 后台</a>
           </li>
           {% endif %}
+          #}
           <li>
             <a href="/logout"><i class="fas fa-sign-out-alt"></i> 退出</a>
           </li>

@@ -16,6 +16,7 @@ from models import (
     Tag,
     People,
     Memory,
+    MemoryTag,
     Backup,
     News,
     Category,
@@ -100,7 +101,43 @@ def init_default_data():
             db.session.add(memory)
             print("  示例记忆已创建: 村口老槐树")
 
+        backfill_memory_tags()
         db.session.commit()
+
+
+def backfill_memory_tags():
+    """将 memories.tags(JSON 文本) 中记录的标签同步到 memory_tags 关联表，
+    使「按标签筛选」可用。兼容历史数据：tags 字段可能是标签名，也可能是标签 id。"""
+    created = 0
+    for mem in Memory.query.all():
+        if MemoryTag.query.filter_by(memory_id=mem.id).first():
+            continue
+        try:
+            raw = json.loads(mem.tags) if mem.tags else []
+        except Exception:
+            raw = []
+        for item in raw:
+            tag = None
+            if isinstance(item, int):
+                tag = Tag.query.get(item)
+            elif isinstance(item, str):
+                item = item.strip()
+                if item.isdigit():
+                    tag = Tag.query.get(int(item))
+                else:
+                    tag = Tag.query.filter_by(name=item).first()
+            if tag:
+                db.session.add(
+                    MemoryTag(
+                        memory_id=mem.id,
+                        tag_id=tag.id,
+                        tag_category=tag.category,
+                    )
+                )
+                created += 1
+    if created:
+        db.session.commit()
+        print(f"  记忆标签已同步: {created} 条关联")
 
 
 # ═══ 测试种子数据 ═══

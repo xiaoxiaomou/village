@@ -182,39 +182,39 @@
                 <div class="contact-icon">🏛️</div>
                 <div class="contact-info">
                     <div class="contact-label">村委会地址</div>
-                    <div class="contact-value">美丽乡村示范村村委会大楼</div>
+                    <div class="contact-value">{{ contact.address or '美丽乡村示范村村委会大楼' }}</div>
                 </div>
             </div>
-            
+
             <div class="contact-item">
                 <div class="contact-icon">📞</div>
                 <div class="contact-info">
                     <div class="contact-label">联系电话</div>
-                    <div class="contact-value">0123-12345678</div>
+                    <div class="contact-value">{{ contact.phone or '0123-12345678' }}</div>
                 </div>
             </div>
-            
+
             <div class="contact-item">
                 <div class="contact-icon">📱</div>
                 <div class="contact-info">
                     <div class="contact-label">手机号码</div>
-                    <div class="contact-value">138-0123-4567</div>
+                    <div class="contact-value">{{ contact.mobile or '138-0123-4567' }}</div>
                 </div>
             </div>
-            
+
             <div class="contact-item">
                 <div class="contact-icon">📧</div>
                 <div class="contact-info">
                     <div class="contact-label">电子邮箱</div>
-                    <div class="contact-value">village@example.com</div>
+                    <div class="contact-value">{{ contact.email or 'village@example.com' }}</div>
                 </div>
             </div>
-            
+
             <div class="contact-item">
                 <div class="contact-icon">🌐</div>
                 <div class="contact-info">
                     <div class="contact-label">官方网站</div>
-                    <div class="contact-value">www.village-demo.com</div>
+                    <div class="contact-value">{{ contact.website or 'www.village-demo.com' }}</div>
                 </div>
             </div>
         </div>
