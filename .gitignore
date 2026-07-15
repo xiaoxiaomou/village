@@ -18,6 +18,8 @@ uploads/
 backups/
 cookies.txt
 nul
+.env
+
 
 # ─── 日志 ───
 *.log

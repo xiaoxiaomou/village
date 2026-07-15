@@ -14,12 +14,19 @@ def create_app(config_name="default"):
     app = Flask(__name__, static_folder="../static", template_folder="../templates")
 
     # 配置
-    from config import SQLALCHEMY_DATABASE_URI, UPLOAD_FOLDER, BACKUP_FOLDER, SECRET_KEY
+    from config import (
+        SQLALCHEMY_DATABASE_URI,
+        UPLOAD_FOLDER,
+        BACKUP_FOLDER,
+        SECRET_KEY,
+        TINYMCE_API_KEY,
+    )
 
     app.config["SECRET_KEY"] = SECRET_KEY
     app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+    app.config["TINYMCE_API_KEY"] = TINYMCE_API_KEY
 
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     os.makedirs(BACKUP_FOLDER, exist_ok=True)

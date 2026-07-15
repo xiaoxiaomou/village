@@ -73,12 +73,22 @@ python start.py run
 | `SQLALCHEMY_DATABASE_URI` | 数据库连接 | `sqlite:///<项目目录>/village.db` |
 | `UPLOAD_FOLDER` | 上传文件目录 | `<项目目录>/uploads` |
 | `PAGE_SIZE` | 后台每页条数 | 20 |
+| `TINYMCE_API_KEY` | 后台富文本编辑器（TinyMCE）API Key | 环境变量 `TINYMCE_API_KEY`，未设置时回退为 `no-api-key`（编辑器会提示配置 Key） |
 
 生成更强的密钥：
 
 ```bash
 export SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
 ```
+
+> 📄 本地开发可在项目根目录创建 `.env` 文件写入上述环境变量（已加入 `.gitignore`，**不会进入版本库**）。可参考 `.env.example` 模板。例如：
+>
+> ```ini
+> TINYMCE_API_KEY=你的_tinymce_key
+> SECRET_KEY=你的随机密钥
+> ```
+>
+> 应用启动时会自动读取 `.env`，无需手动 `export`。
 
 ## 数据库维护
 
