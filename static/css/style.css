@@ -695,3 +695,94 @@ tr:hover td {
     width: 100%;
   }
 }
+
+/* ═══ 移动端适配增强（2026-07-15）═══
+   前台页面原本只在 1024px 做了断点，手机（≤640px）仍是固定多列、
+   首页轮播高度写死 480px。这里统一在手机断点降为单列，并收紧字号/间距。
+   用 !important 以压过各模板内联 <style> 中的同权重声明。 */
+@media (max-width: 640px) {
+  .features-grid,
+  .news-grid,
+  .stats-grid,
+  .quick-links,
+  .info-grid,
+  .contact-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 首页轮播在手机上降低高度，避免占用整屏 */
+  .carousel {
+    height: 240px !important;
+    margin-bottom: 28px !important;
+  }
+  .carousel-control {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+  .carousel-prev {
+    left: 10px;
+  }
+  .carousel-next {
+    right: 10px;
+  }
+
+  /* 标题字号收紧 */
+  .section-header h2 {
+    font-size: 22px;
+  }
+  .section-header p {
+    font-size: 13px;
+  }
+  .page-header h1 {
+    font-size: 22px;
+  }
+
+  /* 卡片内边距收紧 */
+  .card-header,
+  .card-body {
+    padding: 16px 18px;
+  }
+
+  /* 表单字号 16px，避免 iOS 聚焦时整页缩放 */
+  .form-control {
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+
+  /* 政务卡片：窄屏让操作按钮换行，避免挤压 */
+  .gov-card {
+    flex-wrap: wrap;
+  }
+
+  /* 详情两栏兜底单列 */
+  .memory-detail-grid,
+  .detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 统计与快捷入口保留 2 列，更紧凑 */
+  .stats-grid,
+  .quick-links {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  body {
+    font-size: 15px;
+  }
+  .container {
+    padding: 16px 14px;
+  }
+  .section-header {
+    margin-bottom: 28px;
+  }
+}
+
+/* 怀旧记录：桌面多列自适应，手机单列（.memory-grid 内联未设列数） */
+@media (min-width: 641px) {
+  .memory-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
