@@ -333,6 +333,7 @@ class SiteContact(db.Model):
     driving_route = db.Column(db.Text, default="")  # 自驾路线（多行文本）
     wechat = db.Column(db.String(100), default="")  # 微信号
     map_embed = db.Column(db.Text, default="")  # 地图嵌入代码/链接
+    route_link = db.Column(db.Text, default="")  # 路线规划链接（高德/百度导航URL等）
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )

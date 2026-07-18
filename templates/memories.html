@@ -6,6 +6,20 @@
     .memory-grid { display: grid; gap: 20px; }
     .memory-header { display: flex; justify-content: space-between; align-items: center; }
     .memory-actions { display: flex; gap: 10px; }
+    /* 整张卡片可点击进入详情 */
+    .memory-card { position: relative; cursor: pointer; transition: box-shadow .2s, transform .2s; }
+    .memory-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.08); transform: translateY(-2px); }
+    /* 覆盖整卡的透明跳转层,放最底,内部真实链接(标签)需提层级 */
+    .memory-card .card-link {
+        position: absolute; inset: 0; z-index: 0;
+        display: block; color: inherit; text-decoration: none;
+    }
+    /* 卡片内需要独立点击的元素(标签)提上来,优先于 card-link */
+    .memory-card .memory-meta,
+    .memory-card .memory-content,
+    .memory-card .memory-media,
+    .memory-card .memory-tags { position: relative; z-index: 1; }
+    .memory-card .memory-tags a { position: relative; z-index: 2; }
 </style>
 {% endblock %}
 
@@ -34,6 +48,7 @@
 <div class="memory-grid" id="memoriesContainer">
     {% for memory in memories %}
     <div class="memory-card">
+        <a class="card-link" href="/memories/{{ memory.id }}" aria-label="查看{{ memory.title }}详情"></a>
         <div class="memory-header">
             <h3 class="memory-title"><a href="/memories/{{ memory.id }}" style="color:inherit;text-decoration:none;">{{ memory.title }}</a></h3>
             <div class="memory-actions">
@@ -57,17 +72,16 @@
         <div class="memory-media">
             <div class="image-grid">
                 {% for url in memory.photo_urls_list[:3] %}
-                <img src="{{ url }}" alt="照片" onclick="window.location.href='/memories/{{ memory.id }}'">
+                <img src="{{ url }}" alt="照片">
                 {% endfor %}
             </div>
         </div>
         {% endif %}
         {% if memory.tags %}
         <div class="memory-tags">
-            {% for tag_name in memory.tag_names %}
-            <a href="/memories?tag={{ tag_name }}" class="tag-badge">{{ tag_name }}</a>
-            <a href="/memories?tag={{ tag.name }}" class="tag-badge">{{ tag.name }}</a>
-            {% endfor %}
+                {% for tag_name in memory.tag_names %}
+                <a href="/memories?tag={{ tag_name }}" class="tag-badge">{{ tag_name }}</a>
+                {% endfor %}
         </div>
         {% endif %}
     </div>

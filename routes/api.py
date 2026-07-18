@@ -5,7 +5,7 @@ API 蓝图：公共 JSON REST API
 
 from flask import Blueprint, jsonify, request, session
 from models import db, User, News, VillageInfo, Government, Service, Message, Category
-from models import VillageLogo, VillageCarousel, MediaFile, AuditLog
+from models import VillageLogo, VillageCarousel, MediaFile, AuditLog, SiteContact
 from datetime import datetime
 import os
 import json
@@ -299,6 +299,37 @@ def get_village_logo():
             }
         )
     return jsonify({"msg": "暂无Logo", "logo": None}), 200
+
+
+# ─── 联系信息 API ───
+
+
+@api_bp.route("/api/contact", methods=["GET"])
+@admin_required
+def get_site_contact():
+    contact = SiteContact.query.first()
+    if not contact:
+        return jsonify({"contact": None}), 200
+    return jsonify(
+        {
+            "id": contact.id,
+            "address": contact.address,
+            "phone": contact.phone,
+            "mobile": contact.mobile,
+            "email": contact.email,
+            "website": contact.website,
+            "work_hours": contact.work_hours,
+            "work_note": contact.work_note,
+            "public_transit": contact.public_transit,
+            "driving_route": contact.driving_route,
+            "wechat": contact.wechat,
+            "map_embed": contact.map_embed,
+            "route_link": contact.route_link,
+            "updated_at": contact.updated_at.isoformat()
+            if contact.updated_at
+            else None,
+        }
+    )
 
 
 # ─── 轮播图 API ───

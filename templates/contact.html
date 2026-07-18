@@ -258,26 +258,52 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
             <div>
                 <h4 style="color: #2d8cf0; margin-bottom: 10px;">🚌 公共交通</h4>
+                {% if contact.public_transit %}
+                <p style="margin: 0; line-height: 1.8; color: #666; white-space: pre-line;">{{ contact.public_transit }}</p>
+                {% else %}
                 <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
                     <li>乘坐123路公交车到"村委会站"下车</li>
                     <li>乘坐456路公交车到"乡村广场站"下车，步行5分钟</li>
                     <li>地铁2号线"乡村站"A出口，转乘123路公交</li>
                 </ul>
+                {% endif %}
             </div>
             <div>
                 <h4 style="color: #2d8cf0; margin-bottom: 10px;">🚗 自驾路线</h4>
+                {% if contact.driving_route %}
+                <p style="margin: 0; line-height: 1.8; color: #666; white-space: pre-line;">{{ contact.driving_route }}</p>
+                {% else %}
                 <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
                     <li>导航搜索"美丽乡村村委会"</li>
                     <li>高速公路乡村出口下，直行3公里</li>
                     <li>村委会大楼提供免费停车位</li>
                 </ul>
+                {% endif %}
             </div>
         </div>
+        {% if contact.route_link %}
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="{{ contact.route_link }}" target="_blank" rel="noopener noreferrer" class="quick-btn" style="display: inline-block; background: #2d8cf0; border-color: #2d8cf0;">🧭 路线规划</a>
+        </div>
+        {% endif %}
     </div>
     
     <!-- 地图位置 -->
     <div class="map-container">
         <h3 style="color: #2d8cf0; margin-bottom: 20px;">🗺️ 位置地图</h3>
+        {% if contact.map_embed %}
+        <div class="map-placeholder" style="border-style: solid;">
+            <div>
+                <p>📍 位置地图展示区域</p>
+                <p style="font-size: 14px; color: #999;">请在后台「联系信息」的地图嵌入处填写地图链接或嵌入代码</p>
+                {% if contact.map_embed.startswith('http') %}
+                <a href="{{ contact.map_embed }}" target="_blank" rel="noopener noreferrer" class="quick-btn" style="display:inline-block; margin-top:10px; background:#43cea2; border-color:#43cea2;">🗺️ 打开地图</a>
+                {% else %}
+                <div style="margin-top:10px;">{{ contact.map_embed | safe }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
         <div class="map-placeholder">
             <div>
                 <p>📍 地图位置展示区域</p>
@@ -286,6 +312,7 @@
                 </p>
             </div>
         </div>
+        {% endif %}
     </div>
     
     <!-- 快速联系 -->
@@ -294,9 +321,9 @@
         <p>选择最适合您的联系方式，我们将尽快为您服务</p>
         <div class="quick-buttons">
             <a href="/message" class="quick-btn">📝 在线留言</a>
-            <a href="tel:0123-12345678" class="quick-btn">📞 电话咨询</a>
-            <a href="mailto:village@example.com" class="quick-btn">📧 邮件联系</a>
-            <a href="#" class="quick-btn" onclick="alert('微信号：village2024')">💬 微信咨询</a>
+            {% if contact.phone %}<a href="tel:{{ contact.phone }}" class="quick-btn">📞 电话咨询</a>{% endif %}
+            {% if contact.email %}<a href="mailto:{{ contact.email }}" class="quick-btn">📧 邮件联系</a>{% endif %}
+            {% if contact.wechat %}<a href="#" class="quick-btn" onclick="alert('微信号：{{ contact.wechat }}')">💬 微信咨询</a>{% endif %}
         </div>
     </div>
 </div>

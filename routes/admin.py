@@ -33,6 +33,7 @@ from models import (
     MediaFile,
     AuditLog,
     Notification,
+    SiteContact,
 )
 from datetime import datetime
 import logging
@@ -240,7 +241,7 @@ def admin_users():
         db.session.commit()
         flash(f"用户 {username} 创建成功")
         return redirect(url_for("admin.admin_users"))
-    
+
     users = User.query.order_by(User.create_time.desc()).all()
     users_data = [
         {
@@ -269,7 +270,9 @@ def edit_user(uid):
         # 更新用户名
         if data.get("username"):
             # 检查新用户名是否与其他用户冲突
-            existing = User.query.filter(User.username == data["username"], User.id != uid).first()
+            existing = User.query.filter(
+                User.username == data["username"], User.id != uid
+            ).first()
             if existing:
                 return jsonify({"msg": "用户名已存在"}), 400
             user.username = data["username"]
@@ -282,7 +285,12 @@ def edit_user(uid):
         if data.get("role"):
             user.role = data["role"]
         db.session.commit()
-        return jsonify({"msg": "用户更新成功", "user": {"id": user.id, "username": user.username, "role": user.role}})
+        return jsonify(
+            {
+                "msg": "用户更新成功",
+                "user": {"id": user.id, "username": user.username, "role": user.role},
+            }
+        )
     # DELETE
     # 不能删除自己
     if session.get("user") == user.username:
@@ -519,6 +527,45 @@ def admin_logo():
             }
         )
     return jsonify({"msg": "暂无Logo", "logo": None}), 200
+
+
+# ═══ 联系信息配置 ═══
+
+
+@admin_bp.route("/admin/contact")
+@admin_required
+def admin_contact_page():
+    return render_template("admin_contact.html")
+
+
+@admin_bp.route("/admin/contact", methods=["POST"])
+@admin_required
+def admin_contact_save():
+    data = request.json
+    contact = SiteContact.query.first()
+    if not contact:
+        contact = SiteContact()
+        db.session.add(contact)
+    fields = [
+        "address",
+        "phone",
+        "mobile",
+        "email",
+        "website",
+        "work_hours",
+        "work_note",
+        "public_transit",
+        "driving_route",
+        "wechat",
+        "map_embed",
+        "route_link",
+    ]
+    for fld in fields:
+        if fld in data:
+            setattr(contact, fld, data.get(fld, ""))
+    contact.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify({"msg": "联系信息保存成功"})
 
 
 # ═══ 用户审核 ═══

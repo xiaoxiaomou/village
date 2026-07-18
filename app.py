@@ -89,4 +89,8 @@ if __name__ == "__main__":
 
         db.session.commit()
 
+    # debug 保持关闭(生产环境不应开调试器),但单独开启模板自动重载,
+    # 这样改 HTML 后无需重启服务即可生效
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.jinja_env.auto_reload = True
     app.run(host="0.0.0.0", port=5000, debug=False)
