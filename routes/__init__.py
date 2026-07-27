@@ -9,8 +9,13 @@ from models import db
 
 import _compat  # noqa: F401 — Windows + asyncio 兼容桩
 
+from core.logging_config import setup_logging
+from core.responses import register_error_handlers
+
 
 def create_app(config_name="default"):
+    setup_logging()
+
     app = Flask(__name__, static_folder="../static", template_folder="../templates")
 
     # 配置
@@ -85,6 +90,31 @@ def create_app(config_name="default"):
     app.register_blueprint(api_bp)
     app.register_blueprint(memories_bp)
     app.register_blueprint(admin_bp)
+
+    # 全局模板变量注入：站点配置 / 当前时间 / 友情链接
+    @app.context_processor
+    def inject_site_globals():
+        from datetime import datetime
+
+        site_config = None
+        friend_links = []
+        try:
+            from models import SiteConfig, FriendLink
+
+            site_config = SiteConfig.get()
+            friend_links = (
+                FriendLink.query.filter_by(is_active=True)
+                .order_by(FriendLink.sort_order, FriendLink.id)
+                .all()
+            )
+        except Exception:
+            # 任何异常（表缺失/未初始化）都兜底，避免页面 500
+            site_config = None
+            friend_links = []
+        return dict(site_config=site_config, now=datetime.now(), friend_links=friend_links)
+
+    # 全局错误处理器（仅影响未匹配路由/未捕获异常）
+    register_error_handlers(app)
 
     # 关闭数据库连接
     @app.teardown_appcontext

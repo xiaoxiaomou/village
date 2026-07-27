@@ -1,148 +1,215 @@
 {% extends "base.html" %}
+{% from "macros/upload_zone.html" import render_upload_zone %}
 {% block title %}编辑记忆 - 乡村记忆系统{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/memorial.css') }}" />
 <style>
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display:block; font-weight:bold; margin-bottom:8px; color:var(--primary); }
-    .form-group input, .form-group textarea, .form-group select {
-        width: 100%;
-        padding: 12px 15px;
-        border: 2px solid var(--secondary);
-        border-radius: 8px;
-        font-size: 14px;
-    }
-    .form-group textarea { min-height: 150px; resize: vertical; }
-    .tag-selector { display: flex; flex-wrap: wrap; gap: 8px; }
-    .tag-option { padding: 6px 14px; border: 2px solid var(--secondary); border-radius: 15px; cursor: pointer; transition: all 0.3s; }
-    .tag-option.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .simple-form { max-width: 640px; margin: 0 auto; }
+  .form-group { margin-bottom: var(--space-5); }
+  .form-group > label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+  .form-group > label .req { color: var(--cinnabar); margin-left: 2px; }
+  .form-group input[type="text"],
+  .form-group input[type="date"],
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--paper-deep);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #fff;
+    color: var(--ink);
+    transition: border-color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
+  }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    border-color: var(--jade);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(90, 138, 127, 0.1);
+  }
+  .form-group textarea { min-height: 140px; resize: vertical; }
+
+  .tag-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag-option {
+    padding: 5px 14px;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--paper-deep);
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--ink-light);
+    transition: all var(--duration-fast) var(--ease-out);
+    user-select: none;
+  }
+  .tag-option:hover { border-color: var(--jade-light); }
+  .tag-option.selected {
+    background: var(--jade-pale);
+    border-color: var(--jade);
+    color: var(--jade);
+    font-weight: 600;
+  }
+  .form-actions { display: flex; gap: 12px; margin-top: var(--space-6); }
+  .form-actions .btn-primary { flex: 1; }
 </style>
 {% endblock %}
 
 {% block content %}
-<h2 class="section-title"><i class="fas fa-edit"></i> 编辑记忆</h2>
+<div class="simple-form">
+  <h2 class="mem-page-head" style="margin-bottom: var(--space-6);">
+    <div>
+      <h1 style="font-size:1.7rem;"><i class="fas fa-edit" style="color:var(--cinnabar);"></i> 编辑记忆</h1>
+      <p>更新文字、照片顺序或视频。</p>
+    </div>
+  </h2>
 
-<form id="memoryForm" onsubmit="return submitEdit()">
+  <form id="memoryForm" novalidate>
     <div class="form-group">
-        <label><i class="fas fa-heading"></i> 记忆标题 *</label>
-        <input type="text" id="memoryTitle" value="{{ memory.title }}" required>
+      <label>记忆标题 <span class="req">*</span></label>
+      <input type="text" id="memoryTitle" value="{{ memory.title }}" />
     </div>
-    
+
     <div class="form-group">
-        <label><i class="fas fa-calendar"></i> 记忆日期 *</label>
-        <input type="date" id="memoryDate" value="{{ memory.date }}" required>
+      <label>记忆日期 <span class="req">*</span></label>
+      <input type="date" id="memoryDate" value="{{ memory.date }}" />
     </div>
-    
+
     <div class="form-group">
-        <label><i class="fas fa-tag"></i> 记忆类型</label>
-        <select id="memoryType">
-            <option value="text" {% if memory.type == 'text' %}selected{% endif %}>纯文字</option>
-            <option value="photo" {% if memory.type == 'photo' %}selected{% endif %}>照片</option>
-            <option value="video" {% if memory.type == 'video' %}selected{% endif %}>视频</option>
-            <option value="audio" {% if memory.type == 'audio' %}selected{% endif %}>语音</option>
-            <option value="mixed" {% if memory.type == 'mixed' %}selected{% endif %}>混合媒体</option>
-        </select>
+      <label>记忆类型</label>
+      <select id="memoryType">
+        <option value="text" {% if memory.type == 'text' %}selected{% endif %}>文字</option>
+        <option value="photo" {% if memory.type == 'photo' %}selected{% endif %}>照片</option>
+        <option value="video" {% if memory.type == 'video' %}selected{% endif %}>视频</option>
+        <option value="audio" {% if memory.type == 'audio' %}selected{% endif %}>语音</option>
+      </select>
+      <div class="form-hint" style="font-size:0.78rem;color:var(--ink-muted);margin-top:6px;">若已上传照片/视频，保存时将自动按内容推断类型。</div>
     </div>
-    
+
     <div class="form-group">
-        <label><i class="fas fa-users"></i> 相关人物</label>
-        <input type="text" id="memoryPeople" value="{{ memory.people or '' }}">
+      <label>相关人物</label>
+      <input type="text" id="memoryPeople" value="{{ memory.people or '' }}" placeholder="如：祖父, 邻居王婶（逗号分隔）" />
     </div>
-    
+
     <div class="form-group">
-        <label><i class="fas fa-align-left"></i> 记忆内容 *</label>
-        <textarea id="memoryContent" required>{{ memory.content }}</textarea>
+      <label>记忆内容 <span class="req">*</span></label>
+      <textarea id="memoryContent">{{ memory.content }}</textarea>
     </div>
-    
+
     <div class="form-group">
-        <label><i class="fas fa-star"></i> 个人感受</label>
-        <textarea id="memoryFeeling">{{ memory.feeling or '' }}</textarea>
+      <label>个人感受</label>
+      <textarea id="memoryFeeling">{{ memory.feeling or '' }}</textarea>
     </div>
-    
+
     <div class="form-group">
-        <label><i class="fas fa-tags"></i> 标签</label>
-        <div class="tag-selector" id="tagSelector">
-            {% for tag in tags %}
-            <div class="tag-option{% if tag.name in memory.tag_names %} selected{% endif %}" data-tag-id="{{ tag.id }}">{{ tag.name }}</div>
-            {% endfor %}
-        </div>
+      <label>标签</label>
+      <div class="tag-selector" id="tagSelector">
+        {% for tag in tags %}
+        <div class="tag-option{% if tag.name in memory.tag_names %} selected{% endif %}" data-tag-id="{{ tag.id }}">{{ tag.name }}</div>
+        {% endfor %}
+      </div>
     </div>
-    
-    <div class="btn-group">
-        <button type="submit" class="btn-primary" style="padding:12px 40px;"><i class="fas fa-save"></i> 保存修改</button>
-        <a href="/memories/{{ memory.id }}" class="btn-secondary">取消</a>
+
+    <div class="form-group">
+      <label>配图与视频</label>
+      {{ render_upload_zone() }}
     </div>
-</form>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" id="submitBtn">
+        <i class="fas fa-save"></i> <span>保存修改</span>
+      </button>
+      <a href="/memories/{{ memory.id }}" class="btn btn-secondary">取消</a>
+    </div>
+  </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/memorial-upload.js') }}"></script>
 <script>
-let selectedTags = [];
+  // 还原既有照片/视频顺序（photo_urls_list 顺序即展示顺序）
+  const uploader = initUploader({
+    initialPhotos: {{ memory.photo_urls_list | tojson }},
+    initialVideos: {{ memory.video_urls_list | tojson }},
+  });
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Load existing tags
-    {% for tag_name in memory.tag_names %}
-    {% for tag in tags %}
-    {% if tag.name == tag_name %}
-    selectedTags.push({{ tag.id }});
-    {% endif %}
-    {% endfor %}
-    {% endfor %}
-    
-    // Update UI
-    document.querySelectorAll('.tag-option').forEach(el => {
-        if (selectedTags.includes(parseInt(el.dataset.tagId))) {
-            el.classList.add('selected');
-        }
-        el.addEventListener('click', function() {
-            this.classList.toggle('selected');
-        });
+  // 标签选择
+  const selectedTags = [];
+  document.querySelectorAll("#tagSelector .tag-option").forEach(function (el) {
+    if (el.classList.contains("selected")) {
+      selectedTags.push(parseInt(el.dataset.tagId, 10));
+    }
+    el.addEventListener("click", function () {
+      el.classList.toggle("selected");
     });
-});
+  });
 
-async function submitEdit() {
-    const title = document.getElementById('memoryTitle').value.trim();
-    const content = document.getElementById('memoryContent').value.trim();
-    const date = document.getElementById('memoryDate').value;
-    
+  document.getElementById("memoryForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const title = document.getElementById("memoryTitle").value.trim();
+    const content = document.getElementById("memoryContent").value.trim();
+    const date = document.getElementById("memoryDate").value;
     if (!title || !content || !date) {
-        alert('请填写必填字段');
-        return false;
+      alert("请填写标题、日期与内容");
+      return;
     }
-    
+
     const selectedTagIds = [];
-    document.querySelectorAll('.tag-option.selected').forEach(el => {
-        selectedTagIds.push(parseInt(el.dataset.tagId));
+    document.querySelectorAll("#tagSelector .tag-option.selected").forEach(function (el) {
+      selectedTagIds.push(parseInt(el.dataset.tagId, 10));
     });
-    
-    const formData = {
-        title: title,
-        content: content,
-        date: date,
-        type: document.getElementById('memoryType').value,
-        people: document.getElementById('memoryPeople').value.trim(),
-        feeling: document.getElementById('memoryFeeling').value.trim(),
-        tag_ids: selectedTagIds
+
+    // 若已上传照片/视频，则以推断类型为主；否则使用下拉选择
+    const hasMedia = uploader.photoCount() > 0 || uploader.videoCount() > 0;
+    const type = hasMedia
+      ? uploader.inferType()
+      : document.getElementById("memoryType").value;
+
+    const payload = {
+      title: title,
+      content: content,
+      date: date,
+      type: type,
+      people: document.getElementById("memoryPeople").value.trim(),
+      feeling: document.getElementById("memoryFeeling").value.trim(),
+      tag_ids: selectedTagIds,
+      photo_urls: uploader.getPhotoUrls(),
+      video_urls: uploader.getVideoUrls(),
     };
-    
+
+    const btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.querySelector("span").textContent = "保存中…";
+
     try {
-        const response = await fetch('/api/memories/{{ memory.id }}', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
-        
-        if (response.ok) {
-            showMessage('记忆更新成功！', 'success');
-            setTimeout(() => window.location.href = '/memories/{{ memory.id }}', 1000);
-        } else {
-            alert('更新失败');
-        }
-    } catch (error) {
-        alert('提交失败: ' + error.message);
+      const res = await fetch("/api/memories/{{ memory.id }}", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        showMessage("记忆更新成功！", "success");
+        setTimeout(() => (window.location.href = "/memories/{{ memory.id }}"), 900);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        alert(d.msg || "更新失败");
+        btn.disabled = false;
+        btn.querySelector("span").textContent = "保存修改";
+      }
+    } catch (err) {
+      alert("提交失败：" + err.message);
+      btn.disabled = false;
+      btn.querySelector("span").textContent = "保存修改";
     }
-    
-    return false;
-}
+  });
 </script>
 {% endblock %}

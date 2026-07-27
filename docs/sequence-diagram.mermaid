@@ -1,0 +1,49 @@
+%% 主流程一：新建记忆（多图拖拽排序 + 视频上传）
+sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant P as new_memory.html
+    participant UJ as memorial-upload.js
+    participant A as /api/media
+    participant UP as save_uploaded_file
+    participant M as /api/memories (POST)
+    participant DB as Memory
+
+    U->>P: 打开 /memories/new
+    P->>P: GET new_memory_page 渲染表单 + tags
+    U->>UJ: 选择/拖入多张照片
+    UJ->>UJ: previewFiles() 生成缩略图预览
+    U->>UJ: 拖拽调整顺序
+    UJ->>UJ: reorder() 更新 photoOrder[]（有序）
+    U->>UJ: 选择视频文件
+    UJ->>A: POST /api/media（multipart 视频）
+    A->>UP: save_uploaded_file(video, subfolder="videos", allowed_exts, max_size)
+    UP-->>A: {ok, url}
+    A-->>UJ: {media:{file_url, file_type:"video"}}
+    UJ->>UJ: 追加 video_urls[]
+    U->>P: 点击「保存记忆」
+    P->>UJ: inferType() → video / photo / text
+    P->>M: POST /api/memories {title, content, date, feeling, tag_ids, photo_urls(有序), video_urls, people}
+    M->>DB: INSERT Memory + _sync_memory_tags
+    DB-->>M: 201 {memory}
+    M-->>P: 重定向 /memories
+    P->>U: 跳转时间线列表
+
+%% 主流程二：时间线列表渲染
+sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant B as memories_page()
+    participant Q as Memory.query
+    participant T as memory_card.html（宏）
+    participant V as memories.html（时间线）
+
+    U->>B: GET /memories?tag=&page=
+    B->>Q: order_by(date_recorded.desc()).filter_by_tag(tag)
+    Q-->>B: 分页 items
+    B->>B: 挂载 date/type/feeling/tag_names/photo_urls_list/video_urls_list
+    B->>V: render_template(memories.html, memories, tags, page, total_pages)
+    V->>T: 每条 memory 渲染 .tl-item（金线轴/朱砂节点/右卡片）
+    T-->>V: 照片(内嵌缩略图)/视频(<video controls>)/标签/感想
+    V-->>U: 返回纪念录式时间线页面
+    Note over U: 无记忆时渲染 .tl-empty 空状态引导

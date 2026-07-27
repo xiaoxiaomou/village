@@ -1,0 +1,25 @@
+{# ═══════════════════════════════════════════════════════════════
+   上传区宏：拖拽选择区 + 照片预览网格 + 视频选择
+   new/edit 两页共用。元素 id 固定，由 static/js/memorial-upload.js
+   的 initUploader() 绑定交互（多图预览、拖拽排序、视频上传）。
+   仅使用 base.html 设计令牌（经 static/css/memorial.css）。
+   ═══════════════════════════════════════════════════════════════ #}
+
+{% macro render_upload_zone() %}
+<div class="mem-upload-zone" id="memUploadZone">
+  <i class="fas fa-cloud-upload-alt"></i>
+  <p>点击或拖拽照片到此处（支持多张）</p>
+  <small>可拖拽缩略图调整顺序 · 单张不超过约 20MB</small>
+  <input type="file" id="memPhotoInput" accept="image/*" multiple hidden />
+</div>
+<div class="mem-thumbs" id="memThumbs"></div>
+
+<div class="mem-video-zone">
+  <label for="memVideoInput">视频（选填）</label>
+  <input type="file" id="memVideoInput" accept="video/*" hidden />
+  <button type="button" class="btn btn-secondary" onclick="document.getElementById('memVideoInput').click()">
+    <i class="fas fa-video"></i> 选择视频
+  </button>
+  <div class="mem-video-preview" id="memVideoPreview"></div>
+</div>
+{% endmacro %}

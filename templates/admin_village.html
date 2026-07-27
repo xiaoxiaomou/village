@@ -1,132 +1,448 @@
-{% extends 'base.html' %} {% block content %}
-<div class="container mt-4">
-  <h2>乡村概况管理</h2>
-  <form method="post" action="{{ url_for('admin.admin_village') }}" class="mb-4">
-    <div class="mb-3">
-      <label for="title" class="form-label">标题</label>
-      <input type="text" class="form-control" id="title" name="title" required />
-    </div>
-    <div class="mb-3">
-      <label for="content" class="form-label">内容</label>
-      <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">添加概况</button>
-  </form>
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>标题</th>
-        <th>内容</th>
-        <th>创建时间</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for v in village_list %}
-      <tr>
-        <td>{{ v.id }}</td>
-        <td>{{ v.title }}</td>
-        <td>{{ v.content }}</td>
-        <td>{{ v.create_time }}</td>
-        <td>
-          <button
-            class="btn btn-sm btn-warning"
-            onclick="editVillage({{ v.id }}, '{{ v.title }}', '{{ v.content }}')"
-          >
-            编辑
-          </button>
-          <button class="btn btn-sm btn-danger" onclick="deleteVillage({{ v.id }})">删除</button>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <!-- 编辑模态框 -->
-  <div
-    class="modal fade"
-    id="editModal"
-    tabindex="-1"
-    aria-labelledby="editModalLabel"
-    aria-hidden="true"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="editForm">
-          <div class="modal-header">
-            <h5 class="modal-title" id="editModalLabel">编辑乡村概况</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" id="edit_id" name="id" />
-            <div class="mb-3">
-              <label for="edit_title" class="form-label">标题</label>
-              <input type="text" class="form-control" id="edit_title" name="title" required />
-            </div>
-            <div class="mb-3">
-              <label for="edit_content" class="form-label">内容</label>
-              <textarea
-                class="form-control"
-                id="edit_content"
-                name="content"
-                rows="4"
-                required
-              ></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-            <button type="submit" class="btn btn-primary">保存修改</button>
-          </div>
-        </form>
+{% extends 'base.html' %}
+{% block title %}乡村概况管理 - 管理后台{% endblock %}
+
+{% block head %}
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<style>
+  body { background: #f5f5f7; }
+  .admin-wrap { max-width: 960px; margin: 20px auto; padding: 0 20px; }
+  .admin-wrap h2 { margin-bottom: 20px; color: #1d1d1f; font-size: 22px; }
+  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card h3 { margin: 0 0 16px; font-size: 16px; color: #333; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 14px; color: #333; }
+  .form-group input, .form-group textarea {
+    width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0;
+    border-radius: 8px; font-size: 14px; box-sizing: border-box; transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: #007aff; outline: none; }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+  .btn-primary { background: #007aff; color: white; }
+  .btn-primary:hover { background: #0062cc; }
+  .btn-warning { background: #ff9500; color: white; }
+  .btn-warning:hover { background: #e08600; }
+  .btn-danger { background: #ff3b30; color: white; }
+  .btn-danger:hover { background: #d63429; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-ghost { background: #f0f0f0; color: #333; }
+  .btn-ghost:hover { background: #e0e0e0; }
+  .search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+  .search-bar input { flex: 1; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
+  .search-bar input:focus { border-color: #007aff; outline: none; }
+  .stats { display: flex; gap: 12px; margin-bottom: 16px; }
+  .stat-badge { background: #f0f0f5; padding: 6px 14px; border-radius: 20px; font-size: 13px; color: #555; }
+  .stat-badge strong { color: #007aff; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+  th { background: #f8f9fa; font-weight: 600; color: #555; }
+  tr:hover { background: #f8f9ff; }
+  .table-wrap { overflow-x: auto; }
+  .title-cell { font-weight: 600; max-width: 200px; }
+  .content-cell { max-width: 300px; color: #666; }
+  .content-cell .truncated { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
+  .img-thumb { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; background: #f0f0f0; }
+  .img-placeholder { width: 48px; height: 48px; border-radius: 6px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 18px; }
+  .empty-state { text-align: center; padding: 40px; color: #999; }
+  .empty-state i { font-size: 36px; display: block; margin-bottom: 12px; color: #ccc; }
+  /* 模态框 */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.show { display: flex; }
+  .modal-content { background: white; border-radius: 12px; padding: 28px; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; }
+  .modal-content h3 { margin: 0 0 16px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 8px; display: none; }
+  .content-plain { white-space: pre-wrap; line-height: 1.6; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrap">
+  <h2>🏘️ 乡村概况管理</h2>
+
+  <!-- 添加概况 -->
+  <div class="card">
+    <h3>添加新概况</h3>
+    <form id="addForm">
+      <div class="form-group">
+        <label for="addTitle">标题 <span style="color:#ff3b30">*</span></label>
+        <input type="text" id="addTitle" name="title" required placeholder="如：村庄简介、历史文化..." />
       </div>
+      <div class="form-group">
+        <label for="addContent">内容 <span style="color:#ff3b30">*</span></label>
+        <textarea id="addContent" name="content" rows="6"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="addImageUrl">封面图片 URL</label>
+        <input type="url" id="addImageUrl" name="image_url" placeholder="https://example.com/image.jpg" />
+        <img id="addImgPreview" class="img-preview" />
+      </div>
+      <button type="submit" class="btn btn-primary">添加概况</button>
+    </form>
+  </div>
+
+  <!-- ═══ 页面文案配置（/village 可见文本） ═══ -->
+  <div class="card">
+    <h3>📝 页面文案配置 <small style="font-weight:400;color:#888;font-size:13px;">— 前台 /village 页面的标题、副标题、KPI 标签等</small></h3>
+    <form id="villageConfigForm">
+      <div class="form-group">
+        <label for="vcHeroSubtitle">封面副标题</label>
+        <input type="text" id="vcHeroSubtitle" name="hero_subtitle" placeholder="如：生态宜居 · 产业兴旺 · 乡风文明" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="form-group">
+          <label for="vcIntroTitle">「关于我们的村庄」标题</label>
+          <input type="text" id="vcIntroTitle" name="intro_title" placeholder="如：关于我们的村庄" />
+        </div>
+        <div class="form-group">
+          <label for="vcIntroSubtitle">「关于我们的村庄」副文案</label>
+          <input type="text" id="vcIntroSubtitle" name="intro_subtitle" placeholder="如：山水田园间，品味乡村魅力" />
+        </div>
+        <div class="form-group">
+          <label for="vcFeaturesTitle">「乡村特色」标题</label>
+          <input type="text" id="vcFeaturesTitle" name="features_title" placeholder="如：乡村特色" />
+        </div>
+        <div class="form-group">
+          <label for="vcFeaturesSubtitle">「乡村特色」副文案</label>
+          <input type="text" id="vcFeaturesSubtitle" name="features_subtitle" placeholder="如：生态、生产、生活融合发展" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="vcVillageInfoTitle">「村庄信息」区块标题</label>
+        <input type="text" id="vcVillageInfoTitle" name="village_info_title" placeholder="如：村庄信息" />
+      </div>
+
+      <!-- KPI 大数字（home_stats） -->
+      <div style="background:#f8f9fa;border-radius:8px;padding:14px;margin-bottom:14px;">
+        <div style="font-weight:600;font-size:14px;margin-bottom:10px;color:#333;">📊 KPI 大数字（/village 页面 4 个统计数字）</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="vcStatPop" style="font-size:12px;">常住人口</label>
+            <input type="text" id="vcStatPop" name="stat_population" placeholder="2500+" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="vcStatArea" style="font-size:12px;">村庄面积</label>
+            <input type="text" id="vcStatArea" name="stat_area" placeholder="15km²" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="vcStatOutput" style="font-size:12px;">年农业产值</label>
+            <input type="text" id="vcStatOutput" name="stat_output" placeholder="1200万" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="vcStatSat" style="font-size:12px;">村民满意度</label>
+            <input type="text" id="vcStatSat" name="stat_satisfaction" placeholder="98%" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="vcStatLabels">KPI 标签（JSON）</label>
+        <textarea id="vcStatLabels" name="stat_labels" rows="3" placeholder='{"population":"常住人口","area":"村庄面积","output":"年农业产值","satisfaction":"村民满意度"}'></textarea>
+        <small style="color:#999;font-size:12px;">修改后保存即时生效，对应 /village 页面 4 个大数字的标签文字</small>
+      </div>
+      <button type="submit" class="btn btn-primary">💾 保存页面文案</button>
+      <span id="vcSaveMsg" style="margin-left:12px;font-size:13px;"></span>
+    </form>
+  </div>
+
+  <!-- 概况列表 -->
+  <div class="card">
+    <h3>概况列表</h3>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="🔍 搜索标题或内容..." oninput="filterList()" />
     </div>
+    <div class="stats">
+      <span class="stat-badge">共 <strong id="totalCount">0</strong> 条</span>
+    </div>
+    <div id="villageList"><p class="empty-state"><i class="fas fa-spinner fa-spin"></i>加载中...</p></div>
   </div>
 </div>
+
+<!-- 编辑模态框 -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-content">
+    <h3>编辑乡村概况</h3>
+    <form id="editForm">
+      <div class="form-group">
+        <label for="editTitle">标题</label>
+        <input type="text" id="editTitle" required />
+      </div>
+      <div class="form-group">
+        <label for="editContent">内容</label>
+        <textarea id="editContent" rows="8"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="editImageUrl">封面图片 URL</label>
+        <input type="url" id="editImageUrl" placeholder="https://example.com/image.jpg" />
+        <img id="editImgPreview" class="img-preview" />
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary">保存修改</button>
+        <button type="button" class="btn btn-ghost" onclick="closeEdit()">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 详情预览模态框 -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="detailTitle" style="margin:0;"></h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeDetail()">✕</button>
+    </div>
+    <img id="detailImg" class="img-preview" style="display:none;max-height:300px;width:100%;margin-bottom:16px;" />
+    <div id="detailContent" class="content-plain" style="color:#444;font-size:14px;"></div>
+  </div>
+</div>
+
 <script>
-  function editVillage(id, title, content) {
-    document.getElementById("edit_id").value = id;
-    document.getElementById("edit_title").value = title;
-    document.getElementById("edit_content").value = content;
-    var editModal = new bootstrap.Modal(document.getElementById("editModal"));
-    editModal.show();
-  }
-  document.getElementById("editForm").onsubmit = function (e) {
-    e.preventDefault();
-    var id = document.getElementById("edit_id").value;
-    var title = document.getElementById("edit_title").value;
-    var content = document.getElementById("edit_content").value;
-    fetch("/admin/village/" + id, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: title, content: content }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.msg && data.msg.includes("成功")) {
-          location.reload();
-        } else {
-          alert(data.msg || "修改失败");
-        }
-      });
-  };
-  function deleteVillage(id) {
-    if (confirm("确定要删除该概况吗？")) {
-      fetch("/admin/village/" + id, { method: "DELETE" })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.msg && data.msg.includes("删除")) {
-            location.reload();
-          } else {
-            alert(data.msg || "删除失败");
-          }
-        });
+  let villageData = [];
+  let currentEditId = null;
+
+  // 初始化 TinyMCE
+  tinymce.init({
+    selector: '#addContent, #editContent',
+    height: 300,
+    plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+    toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image link | code | help',
+    menubar: false,
+    branding: false,
+    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }'
+  });
+
+  // 图片预览
+  document.getElementById('addImageUrl').addEventListener('input', function() {
+    const preview = document.getElementById('addImgPreview');
+    if (this.value) { preview.src = this.value; preview.style.display = 'block'; preview.onerror = () => preview.style.display = 'none'; }
+    else { preview.style.display = 'none'; }
+  });
+  document.getElementById('editImageUrl').addEventListener('input', function() {
+    const preview = document.getElementById('editImgPreview');
+    if (this.value) { preview.src = this.value; preview.style.display = 'block'; preview.onerror = () => preview.style.display = 'none'; }
+    else { preview.style.display = 'none'; }
+  });
+
+  // 加载列表
+  async function loadVillages() {
+    try {
+      const res = await fetch('/admin/village', { headers: { 'Accept': 'application/json' } });
+      villageData = await res.json();
+      renderList(villageData);
+    } catch (e) {
+      document.getElementById('villageList').innerHTML = '<p class="empty-state"><i class="fas fa-exclamation-triangle"></i>加载失败，请刷新页面</p>';
     }
   }
+
+  function renderList(list) {
+    const div = document.getElementById('villageList');
+    document.getElementById('totalCount').textContent = list.length;
+    if (!list.length) {
+      div.innerHTML = '<p class="empty-state"><i class="fas fa-inbox"></i>暂无概况数据，请添加</p>';
+      return;
+    }
+    let html = '<div class="table-wrap"><table><thead><tr><th>封面</th><th>标题</th><th>内容摘要</th><th>操作</th></tr></thead><tbody>';
+    list.forEach(v => {
+      const imgHtml = v.image_url
+        ? `<img class="img-thumb" src="${escHtml(v.image_url)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div class="img-placeholder" style="display:none;"><i class="fas fa-image"></i></div>`
+        : `<div class="img-placeholder"><i class="fas fa-image"></i></div>`;
+      const contentText = stripHtml(v.content || '');
+      const truncated = contentText.length > 80 ? contentText.slice(0, 80) + '...' : contentText;
+      html += `<tr>
+        <td>${imgHtml}</td>
+        <td class="title-cell"><a href="javascript:void(0)" onclick="showDetail(${v.id})" style="color:#007aff;text-decoration:none;">${escHtml(v.title)}</a></td>
+        <td class="content-cell"><div class="truncated">${escHtml(truncated)}</div></td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-warning btn-sm" onclick='editVillage(${JSON.stringify(v).replace(/'/g, "&#39;")})'>编辑</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteVillage(${v.id})">删除</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    div.innerHTML = html;
+  }
+
+  function filterList() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    if (!q) { renderList(villageData); return; }
+    const filtered = villageData.filter(v =>
+      (v.title || '').toLowerCase().includes(q) || stripHtml(v.content || '').toLowerCase().includes(q)
+    );
+    renderList(filtered);
+  }
+
+  // 添加
+  document.getElementById('addForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const title = document.getElementById('addTitle').value.trim();
+    const editor = tinymce.get('addContent');
+    const content = editor ? editor.getContent() : '';
+    const image_url = document.getElementById('addImageUrl').value.trim();
+    if (!title || !content) { alert('标题和内容不能为空'); return; }
+    try {
+      const res = await fetch('/admin/village', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, image_url })
+      });
+      if (res.ok) {
+        this.reset();
+        if (editor) editor.setContent('');
+        document.getElementById('addImgPreview').style.display = 'none';
+        loadVillages();
+      } else {
+        const data = await res.json();
+        alert(data.msg || '添加失败');
+      }
+    } catch (e) { alert('网络错误'); }
+  });
+
+  // 编辑
+  function editVillage(v) {
+    currentEditId = v.id;
+    document.getElementById('editTitle').value = v.title;
+    const editor = tinymce.get('editContent');
+    if (editor) editor.setContent(v.content || '');
+    document.getElementById('editImageUrl').value = v.image_url || '';
+    const preview = document.getElementById('editImgPreview');
+    if (v.image_url) { preview.src = v.image_url; preview.style.display = 'block'; preview.onerror = () => preview.style.display = 'none'; }
+    else { preview.style.display = 'none'; }
+    document.getElementById('editModal').classList.add('show');
+  }
+
+  function closeEdit() {
+    document.getElementById('editModal').classList.remove('show');
+    currentEditId = null;
+  }
+
+  document.getElementById('editForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!currentEditId) return;
+    const title = document.getElementById('editTitle').value.trim();
+    const editor = tinymce.get('editContent');
+    const content = editor ? editor.getContent() : '';
+    const image_url = document.getElementById('editImageUrl').value.trim();
+    try {
+      const res = await fetch('/admin/village/' + currentEditId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, image_url })
+      });
+      if (res.ok) { closeEdit(); loadVillages(); }
+      else { alert('更新失败'); }
+    } catch (e) { alert('网络错误'); }
+  });
+
+  // 删除
+  async function deleteVillage(id) {
+    if (!confirm('确定要删除该概况吗？此操作不可恢复。')) return;
+    try {
+      const res = await fetch('/admin/village/' + id, { method: 'DELETE' });
+      if (res.ok) loadVillages();
+      else alert('删除失败');
+    } catch (e) { alert('网络错误'); }
+  }
+
+  // 详情预览
+  function showDetail(id) {
+    const v = villageData.find(x => x.id === id);
+    if (!v) return;
+    document.getElementById('detailTitle').textContent = v.title;
+    const img = document.getElementById('detailImg');
+    if (v.image_url) { img.src = v.image_url; img.style.display = 'block'; img.onerror = () => img.style.display = 'none'; }
+    else { img.style.display = 'none'; }
+    document.getElementById('detailContent').textContent = stripHtml(v.content || '无内容');
+    document.getElementById('detailModal').classList.add('show');
+  }
+
+  function closeDetail() { document.getElementById('detailModal').classList.remove('show'); }
+
+  // 工具函数
+  function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function stripHtml(s) { const d = document.createElement('div'); d.innerHTML = s; return d.textContent || d.innerText || ''; }
+
+  // 模态框点击背景关闭
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('show'); } });
+  });
+
+  // ═══ 页面文案配置（SiteConfig 村情字段） ═══
+  const vcFields = [
+    ['vcHeroSubtitle', 'hero_subtitle'],
+    ['vcIntroTitle', 'intro_title'],
+    ['vcIntroSubtitle', 'intro_subtitle'],
+    ['vcFeaturesTitle', 'features_title'],
+    ['vcFeaturesSubtitle', 'features_subtitle'],
+    ['vcVillageInfoTitle', 'village_info_title'],
+    ['vcStatLabels', 'stat_labels'],
+  ];
+  // KPI 数字字段（从 home_stats JSON 拆出/合并回去）
+  const vcStatNumFields = [
+    ['vcStatPop', 'population'],
+    ['vcStatArea', 'area'],
+    ['vcStatOutput', 'output'],
+    ['vcStatSat', 'satisfaction'],
+  ];
+
+  async function loadVillageConfig() {
+    try {
+      const res = await fetch('/admin/village-config');
+      if (!res.ok) return;
+      const d = await res.json();
+      // 普通文本 / JSON 字符串字段
+      vcFields.forEach(([elId, key]) => {
+        const el = document.getElementById(elId);
+        if (el) el.value = (d[key] || '');
+      });
+      // KPI 数字：解析 home_stats JSON → 填充 4 个输入框
+      try {
+        const hs = typeof d.home_stats === 'string' ? JSON.parse(d.home_stats) : (d.home_stats || {});
+        vcStatNumFields(([elId, key]) => {
+          const el = document.getElementById(elId);
+          if (el) el.value = (hs[key] || '');
+        });
+      } catch(e) { /* home_stats 解析失败则留空 */ }
+    } catch (e) { /* 静默失败，不影响 VillageInfo 列表 */ }
+  }
+
+  document.getElementById('villageConfigForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const msgEl = document.getElementById('vcSaveMsg');
+    msgEl.textContent = '保存中...';
+    msgEl.style.color = '#888';
+    const body = {};
+    vcFields.forEach(([elId, key]) => {
+      const el = document.getElementById(elId);
+      body[key] = el ? el.value : '';
+    });
+    // KPI 数字：4 个字段 → 拼 home_stats JSON
+    const homeStats = {};
+    vcStatNumFields(([elId, key]) => {
+      const el = document.getElementById(elId);
+      homeStats[key] = el ? el.value : '';
+    });
+    body.home_stats = JSON.stringify(homeStats);
+    try {
+      const res = await fetch('/admin/village-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const d = await res.json();
+      if (res.ok) {
+        msgEl.textContent = '✅ ' + (d.msg || '已保存');
+        msgEl.style.color = '#28a745';
+      } else {
+        msgEl.textContent = '❌ ' + (d.msg || '保存失败');
+        msgEl.style.color = '#ff3b30';
+      }
+    } catch (err) {
+      msgEl.textContent = '❌ 网络错误';
+      msgEl.style.color = '#ff3b30';
+    }
+  });
+
+  // 初始化
+  loadVillages();
+  loadVillageConfig();
 </script>
 {% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}关于我们 - {{ site_config.site_title if site_config else '乡村记忆系统' }}{% endblock %}
+
+{% block head %}
+<style>
+  .about-container {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .about-header {
+    text-align: center;
+    margin-bottom: 36px;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, var(--ink-dark) 0%, var(--ink) 100%);
+    color: var(--paper);
+    border-radius: 20px;
+  }
+  .about-header h1 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 30px;
+    margin: 0 0 12px;
+    letter-spacing: 2px;
+  }
+  .about-header p {
+    color: var(--ink-muted);
+    font-size: 14px;
+    margin: 0;
+  }
+  .about-content {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid var(--paper-deep);
+    line-height: 1.9;
+    color: var(--ink);
+  }
+  .about-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin: 16px 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-container">
+  <div class="about-header">
+    <h1>关于我们</h1>
+    <p>记录乡村的点滴变化，传承乡土文化记忆</p>
+  </div>
+  <div class="about-content">
+    {% if about_content %}
+    {{ about_content | safe }}
+    {% else %}
+    <p>乡村记忆系统致力于记录乡村的点滴变化，传承乡土文化记忆。这里收藏着村庄的故事、人物与风景，让每一份乡愁都有处安放。</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

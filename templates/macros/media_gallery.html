@@ -1,0 +1,37 @@
+{# ═══════════════════════════════════════════════════════════════
+   媒体画廊宏：照片（首图大图 + 缩略图点击放大/切换）+ 视频内嵌
+   供详情页复用。缩略图点击调用 memSwapMain(this) 切换主图，
+   主图点击调用 openLightbox(src) 全屏查看（均在 memorial-upload.js）。
+   仅使用 base.html 设计令牌（经 static/css/memorial.css）。
+   ═══════════════════════════════════════════════════════════════ #}
+
+{% macro render_gallery(photos, videos, with_main=true) %}
+{% if photos and photos|length %}
+<div class="mem-gallery">
+  {% if with_main %}
+  <div class="mem-gallery-main">
+    <img id="memMainPhoto" src="{{ photos[0] }}" alt="记忆照片" onclick="openLightbox(this.src)" />
+  </div>
+  {% endif %}
+  <div class="mem-gallery-thumbs">
+    {% for url in photos %}
+    <img class="mem-thumb{% if loop.first and with_main %} is-active{% endif %}"
+         src="{{ url }}" alt="缩略图" onclick="memSwapMain(this)" />
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if videos and videos|length %}
+<div class="mem-videos">
+  {% for url in videos %}
+  <div class="mem-video-item">
+    <video controls preload="metadata">
+      <source src="{{ url }}" type="video/mp4" />
+      您的浏览器不支持视频播放
+    </video>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}

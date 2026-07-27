@@ -7,38 +7,15 @@ from flask import Blueprint, jsonify, request, session
 from models import db, User, News, VillageInfo, Government, Service, Message, Category
 from models import VillageLogo, VillageCarousel, MediaFile, AuditLog, SiteContact
 from datetime import datetime
+from routes.decorators import login_required, admin_required
+from core.serializers import paginate_to_dict
+from core.upload import save_uploaded_file
 import os
 import json
 import logging
 
 api_bp = Blueprint("api", __name__)
 logger = logging.getLogger(__name__)
-
-
-def login_required(f):
-    from functools import wraps
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user" not in session:
-            return jsonify({"msg": "未登录"}), 401
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-def admin_required(f):
-    from functools import wraps
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user" not in session:
-            return jsonify({"msg": "未登录"}), 401
-        if session.get("role") != "admin":
-            return jsonify({"msg": "无权限"}), 403
-        return f(*args, **kwargs)
-
-    return decorated_function
 
 
 # ─── 新闻 API ───
@@ -101,17 +78,7 @@ def get_news():
         for n in pagination.items
     ]
 
-    return jsonify(
-        {
-            "data": news_list,
-            "pagination": {
-                "page": page,
-                "per_page": per_page,
-                "total": pagination.total,
-                "pages": (pagination.total + per_page - 1) // per_page,
-            },
-        }
-    )
+    return jsonify(paginate_to_dict(news_list, pagination))
 
 
 @api_bp.route("/api/news/<int:news_id>")
@@ -460,17 +427,14 @@ def upload_file():
     file = request.files["file"]
     if file.filename == "":
         return jsonify({"msg": "没有选择文件"}), 400
-    if file:
-        import uuid
-        from werkzeug.utils import secure_filename
-        from flask import current_app
+    from flask import current_app
 
-        filename = secure_filename(file.filename)
-        file_ext = filename.rsplit(".", 1)[1].lower() if "." in filename else ""
-        unique_filename = (
-            f"{uuid.uuid4().hex}.{file_ext}" if file_ext else str(uuid.uuid4().hex)
-        )
-        allowed_extensions = {
+    result = save_uploaded_file(
+        file,
+        upload_folder=current_app.config["UPLOAD_FOLDER"],
+        url_prefix="/download",
+        subfolder="",
+        allowed_exts={
             "txt",
             "pdf",
             "png",
@@ -481,20 +445,18 @@ def upload_file():
             "docx",
             "xls",
             "xlsx",
+        },
+    )
+    if not result["ok"]:
+        return jsonify({"msg": result["error"]}), result["code"]
+    return jsonify(
+        {
+            "msg": "文件上传成功",
+            "filename": result["filename"],
+            "original_name": file.filename,
+            "url": result["url"],
         }
-        if file_ext not in allowed_extensions:
-            return jsonify({"msg": "不支持的文件类型"}), 400
-        file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], unique_filename)
-        file.save(file_path)
-        return jsonify(
-            {
-                "msg": "文件上传成功",
-                "filename": unique_filename,
-                "original_name": filename,
-                "url": f"/download/{unique_filename}",
-            }
-        )
-    return jsonify({"msg": "上传失败"}), 500
+    )
 
 
 @api_bp.route("/api/upload/image", methods=["POST"])
@@ -506,43 +468,35 @@ def upload_image():
     file = request.files["image"]
     if file.filename == "":
         return jsonify({"msg": "没有选择图片"}), 400
-    if file:
-        import uuid
-        from werkzeug.utils import secure_filename
-        from flask import current_app
+    from flask import current_app
 
-        filename = secure_filename(file.filename)
-        file_ext = filename.rsplit(".", 1)[1].lower() if "." in filename else ""
-        allowed_extensions = {"png", "jpg", "jpeg", "gif", "webp"}
-        if file_ext not in allowed_extensions:
-            return jsonify(
-                {"msg": "不支持的图片格式，仅支持 PNG, JPG, JPEG, GIF, WebP"}
-            ), 400
-        max_size = 5 * 1024 * 1024
-        file.seek(0, 2)
-        file_size = file.tell()
-        file.seek(0)
-        if file_size > max_size:
-            return jsonify({"msg": "图片大小不能超过5MB"}), 400
-        unique_filename = f"carousel_{uuid.uuid4().hex}.{file_ext}"
-        file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], unique_filename)
-        file.save(file_path)
-        try:
-            from PIL import Image
+    result = save_uploaded_file(
+        file,
+        upload_folder=current_app.config["UPLOAD_FOLDER"],
+        url_prefix="/uploads",
+        subfolder="",
+        allowed_exts={"png", "jpg", "jpeg", "gif", "webp"},
+        max_size=5 * 1024 * 1024,
+    )
+    if not result["ok"]:
+        return jsonify({"msg": result["error"]}), result["code"]
+    # 保留原逻辑：用 PIL 读取图片尺寸并记录日志
+    file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], result["filename"])
+    try:
+        from PIL import Image
 
-            with Image.open(file_path) as img:
-                logger.info(f"上传图片尺寸: {img.size[0]}x{img.size[1]}")
-        except Exception:
-            pass
-        return jsonify(
-            {
-                "msg": "图片上传成功",
-                "filename": unique_filename,
-                "url": f"/uploads/{unique_filename}",
-                "size": file_size,
-            }
-        )
-    return jsonify({"msg": "上传失败"}), 500
+        with Image.open(file_path) as img:
+            logger.info(f"上传图片尺寸: {img.size[0]}x{img.size[1]}")
+    except Exception:
+        pass
+    return jsonify(
+        {
+            "msg": "图片上传成功",
+            "filename": result["filename"],
+            "url": result["url"],
+            "size": result["size"],
+        }
+    )
 
 
 # ─── 统计 API ───
@@ -578,15 +532,16 @@ def get_stats():
 # ─── 首页公开统计 API ───
 @api_bp.route("/api/home/stats")
 def get_home_stats():
-    """首页公开统计数据"""
-    from models import User, Memory, News, Service
+    """首页公开统计数据（内部读 SiteConfig，JSON 结构保持不变）。"""
+    from models import User, Memory, News, Service, SiteConfig
 
+    stats = SiteConfig.get().home_stats_dict
     return jsonify(
         {
-            "population": "2500+",
-            "area": "15km²",
-            "output": "1200万",
-            "satisfaction": "98%",
+            "population": stats.get("population", "2500+"),
+            "area": stats.get("area", "15km²"),
+            "output": stats.get("output", "1200万"),
+            "satisfaction": stats.get("satisfaction", "98%"),
             "users": User.query.count(),
             "memories": Memory.query.count(),
             "news": News.query.count(),

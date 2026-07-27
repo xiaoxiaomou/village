@@ -1,0 +1,138 @@
+{% extends 'base.html' %} {% block title %}乡村特色管理 - 管理后台{% endblock %} {% block head %}
+<style>
+  body { background: #f5f5f7; }
+  .admin-wrap { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+  .admin-wrap h2 { margin-bottom: 20px; color: #1d1d1f; }
+  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card h3 { margin: 0 0 16px; font-size: 16px; color: #333; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 14px; color: #333; }
+  .form-group input, .form-group textarea {
+    width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: #007aff; outline: none; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+  .btn-primary { background: #007aff; color: white; }
+  .btn-primary:hover { background: #0062cc; }
+  .btn-warning { background: #ff9500; color: white; }
+  .btn-danger { background: #ff3b30; color: white; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+  th { background: #f8f9fa; font-weight: 600; color: #555; }
+  tr:hover { background: #f8f9ff; }
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.show { display: flex; }
+  .modal-content { background: white; border-radius: 12px; padding: 28px; max-width: 640px; width: 90%; max-height: 85vh; overflow-y: auto; }
+  @media (max-width: 640px) { .row-2 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %} {% block content %}
+<div class="admin-wrap">
+  <h2>🌿 村情·乡村特色管理</h2>
+
+  <div class="card">
+    <h3>添加特色卡片</h3>
+    <form method="post" action="{{ url_for('admin.admin_village_highlights') }}">
+      <div class="form-group">
+        <label for="title">标题</label>
+        <input type="text" id="title" name="title" required placeholder="如：生态环境" />
+      </div>
+      <div class="form-group">
+        <label for="description">文案</label>
+        <textarea id="description" name="description" rows="3" placeholder="特色简介"></textarea>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label for="icon">图标类名</label>
+          <input type="text" id="icon" name="icon" value="fas fa-leaf" placeholder="fas fa-leaf" />
+        </div>
+        <div class="form-group">
+          <label for="sort_order">排序</label>
+          <input type="number" id="sort_order" name="sort_order" value="0" />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">添加</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>已配置乡村特色</h3>
+    {% if highlights %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>标题</th><th>图标</th><th>排序</th><th>操作</th></tr></thead>
+        <tbody>
+          {% for h in highlights %}
+          <tr>
+            <td><strong>{{ h.title }}</strong></td>
+            <td><i class="{{ h.icon }}"></i> {{ h.icon }}</td>
+            <td>{{ h.sort_order }}</td>
+            <td>
+              <button class="btn btn-warning btn-sm" onclick="editH({{ h.id }}, '{{ h.title|e }}', '{{ h.description|e }}', '{{ h.icon }}', {{ h.sort_order }})">编辑</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteH({{ h.id }})">删除</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="color:#999; text-align:center; padding:20px;">暂无特色卡片，请添加</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal-content">
+    <h3>编辑特色卡片</h3>
+    <form id="editForm">
+      <div class="form-group"><label for="editTitle">标题</label><input type="text" id="editTitle" required /></div>
+      <div class="form-group"><label for="editDescription">文案</label><textarea id="editDescription" rows="3"></textarea></div>
+      <div class="row-2">
+        <div class="form-group"><label for="editIcon">图标类名</label><input type="text" id="editIcon" /></div>
+        <div class="form-group"><label for="editSort">排序</label><input type="number" id="editSort" /></div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="button" class="btn" style="background:#f0f0f0" onclick="closeEdit()">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let currentId = null;
+  function editH(id, title, description, icon, sort) {
+    currentId = id;
+    document.getElementById("editTitle").value = title;
+    document.getElementById("editDescription").value = description;
+    document.getElementById("editIcon").value = icon;
+    document.getElementById("editSort").value = sort;
+    document.getElementById("editModal").classList.add("show");
+  }
+  function closeEdit() { document.getElementById("editModal").classList.remove("show"); currentId = null; }
+  document.getElementById("editForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    if (!currentId) return;
+    const payload = {
+      title: document.getElementById("editTitle").value,
+      description: document.getElementById("editDescription").value,
+      icon: document.getElementById("editIcon").value,
+      sort_order: parseInt(document.getElementById("editSort").value) || 0,
+    };
+    try {
+      const res = await fetch("/admin/village-highlights/" + currentId, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (res.ok) location.reload(); else alert("更新失败");
+    } catch (e) { alert("网络错误"); }
+  });
+  async function deleteH(id) {
+    if (!confirm("确定删除该特色卡片吗？")) return;
+    try {
+      const res = await fetch("/admin/village-highlights/" + id, { method: "DELETE" });
+      if (res.ok) location.reload(); else alert("删除失败");
+    } catch (e) { alert("网络错误"); }
+  }
+  document.getElementById("editModal").addEventListener("click", function (e) { if (e.target === this) closeEdit(); });
+</script>
+{% endblock %}

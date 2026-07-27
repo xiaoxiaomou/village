@@ -1,0 +1,135 @@
+{# ═══════════════════════════════════════════════════════════════
+   时间线卡片宏：金线节点 + 朱砂日期 + 右卡片
+   入参 memory 需已挂载渲染期属性（routes/memories.py 注入）：
+     id, title, date, type, people, content,
+     photo_urls_list, video_urls_list, tag_names
+   仅使用 base.html 设计令牌（经 static/css/memorial.css）。
+   ═══════════════════════════════════════════════════════════════ #}
+
+{% macro render_card(memory) %}
+{% set type_labels = {'text': '文字', 'photo': '照片', 'video': '视频', 'audio': '语音'} %}
+{% set type_icons = {'text': 'fa-feather', 'photo': 'fa-camera', 'video': 'fa-video', 'audio': 'fa-microphone'} %}
+{% set t = memory.type or 'text' %}
+<div class="tl-item">
+  {# 朱砂节点 #}
+  <span class="tl-node" aria-hidden="true"></span>
+
+  {# 日期（浮于中轴左侧；移动端自动落到卡片上方） #}
+  <time class="tl-date" datetime="{{ memory.date }}">
+    {{ memory.date }}
+    {% if memory.date and memory.date|string|length >= 4 %}
+    <small>{{ memory.date[0:4] }} 年</small>
+    {% endif %}
+  </time>
+
+  {# 右侧卡片 #}
+  <article class="tl-card">
+    <div class="tl-card-head">
+      <h3 class="tl-card-title">
+        <a href="/memories/{{ memory.id }}">{{ memory.title }}</a>
+      </h3>
+      <span class="tl-type-badge {{ 'is-' ~ t if t in ['photo', 'video', 'audio'] else '' }}">
+        <i class="fas {{ type_icons.get(t, 'fa-feather') }}"></i>
+        {{ type_labels.get(t, '文字') }}
+      </span>
+    </div>
+
+    <div class="tl-card-meta">
+      {% if memory.people_list %}
+      <span><i class="fas fa-user"></i>
+        {% for p in memory.people_list %}{% if p.pid %}<a class="mem-person-link" href="/people/{{ p.pid }}">{{ p.name }}</a>{% else %}{{ p.name }}{% endif %}{% if not loop.last %}、{% endif %}{% endfor %}
+      </span>
+      {% endif %}
+      {% set locs = memory.get_locations() %}
+      {% if locs %}
+      <span class="mem-locations">📍 {{ locs | join(' · ') }}</span>
+      {% endif %}
+    </div>
+
+    {% if memory.content %}
+    <div class="tl-card-body">
+      <p>{{ memory.content[:160] }}{% if memory.content|length > 160 %}…{% endif %}</p>
+    </div>
+    {% endif %}
+
+    {% if memory.photo_urls_list or memory.video_urls_list %}
+    <div class="tl-card-media">
+      {% if memory.photo_urls_list %}
+      <div class="tl-media-grid">
+        {% for url in memory.photo_urls_list[:6] %}
+        <img src="{{ url }}" alt="记忆照片" loading="lazy"
+             onclick="openLightbox('{{ url }}')" />
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if memory.video_urls_list %}
+      <div class="tl-video-list">
+        {% for url in memory.video_urls_list %}
+        <video controls preload="metadata">
+          <source src="{{ url }}" type="video/mp4" />
+          您的浏览器不支持视频播放
+        </video>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if memory.tag_names %}
+    <div class="tl-card-tags">
+      {% for tag_name in memory.tag_names %}
+      <a href="/memories?tag={{ tag_name }}">{{ tag_name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="tl-card-foot">
+      <a href="/memories/{{ memory.id }}">查看完整记忆 <i class="fas fa-arrow-right"></i></a>
+    </div>
+  </article>
+</div>
+{% endmacro %}
+
+
+{% macro render_grid_card(memory) %}
+{# 网格视图卡片：复用 .memory-grid / .memory-card 纪念视觉；
+   与 render_card 共用渲染期属性（id/title/date/type/photo_urls_list/tag_names/people_list）。 #}
+{% set type_labels = {'text': '文字', 'photo': '照片', 'video': '视频', 'audio': '语音'} %}
+{% set type_icons = {'text': 'fa-feather', 'photo': 'fa-camera', 'video': 'fa-video', 'audio': 'fa-microphone'} %}
+{% set t = memory.type or 'text' %}
+<a class="memory-card" href="/memories/{{ memory.id }}">
+  {% if memory.photo_urls_list %}
+  <div class="memory-card-cover">
+    <img src="{{ memory.photo_urls_list[0] }}" alt="{{ memory.title }}" loading="lazy" />
+  </div>
+  {% else %}
+  <div class="memory-card-cover memory-card-cover--empty">
+    <i class="fas {{ type_icons.get(t, 'fa-feather') }}"></i>
+  </div>
+  {% endif %}
+  <div class="memory-card-body">
+    <div class="memory-card-date">{{ memory.date }}</div>
+    <h3 class="memory-card-title">{{ memory.title }}</h3>
+    <span class="tl-type-badge {{ 'is-' ~ t if t in ['photo', 'video', 'audio'] else '' }}">
+      <i class="fas {{ type_icons.get(t, 'fa-feather') }}"></i>
+      {{ type_labels.get(t, '文字') }}
+    </span>
+    {% if memory.tag_names %}
+    <div class="memory-card-tags">
+      {% for tag_name in memory.tag_names[:3] %}
+      <span class="tag-badge">{{ tag_name }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if memory.people_list %}
+    <div class="memory-card-people">
+      {% for p in memory.people_list %}{% if p.pid %}<a href="/people/{{ p.pid }}">{{ p.name }}</a>{% else %}{{ p.name }}{% endif %}{% if not loop.last %}、{% endif %}{% endfor %}
+    </div>
+    {% endif %}
+    {% set locs = memory.get_locations() %}
+    {% if locs %}
+    <div class="mem-locations">📍 {{ locs | join(' · ') }}</div>
+    {% endif %}
+  </div>
+</a>
+{% endmacro %}

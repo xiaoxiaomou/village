@@ -1,121 +1,100 @@
 {% extends "base.html" %}
+{% from "macros/media_gallery.html" import render_gallery %}
 {% block title %}{{ memory.title }} - 乡村记忆系统{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/memorial.css') }}" />
 <style>
-    .memory-detail { background: #fff; border-radius: 12px; padding: 30px; }
-    .memory-detail-header { border-bottom: 3px solid var(--primary-light); padding-bottom: 15px; margin-bottom: 20px; }
-    .memory-detail-content { line-height: 1.9; font-size: 1.05em; margin: 20px 0; }
-    .memory-detail-meta { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; color: var(--text-light); }
-    .media-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin: 20px 0; }
-    .media-gallery img { width: 100%; height: 250px; object-fit: cover; border-radius: 10px; cursor: pointer; transition: transform 0.3s; }
-    .media-gallery img:hover { transform: scale(1.03); }
-    .feeling-section { background: var(--bg-warm); padding: 20px; border-radius: 10px; border-left: 4px solid var(--primary); margin: 20px 0; }
-    .audio-player { margin: 20px 0; }
-    .back-link { display: inline-block; margin-bottom: 20px; color: var(--primary); }
+  /* 详情页专属微调（其余样式在 memorial.css，均引用设计令牌） */
+  .mem-detail-content { margin: var(--space-4) 0; }
 </style>
 {% endblock %}
 
 {% block content %}
-<a href="/memories" class="back-link"><i class="fas fa-arrow-left"></i> 返回记忆列表</a>
+<a href="/memories" class="mem-back-link"><i class="fas fa-arrow-left"></i> 返回记忆列表</a>
 
-<div class="memory-detail">
-    <div class="memory-detail-header">
-        <h1 style="color:var(--primary);margin:0 0 10px 0;">{{ memory.title }}</h1>
-        <div class="memory-detail-meta">
-            <span><i class="fas fa-calendar"></i> {{ memory.date }}</span>
-            {% if memory.people %}
-            <span><i class="fas fa-users"></i> {{ memory.people }}</span>
-            {% endif %}
-            {% if memory.author %}
-            <span><i class="fas fa-user"></i> {{ memory.author }}</span>
-            {% endif %}
-        </div>
-    </div>
-    
-    <div class="memory-detail-content">{{ memory.content|replace('\n', '<br>')|safe }}</div>
-    
-    {% if memory.photo_urls %}
-    <h3 style="color:var(--primary);margin-top:30px;"><i class="fas fa-images"></i> 照片</h3>
-    <div class="media-gallery">
-        {% for url in memory.photo_urls_list %}
-        <img src="{{ url }}" alt="记忆照片" onclick="openLightbox(this.src)">
-        {% endfor %}
+<div class="mem-detail">
+  <div class="mem-detail-header">
+    <h1 class="mem-detail-title">{{ memory.title }}</h1>
+    {% if memory.date and memory.date|string|length >= 10 %}
+    <div class="mem-seal" title="{{ memory.date }}">
+      <span class="mem-seal-day">{{ memory.date[5:] }}</span>
+      <span class="mem-seal-y">{{ memory.date[0:4] }} 年</span>
     </div>
     {% endif %}
-    
-    {% if memory.video_urls_list %}
-    <h3 style="color:var(--primary);margin-top:30px;"><i class="fas fa-video"></i> 视频</h3>
-    <div class="media-gallery">
-        {% for url in memory.video_urls_list %}
-        <video controls style="width:100%;height:250px;object-fit:cover;border-radius:10px;">
-            <source src="{{ url }}" type="video/mp4">
-            您的浏览器不支持视频播放
-        </video>
-        {% endfor %}
-    </div>
+  </div>
+
+  <div class="mem-detail-meta">
+    {% if memory.people_list %}
+    <span><i class="fas fa-users"></i>
+      {% for p in memory.people_list %}{% if p.pid %}<a class="mem-person-link" href="/people/{{ p.pid }}">{{ p.name }}</a>{% else %}{{ p.name }}{% endif %}{% if not loop.last %}、{% endif %}{% endfor %}
+    </span>
     {% endif %}
-    
-    {% if memory.audio_url %}
-    <h3 style="color:var(--primary);margin-top:30px;"><i class="fas fa-microphone"></i> 语音</h3>
-    <div class="audio-player">
-        <audio controls style="width:100%;">
-            <source src="{{ memory.audio_url }}" type="audio/wav">
-            您的浏览器不支持音频播放
-        </audio>
-    </div>
+    {% if memory.locations %}
+    <span class="mem-locations">📍 {{ memory.locations | join(' · ') }}</span>
     {% endif %}
-    
-    {% if memory.feeling %}
-    <div class="feeling-section">
-        <h3 style="margin-top:0;color:var(--primary);"><i class="fas fa-heart"></i> 个人感受</h3>
-        <p>{{ memory.feeling }}</p>
-    </div>
+    {% if memory.author %}
+    <span><i class="fas fa-user"></i> {{ memory.author }}</span>
     {% endif %}
-    
-    {% if memory.tags %}
-    <div style="margin-top:30px;">
-        <h3 style="color:var(--primary);"><i class="fas fa-tags"></i> 标签</h3>
-        <div class="memory-tags">
-            {% for tag_name in memory.tags %}
-            <a href="/memories?tag={{ tag_name }}" class="tag-badge">{{ tag_name }}</a>
-            {% endfor %}
-        </div>
+    {% set type_labels = {'text': '文字', 'photo': '照片', 'video': '视频', 'audio': '语音'} %}
+    <span><i class="fas fa-tag"></i> {{ type_labels.get(memory.type, '文字') }}</span>
+  </div>
+
+  <div class="mem-detail-content">{{ memory.content }}</div>
+
+  {{ render_gallery(memory.photo_urls_list, memory.video_urls_list) }}
+
+  {% if memory.audio_url %}
+  <div class="mem-videos">
+    <div class="mem-video-item" style="grid-template-columns: 1fr;">
+      <audio controls style="width:100%;">
+        <source src="{{ memory.audio_url }}" type="audio/wav" />
+        您的浏览器不支持音频播放
+      </audio>
     </div>
-    {% endif %}
-    
-    <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--secondary);display:flex;gap:10px;">
-        <a href="/memories/{{ memory.id }}/edit" class="btn-primary"><i class="fas fa-edit"></i> 编辑</a>
-        <button class="btn-secondary" onclick="deleteMemory({{ memory.id }})"><i class="fas fa-trash"></i> 删除</button>
-        <a href="/timeline" class="btn-secondary"><i class="fas fa-clock"></i> 时间轴</a>
-    </div>
+  </div>
+  {% endif %}
+
+  {% if memory.feeling %}
+  <div class="mem-feeling">
+    <h3><i class="fas fa-heart"></i> 个人感受</h3>
+    <p>{{ memory.feeling }}</p>
+  </div>
+  {% endif %}
+
+  {% if memory.tags and memory.tags|length %}
+  <div class="mem-detail-tags">
+    {% for tag_name in memory.tags %}
+    <a href="/memories?tag={{ tag_name }}"><i class="fas fa-hashtag"></i> {{ tag_name }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="mem-detail-actions">
+    <a href="/memories/{{ memory.id }}/edit" class="btn btn-primary"><i class="fas fa-edit"></i> 编辑</a>
+    <button class="btn btn-secondary" onclick="deleteMemory({{ memory.id }})"><i class="fas fa-trash"></i> 删除</button>
+    <a href="/timeline" class="btn btn-secondary"><i class="fas fa-clock"></i> 时间轴</a>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/memorial-upload.js') }}"></script>
 <script>
-function openLightbox(src) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.onclick = () => overlay.remove();
-    overlay.innerHTML = '<img src="' + src + '" style="max-width:90%;max-height:90%;border-radius:8px;">';
-    document.body.appendChild(overlay);
-}
-
-async function deleteMemory(id) {
-    if (!confirm('确定要删除这段记忆吗？此操作不可恢复。')) return;
-    
+  // 删除记忆（沿用既有 DELETE /api/memories/<id> 契约）
+  async function deleteMemory(id) {
+    if (!confirm("确定要删除这段记忆吗？此操作不可恢复。")) return;
     try {
-        const response = await fetch('/api/memories/' + id, { method: 'DELETE' });
-        if (response.ok) {
-            showMessage('记忆已删除', 'success');
-            setTimeout(() => window.location.href = '/memories', 1000);
-        } else {
-            alert('删除失败');
-        }
-    } catch (error) {
-        alert('删除失败: ' + error.message);
+      const res = await fetch("/api/memories/" + id, { method: "DELETE" });
+      if (res.ok) {
+        showMessage("记忆已删除", "success");
+        setTimeout(() => (window.location.href = "/memories"), 900);
+      } else {
+        alert("删除失败");
+      }
+    } catch (err) {
+      alert("删除失败：" + err.message);
     }
-}
+  }
 </script>
 {% endblock %}

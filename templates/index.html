@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% block title %}美丽乡村信息平台 - 首页{% endblock %} {% block head %}
+{% extends "base.html" %} {% block title %}{{ site_config.site_title if site_config else '美丽乡村信息平台' }} - 首页{% endblock %} {% block head %}
 <style>
   /* ===== 轮播图 ===== */
   .carousel {
@@ -643,6 +643,14 @@
 
 <!-- 快速入口 -->
 <div class="quick-links">
+  {% if site_config and site_config.quick_link_items %}
+    {% for q in site_config.quick_link_items %}
+    <a href="{{ q.url }}" class="quick-link {{ q.color or 'red' }}">
+      <i class="{{ q.icon or 'fas fa-circle' }}"></i>
+      <span>{{ q.label }}</span>
+    </a>
+    {% endfor %}
+  {% else %}
   <a href="/news" class="quick-link red">
     <i class="fas fa-newspaper"></i>
     <span>新闻动态</span>
@@ -663,6 +671,7 @@
     <i class="fas fa-comments"></i>
     <span>留言互动</span>
   </a>
+  {% endif %}
 </div>
 
 <!-- 特色服务 -->
@@ -676,11 +685,11 @@
     {% if features %}
       {% for f in features %}
       <div class="feature-card">
-        <div class="feature-icon {{ f.color or 'red' }}">
+        <div class="feature-icon {{ f.icon_color or 'red' }}">
           <i class="{{ f.icon or 'fas fa-leaf' }}"></i>
         </div>
         <h3>{{ f.title }}</h3>
-        <p>{{ f.summary }}</p>
+        <p>{{ f.description }}</p>
         <a href="{{ f.link or '/services' }}" class="feature-link">
           了解更多 <i class="fas fa-arrow-right" style="font-size: 12px"></i>
         </a>
@@ -729,30 +738,28 @@
     <div class="section-divider"></div>
   </div>
   <div class="news-grid">
+    {% if home_news %}
+      {% for n in home_news %}
+      <a href="/news/{{ n.id }}" style="text-decoration:none; color:inherit; display:block;">
+        <div class="news-card">
+          <div class="date"><i class="far fa-calendar-alt"></i> {{ n.create_time.strftime('%Y-%m-%d') if n.create_time else '' }}</div>
+          <h4>{{ n.title }}</h4>
+          <p>{{ (n.content[:80] ~ '…') if n.content and n.content|length > 80 else (n.content or '') }}</p>
+          {% if n.category %}
+          <span class="tag">{{ n.category.name }}</span>
+          {% elif n.author %}
+          <span class="tag">{{ n.author }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    {% else %}
     <div class="news-card">
-      <div class="date"><i class="far fa-calendar-alt"></i> 2023-06-15</div>
-      <h4>乡村振兴政策解读</h4>
-      <p>最新乡村振兴政策出台，为农村发展提供新动力，包括产业扶持、人才引进等多项措施。</p>
-      <span class="tag">政策</span>
+      <div class="date"><i class="far fa-calendar-alt"></i> —</div>
+      <h4>暂无动态</h4>
+      <p>更多乡村资讯正在整理中，敬请期待。</p>
     </div>
-    <div class="news-card">
-      <div class="date"><i class="far fa-calendar-alt"></i> 2023-06-10</div>
-      <h4>农产品展销会圆满结束</h4>
-      <p>本次展销会吸引了周边地区众多游客，农产品销售额创历史新高，农民收入显著提升。</p>
-      <span class="tag">经济</span>
-    </div>
-    <div class="news-card">
-      <div class="date"><i class="far fa-calendar-alt"></i> 2023-06-05</div>
-      <h4>乡村文化节即将举办</h4>
-      <p>第三届乡村文化节将于下月举行，届时将有传统手工艺展示、民俗表演等丰富活动。</p>
-      <span class="tag">文化</span>
-    </div>
-    <div class="news-card">
-      <div class="date"><i class="far fa-calendar-alt"></i> 2023-06-01</div>
-      <h4>农村基础设施改造工程启动</h4>
-      <p>新一轮农村基础设施改造工程正式启动，将对道路、供水、网络等进行全面升级。</p>
-      <span class="tag">建设</span>
-    </div>
+    {% endif %}
   </div>
   <div class="news-footer">
     <a href="/news" class="btn btn-secondary">

@@ -12,8 +12,57 @@ if __name__ == "__main__":
     from werkzeug.security import generate_password_hash
     from models import db, User
 
+    def _ensure_site_config_columns():
+        """自愈式加列：比对 site_config 表列集合，缺失则 ALTER 补齐并回填默认值。
+
+        仅在旧库未执行 db_migrate_site_config.py 时兜底；幂等，可重复运行。
+        须已在应用上下文（app_context）内调用。
+        """
+        from sqlalchemy import inspect as sa_inspect, text
+        from models import SiteConfig
+
+        # 模型新增的 7 个列（与 models.py / default_values 双写一致）
+        new_cols = [
+            "hero_subtitle",
+            "stat_labels",
+            "intro_title",
+            "intro_subtitle",
+            "features_title",
+            "features_subtitle",
+            "village_info_title",
+        ]
+        try:
+            existing_cols = {c["name"] for c in sa_inspect(db.engine).get_columns("site_config")}
+        except Exception:
+            # 表不存在时 db.create_all 已建好带新列的表，无需处理
+            return
+        missing_cols = [c for c in new_cols if c not in existing_cols]
+        if not missing_cols:
+            return
+
+        # 先加列（ALTER 后立即提交，使后续模型查询可见新列）
+        with db.engine.begin() as conn:
+            for col in missing_cols:
+                conn.execute(text(f"ALTER TABLE site_config ADD COLUMN {col} TEXT"))
+
+        # 再用默认值回填为 NULL 的列（仅当真实数据行存在时）
+        cfg = SiteConfig.query.first()
+        if cfg is not None:
+            defaults = SiteConfig.default_values()
+            for col in missing_cols:
+                if not getattr(cfg, col, None):
+                    setattr(cfg, col, defaults.get(col, ""))
+            db.session.commit()
+        print(f"[自愈] 已为 site_config 补齐缺失列并回填: {missing_cols}")
+
     with app.app_context():
         db.create_all()
+
+        # ── 自愈式加列（保险）：旧库未执行迁移脚本时，补齐 SiteConfig 新增列并回填 ──
+        # 若 site_config 表已存在但缺新列，SELECT 会因缺列报错导致全站配置丢失，
+        # 此处用 inspect 比对列集合，缺失则 ALTER 补齐，再用默认值回填。幂等、可重复。
+        _ensure_site_config_columns()
+
         admin = User.query.filter_by(username="admin").first()
         if not admin:
             admin = User(
@@ -86,6 +135,53 @@ if __name__ == "__main__":
                 ),
             ]
             db.session.add_all(defaults)
+
+        # 初始化站点全局配置（单行，id=1）：仅在为空时填充
+        from models import SiteConfig, FriendLink, VillageHighlight, VillageStat
+
+        if not SiteConfig.query.first():
+            cfg = SiteConfig(id=1, **SiteConfig.default_values())
+            db.session.add(cfg)
+
+        # 友情链接默认数据
+        if not FriendLink.query.first():
+            friend_links = [
+                FriendLink(name="乡村振兴局", url="https://www.moa.gov.cn/", description="农业农村部官方网站", sort_order=1),
+                FriendLink(name="中国文明网", url="http://www.wenming.cn/", description="精神文明建设门户网站", sort_order=2),
+                FriendLink(name="学习强国", url="https://www.xuexi.cn/", description="权威学习平台", sort_order=3),
+            ]
+            db.session.add_all(friend_links)
+
+        # 村情·乡村特色默认卡片
+        if not VillageHighlight.query.first():
+            highlights = [
+                VillageHighlight(title="生态环境", description="山清水秀，空气清新，森林覆盖率高，是天然的生态氧吧", icon="fas fa-leaf", sort_order=1),
+                VillageHighlight(title="民居特色", description="传统村落格局保存完好，白墙黛瓦与现代设施完美融合", icon="fas fa-home", sort_order=2),
+                VillageHighlight(title="人文风情", description="淳朴民风，热情好客，丰富的民俗文化和传统手工艺", icon="fas fa-hands-helping", sort_order=3),
+            ]
+            db.session.add_all(highlights)
+
+        # 村情·村庄信息默认指标
+        if not VillageStat.query.first():
+            stats = [
+                VillageStat(label="耕地面积", value="约2800亩", group_name="自然资源", sort_order=1),
+                VillageStat(label="山林面积", value="约5000亩", group_name="自然资源", sort_order=2),
+                VillageStat(label="水域面积", value="约200亩", group_name="自然资源", sort_order=3),
+                VillageStat(label="森林覆盖率", value="65%", group_name="自然资源", sort_order=4),
+                VillageStat(label="户数", value="约620户", group_name="人口概况", sort_order=1),
+                VillageStat(label="劳动力", value="约1500人", group_name="人口概况", sort_order=2),
+                VillageStat(label="外出务工", value="约400人", group_name="人口概况", sort_order=3),
+                VillageStat(label="党员", value="68人", group_name="人口概况", sort_order=4),
+                VillageStat(label="主导产业", value="水稻种植", group_name="产业发展", sort_order=1),
+                VillageStat(label="特色产业", value="乡村旅游", group_name="产业发展", sort_order=2),
+                VillageStat(label="合作社", value="5家", group_name="产业发展", sort_order=3),
+                VillageStat(label="电商平台", value="3个", group_name="产业发展", sort_order=4),
+                VillageStat(label="道路硬化", value="100%", group_name="基础设施", sort_order=1),
+                VillageStat(label="自来水", value="100%", group_name="基础设施", sort_order=2),
+                VillageStat(label="网络覆盖", value="98%", group_name="基础设施", sort_order=3),
+                VillageStat(label="路灯安装", value="156盏", group_name="基础设施", sort_order=4),
+            ]
+            db.session.add_all(stats)
 
         db.session.commit()
 

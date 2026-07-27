@@ -1,0 +1,70 @@
+classDiagram
+    direction LR
+
+    class Memory {
+        +int id
+        +str title
+        +int author_id
+        +Text content
+        +Text reflection
+        +str memory_type
+        +Date date_recorded
+        +Text photo_urls
+        +Text video_urls
+        +Text tags
+        +bool is_public
+        +get_photos() list
+        +get_videos() list
+        +get_tags() list
+        +get_people() list
+        +get_locations() list
+    }
+    note for Memory "复用，不修改（models.py:142）\nphoto_urls/video_urls 为 JSON 数组串，数组顺序即展示顺序"
+
+    class TimelineRenderModel {
+        +str date
+        +str type
+        +str feeling
+        +list tag_names
+        +list photo_urls_list
+        +list video_urls_list
+        +str people
+    }
+    note for TimelineRenderModel "路由渲染前挂载到 Memory 实例的临时属性\n(memories_page/memory_detail_page/edit_memory_page 已注入)"
+
+    class MemoriesBlueprint {
+        +memories_page() 渲染时间线
+        +new_memory_page() 渲染新建表单
+        +memory_detail_page() 渲染详情
+        +edit_memory_page() 渲染编辑表单
+        +api_memories() POST 新建
+        +api_memory_detail() PUT 编辑
+    }
+    note for MemoriesBlueprint "routes/memories.py（memories 蓝图）\n仅微调 order_by，不改 URL 与 JSON 契约"
+
+    class UploadService {
+        +save_uploaded_file(file, upload_folder, url_prefix, subfolder, allowed_exts, max_size) dict
+    }
+    note for UploadService "core/upload.py，复用不改签名\n调用处：/api/media 路由"
+
+    class MemorialUploader {
+        +initUploader(opts)
+        +previewFiles(FileList)
+        +reorder(callback)
+        +inferType() str
+        +uploadAll() Promise
+    }
+    note for MemorialUploader "static/js/memorial-upload.js（新增）\n多图预览/拖拽排序/视频上传/类型推断"
+
+    class TimelineCard {
+        +render(Memory) html
+    }
+    note for TimelineCard "templates/macros/memory_card.html（新增 Jinja 宏）\n金线轴+朱砂节点+右卡片"
+
+    Memory <.. TimelineRenderModel : 派生临时属性
+    MemoriesBlueprint ..> Memory : 查询/创建
+    MemoriesBlueprint ..> TimelineRenderModel : 挂载并传入模板
+    MemoriesBlueprint ..> UploadService : 经 /api/media 调用
+    MemoriesBlueprint ..> TimelineCard : 渲染 memories.html
+    MemorialUploader ..> UploadService : 经 /api/media 上传
+    TimelineCard ..> TimelineRenderModel : 消费字段

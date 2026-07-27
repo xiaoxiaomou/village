@@ -1,0 +1,156 @@
+{% extends 'base.html' %} {% block title %}友情链接管理 - 管理后台{% endblock %} {% block head %}
+<style>
+  body { background: #f5f5f7; }
+  .admin-wrap { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+  .admin-wrap h2 { margin-bottom: 20px; color: #1d1d1f; }
+  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card h3 { margin: 0 0 16px; font-size: 16px; color: #333; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 14px; color: #333; }
+  .form-group input, .form-group textarea {
+    width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: #007aff; outline: none; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+  .btn-primary { background: #007aff; color: white; }
+  .btn-primary:hover { background: #0062cc; }
+  .btn-warning { background: #ff9500; color: white; }
+  .btn-danger { background: #ff3b30; color: white; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+  th { background: #f8f9fa; font-weight: 600; color: #555; }
+  tr:hover { background: #f8f9ff; }
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.show { display: flex; }
+  .modal-content { background: white; border-radius: 12px; padding: 28px; max-width: 640px; width: 90%; max-height: 85vh; overflow-y: auto; }
+  @media (max-width: 640px) { .row-2 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %} {% block content %}
+<div class="admin-wrap">
+  <h2>🔗 友情链接管理</h2>
+
+  <div class="card">
+    <h3>添加友情链接</h3>
+    <form method="post" action="{{ url_for('admin.admin_friend_links') }}">
+      <div class="row-2">
+        <div class="form-group">
+          <label for="name">链接名称</label>
+          <input type="text" id="name" name="name" required placeholder="如：乡村振兴局" />
+        </div>
+        <div class="form-group">
+          <label for="url">跳转地址</label>
+          <input type="text" id="url" name="url" placeholder="https://..." />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="logo_url">站点图标 URL（可选）</label>
+        <input type="text" id="logo_url" name="logo_url" placeholder="图标链接" />
+      </div>
+      <div class="form-group">
+        <label for="description">备注（可选）</label>
+        <input type="text" id="description" name="description" placeholder="备注说明" />
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label for="sort_order">排序</label>
+          <input type="number" id="sort_order" name="sort_order" value="0" />
+        </div>
+        <div class="form-group" style="display:flex; align-items:flex-end;">
+          <label style="display:flex; align-items:center; gap:6px; font-weight:600;">
+            <input type="checkbox" name="is_active" checked /> 在前台展示
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">添加</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>已配置友情链接</h3>
+    {% if links %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>名称</th><th>地址</th><th>排序</th><th>展示</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          {% for l in links %}
+          <tr>
+            <td><strong>{{ l.name }}</strong></td>
+            <td><a href="{{ l.url }}" target="_blank">{{ l.url }}</a></td>
+            <td>{{ l.sort_order }}</td>
+            <td>{{ '是' if l.is_active else '否' }}</td>
+            <td>
+              <button class="btn btn-warning btn-sm" onclick="editLink({{ l.id }}, '{{ l.name|e }}', '{{ l.url|e }}', '{{ l.logo_url|e }}', '{{ l.description|e }}', {{ l.sort_order }}, {{ 'true' if l.is_active else 'false' }})">编辑</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteLink({{ l.id }})">删除</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="color:#999; text-align:center; padding:20px;">暂无友情链接，请添加</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal-content">
+    <h3>编辑友情链接</h3>
+    <form id="editForm">
+      <div class="form-group"><label for="editName">名称</label><input type="text" id="editName" required /></div>
+      <div class="form-group"><label for="editUrl">地址</label><input type="text" id="editUrl" /></div>
+      <div class="form-group"><label for="editLogo">图标 URL</label><input type="text" id="editLogo" /></div>
+      <div class="form-group"><label for="editDesc">备注</label><input type="text" id="editDesc" /></div>
+      <div class="form-group"><label for="editSort">排序</label><input type="number" id="editSort" /></div>
+      <div class="form-group"><label style="display:flex; align-items:center; gap:6px; font-weight:600;"><input type="checkbox" id="editActive" /> 在前台展示</label></div>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="button" class="btn" style="background:#f0f0f0" onclick="closeEdit()">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let currentId = null;
+  function editLink(id, name, url, logo, desc, sort, active) {
+    currentId = id;
+    document.getElementById("editName").value = name;
+    document.getElementById("editUrl").value = url;
+    document.getElementById("editLogo").value = logo;
+    document.getElementById("editDesc").value = desc;
+    document.getElementById("editSort").value = sort;
+    document.getElementById("editActive").checked = active;
+    document.getElementById("editModal").classList.add("show");
+  }
+  function closeEdit() { document.getElementById("editModal").classList.remove("show"); currentId = null; }
+  document.getElementById("editForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    if (!currentId) return;
+    const payload = {
+      name: document.getElementById("editName").value,
+      url: document.getElementById("editUrl").value,
+      logo_url: document.getElementById("editLogo").value,
+      description: document.getElementById("editDesc").value,
+      sort_order: parseInt(document.getElementById("editSort").value) || 0,
+      is_active: document.getElementById("editActive").checked,
+    };
+    try {
+      const res = await fetch("/admin/friend-links/" + currentId, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (res.ok) location.reload(); else alert("更新失败");
+    } catch (e) { alert("网络错误"); }
+  });
+  async function deleteLink(id) {
+    if (!confirm("确定删除该友情链接吗？")) return;
+    try {
+      const res = await fetch("/admin/friend-links/" + id, { method: "DELETE" });
+      if (res.ok) location.reload(); else alert("删除失败");
+    } catch (e) { alert("网络错误"); }
+  }
+  document.getElementById("editModal").addEventListener("click", function (e) { if (e.target === this) closeEdit(); });
+</script>
+{% endblock %}

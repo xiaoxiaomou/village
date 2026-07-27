@@ -148,6 +148,27 @@
         <label for="adminContent">内容</label>
         <textarea id="adminContent" name="content" rows="8"></textarea>
       </div>
+      <div class="form-group">
+        <label for="author">作者</label>
+        <input type="text" id="author" name="author" placeholder="作者署名（可选）" />
+      </div>
+      <div class="form-group">
+        <label for="category_id">分类</label>
+        <select id="category_id" name="category_id" style="width:100%; padding:10px 14px; border:2px solid #e0e0e0; border-radius:8px; font-size:14px;">
+          <option value="">未分类</option>
+          {% for c in categories %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="image_url">封面图 URL</label>
+        <input type="text" id="image_url" name="image_url" placeholder="封面图链接（可选）" />
+        <div class="form-hint">
+          <input type="file" id="newsImage" accept="image/*" style="margin-top:6px;" />
+          <button type="button" class="btn btn-primary" style="margin-top:6px;padding:6px 14px;" onclick="uploadNewsImage()">上传图片</button>
+        </div>
+      </div>
       <button type="submit" class="btn btn-primary">发布新闻</button>
     </form>
   </div>
@@ -173,7 +194,7 @@
             <td>
               <button
                 class="btn btn-warning btn-sm"
-                onclick="editNews({{ news.id }}, '{{ news.title|e }}', '{{ news.content|e }}')"
+                onclick="editNews({{ news.id }}, '{{ news.title|e }}', '{{ news.content|e }}', '{{ news.author|e }}', {{ news.category_id or 'null' }}, '{{ news.image_url|e }}')"
               >
                 编辑
               </button>
@@ -192,97 +213,143 @@
   </div>
 </div>
 
-<!-- 编辑模态框 -->
-<div class="modal-overlay" id="editModal">
-  <div class="modal-content">
-    <h3>编辑新闻</h3>
-    <form id="editForm">
-      <div class="form-group">
-        <label for="editTitle">标题</label>
-        <input type="text" id="editTitle" required />
-      </div>
-      <div class="form-group">
-        <label for="editContent">内容</label>
-        <textarea id="editContent" rows="8"></textarea>
-      </div>
-      <div style="display: flex; gap: 10px">
-        <button type="submit" class="btn btn-primary">保存</button>
-        <button type="button" class="btn" style="background: #f0f0f0" onclick="closeEdit()">
-          取消
-        </button>
-      </div>
-    </form>
+  <!-- 编辑模态框 -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+      <h3>编辑新闻</h3>
+      <form id="editForm">
+        <div class="form-group">
+          <label for="editTitle">标题</label>
+          <input type="text" id="editTitle" required />
+        </div>
+        <div class="form-group">
+          <label for="editContent">内容</label>
+          <textarea id="editContent" rows="8"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="editAuthor">作者</label>
+          <input type="text" id="editAuthor" placeholder="作者署名（可选）" />
+        </div>
+        <div class="form-group">
+          <label for="editCategory">分类</label>
+          <select id="editCategory" style="width:100%; padding:10px 14px; border:2px solid #e0e0e0; border-radius:8px; font-size:14px;">
+            <option value="">未分类</option>
+            {% for c in categories %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editImage">封面图 URL</label>
+          <input type="text" id="editImage" placeholder="封面图链接（可选）" />
+        </div>
+        <div style="display: flex; gap: 10px">
+          <button type="submit" class="btn btn-primary">保存</button>
+          <button type="button" class="btn" style="background: #f0f0f0" onclick="closeEdit()">
+            取消
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
 
-<script>
-  let currentEditId = null;
+  <script>
+    let currentEditId = null;
 
-  // 初始化 TinyMCE
-  tinymce.init({
-    selector: "#adminContent, #editContent",
-    height: 350,
-    plugins:
-      "advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount",
-    toolbar:
-      "undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image link | code | help",
-    menubar: false,
-    statusbar: true,
-    branding: false,
-  });
+    // 初始化 TinyMCE
+    tinymce.init({
+      selector: "#adminContent, #editContent",
+      height: 350,
+      plugins:
+        "advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount",
+      toolbar:
+        "undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image link | code | help",
+      menubar: false,
+      statusbar: true,
+      branding: false,
+    });
 
-  function editNews(id, title, content) {
-    currentEditId = id;
-    document.getElementById("editTitle").value = title;
-    const editor = tinymce.get("editContent");
-    if (editor) editor.setContent(content || "");
-    document.getElementById("editModal").classList.add("show");
-  }
-
-  function closeEdit() {
-    document.getElementById("editModal").classList.remove("show");
-    currentEditId = null;
-  }
-
-  document.getElementById("editForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
-    if (!currentEditId) return;
-    const title = document.getElementById("editTitle").value;
-    const editor = tinymce.get("editContent");
-    const content = editor ? editor.getContent() : "";
-    try {
-      const res = await fetch("/admin/news/" + currentEditId, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content }),
-      });
-      if (res.ok) {
-        location.reload();
-      } else {
-        alert("更新失败");
-      }
-    } catch (e) {
-      alert("网络错误");
+    function editNews(id, title, content, author, categoryId, imageUrl) {
+      currentEditId = id;
+      document.getElementById("editTitle").value = title;
+      document.getElementById("editAuthor").value = author || "";
+      document.getElementById("editCategory").value = categoryId ? String(categoryId) : "";
+      document.getElementById("editImage").value = imageUrl || "";
+      const editor = tinymce.get("editContent");
+      if (editor) editor.setContent(content || "");
+      document.getElementById("editModal").classList.add("show");
     }
-  });
 
-  async function deleteNews(id) {
-    if (!confirm("确定删除这条新闻吗？")) return;
-    try {
-      const res = await fetch("/admin/news/" + id, { method: "DELETE" });
-      if (res.ok) {
-        location.reload();
-      } else {
-        alert("删除失败");
-      }
-    } catch (e) {
-      alert("网络错误");
+    function closeEdit() {
+      document.getElementById("editModal").classList.remove("show");
+      currentEditId = null;
     }
-  }
 
-  // 在编辑模态框关闭时销毁/重建编辑器
-  document.getElementById("editModal").addEventListener("click", function (e) {
-    if (e.target === this) closeEdit();
-  });
-</script>
+    document.getElementById("editForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      if (!currentEditId) return;
+      const title = document.getElementById("editTitle").value;
+      const editor = tinymce.get("editContent");
+      const content = editor ? editor.getContent() : "";
+      const payload = {
+        title,
+        content,
+        author: document.getElementById("editAuthor").value,
+        category_id: document.getElementById("editCategory").value
+          ? parseInt(document.getElementById("editCategory").value)
+          : null,
+        image_url: document.getElementById("editImage").value,
+      };
+      try {
+        const res = await fetch("/admin/news/" + currentEditId, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          location.reload();
+        } else {
+          alert("更新失败");
+        }
+      } catch (e) {
+        alert("网络错误");
+      }
+    });
+
+    async function uploadNewsImage() {
+      const fileInput = document.getElementById("newsImage");
+      if (!fileInput.files.length) { alert("请先选择图片"); return; }
+      const fd = new FormData();
+      fd.append("image", fileInput.files[0]);
+      try {
+        const res = await fetch("/api/upload/image", { method: "POST", body: fd });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          document.getElementById("image_url").value = data.url;
+          alert("上传成功，已填入封面图地址");
+        } else {
+          alert(data.msg || "上传失败");
+        }
+      } catch (e) { alert("网络错误"); }
+    }
+
+    async function deleteNews(id) {
+      if (!confirm("确定删除这条新闻吗？")) return;
+      try {
+        const res = await fetch("/admin/news/" + id, { method: "DELETE" });
+        if (res.ok) {
+          location.reload();
+        } else {
+          alert("删除失败");
+        }
+      } catch (e) {
+        alert("网络错误");
+      }
+    }
+
+    // 在编辑模态框关闭时销毁/重建编辑器
+    document.getElementById("editModal").addEventListener("click", function (e) {
+      if (e.target === this) closeEdit();
+    });
+  </script>
 {% endblock %}

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#faf8f3" />
-    <title>{% block title %}乡村记忆系统{% endblock %}</title>
+    <title>{% block title %}{{ site_config.site_title if site_config else '乡村记忆系统' }}{% endblock %}</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='font-awesome/css/all.min.css') }}"
@@ -594,58 +594,92 @@
           font-size: 22px;
         }
       }
+
+      /* ═══ 前台预览面板（后台页面） ═══ */
+      .fep-wrap { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9000;
+        background: #1d1d1f; border-top: 3px solid #007aff;
+        display: flex; flex-direction: column; transition: height 0.3s ease; }
+      .fep-wrap.fep-small { height: 45vh; }
+      .fep-wrap.fep-large { height: 80vh; }
+      .fep-bar { display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 16px; background: #2c2c2e; color: #fff; flex-shrink: 0;
+        border-bottom: 1px solid #3a3a3c; }
+      .fep-bar-left { display: flex; align-items: center; gap: 12px; }
+      .fep-title { font-weight: 600; font-size: 14px; color: #007aff; }
+      .fep-url { font-size: 12px; color: #98989d; background: #1c1c1e; padding: 2px 10px;
+        border-radius: 4px; font-family: monospace; }
+      .fep-bar-right { display: flex; align-items: center; gap: 6px; }
+      .fep-btn { background: none; border: none; color: #98989d; cursor: pointer;
+        padding: 6px 10px; border-radius: 6px; font-size: 14px; transition: all 0.15s; }
+      .fep-btn:hover { background: #3a3a3c; color: #fff; }
+      .fep-close:hover { background: #ff3b30; color: #fff; }
+      .fep-body { flex: 1; position: relative; overflow: hidden; }
+      .fep-body iframe { width: 100%; height: 100%; border: none; background: #fff; }
+      .fep-fab { position: fixed; bottom: 24px; right: 24px; z-index: 9001;
+        display: flex; align-items: center; gap: 8px;
+        background: #007aff; color: #fff; border: none; padding: 12px 20px;
+        border-radius: 50px; cursor: pointer; font-size: 14px; font-weight: 600;
+        box-shadow: 0 4px 20px rgba(0,122,255,0.4); transition: all 0.2s;
+        font-family: inherit; }
+      .fep-fab:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,122,255,0.5); }
+      .fep-fab i { font-size: 16px; }
+
+      /* ═══ 后台页面：隐藏前台 header/footer，用后台顶栏替代 ═══ */
+      body.is-admin .site-header { display: none !important; }
+      body.is-admin > footer { display: none !important; }
+      body.is-admin { background: #f5f5f7; }
+      body.is-admin .container { padding-top: 20px; }
+      /* 后台顶栏（面包屑 + 返回首页） */
+      .admin-topbar {
+        background: #fff; border-bottom: 1px solid #e0e0e0;
+        padding: 10px 24px; display: flex; align-items: center; gap: 16px;
+        font-size: 14px; color: #555; position: sticky; top: 0; z-index: 100;
+      }
+      .admin-topbar a { color: #007aff; text-decoration: none; }
+      .admin-topbar a:hover { text-decoration: underline; }
+      /* 返回首页按钮 — 醒目独立 */
+      .admin-back-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: linear-gradient(135deg, #007aff, #0055d4);
+        color: #fff !important; padding: 7px 16px; border-radius: 8px;
+        font-size: 13px; font-weight: 600; text-decoration: none !important;
+        box-shadow: 0 2px 8px rgba(0,122,255,0.3);
+        transition: all 0.2s ease; white-space: nowrap;
+      }
+      .admin-back-btn:hover {
+        transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,122,255,0.4);
+        text-decoration: none !important; background: linear-gradient(135deg, #0066dd, #0044aa);
+      }
+      .admin-back-btn i { font-size: 12px; }
+      .admin-topbar .admin-breadcrumb { color: #888; }
+      .admin-topbar .admin-breadcrumb span { margin: 0 6px; color: #ccc; }
     </style>
     {% block head %}{% endblock %}
   </head>
-  <body>
+  <body class="{% if request.path.startswith('/admin') %}is-admin{% endif %}">
     <header class="site-header">
       <div class="header-inner">
         <a href="/" class="logo-area">
-          <i class="fas fa-mountain"></i>
-          <span>乡村记忆</span>
+          {% if site_config and site_config.logo_url %}
+          <img src="{{ site_config.logo_url }}" alt="{{ site_config.logo_name or 'logo' }}" style="height: 28px; border-radius: 6px;" />
+          {% else %}
+          <i class="{{ site_config.logo_icon if site_config and site_config.logo_icon else 'fas fa-mountain' }}"></i>
+          <span>{{ site_config.logo_name if site_config and site_config.logo_name else '乡村记忆' }}</span>
+          {% endif %}
         </a>
         <button class="menu-toggle" onclick="toggleMenu()" aria-label="菜单">
           <i class="fas fa-bars"></i>
         </button>
         <ul class="nav-links" id="navLinks">
+          {% if site_config %}
+          {% for item in site_config.nav_items %}
           <li>
-            <a href="/"><i class="fas fa-home"></i> 首页</a>
+            <a href="{{ item.url }}"><i class="{{ item.icon or 'fas fa-circle' }}"></i> {{ item.label }}</a>
           </li>
-          <li>
-            <a href="/news"><i class="fas fa-newspaper"></i> 新闻</a>
-          </li>
-          <li>
-            <a href="/village"><i class="fas fa-map-marked-alt"></i> 村情</a>
-          </li>
-          <li>
-            <a href="/government"><i class="fas fa-landmark"></i> 政务</a>
-          </li>
-          <li>
-            <a href="/services"><i class="fas fa-concierge-bell"></i> 服务</a>
-          </li>
-          <li>
-            <a href="/message"><i class="fas fa-comments"></i> 留言</a>
-          </li>
-          <li>
-            <a href="/contact"><i class="fas fa-phone-alt"></i> 联系</a>
-          </li>
-          <li>
-            <a href="/timeline"><i class="fas fa-clock"></i> 时间轴</a>
-          </li>
-          <li>
-            <a href="/memories"><i class="fas fa-images"></i> 怀旧</a>
-          </li>
-          {% if session['user'] %}
-          <li>
-            <a href="/dashboard"><i class="fas fa-user"></i> {{ session['user'] }}</a>
-          </li>
-          {#
-          {% if session['role'] == 'admin' %}
-          <li>
-            <a href="/admin"><i class="fas fa-cog"></i> 后台</a>
-          </li>
+          {% endfor %}
           {% endif %}
-          #}
+          {# 前台导航不显示用户名 / 后台入口（已隐藏） #}
+          {% if session['user'] %}
           <li>
             <a href="/logout"><i class="fas fa-sign-out-alt"></i> 退出</a>
           </li>
@@ -658,6 +692,38 @@
       </div>
     </header>
 
+    {# ═══ 后台顶栏（替代前台导航） ═══ #}
+    {% if request.path.startswith('/admin') %}
+    <div class="admin-topbar">
+      <span class="admin-breadcrumb">
+        <span>/</span>
+        {% set _crumb_map = {
+          '/admin/': '仪表板',
+          '/admin/village': '村情管理',
+          '/admin/news': '新闻管理',
+          '/admin/government': '政务管理',
+          '/admin/services': '服务管理',
+          '/admin/people': '人物管理',
+          '/admin/contact': '联系信息',
+          '/admin/site-settings': '站点设置',
+          '/admin/home-features': '首页特色',
+          '/admin/friend-links': '友情链接',
+          '/admin/village-highlights': '乡村特色',
+          '/admin/village-stats': '村庄指标',
+          '/admin/logo': 'Logo 管理',
+          '/admin/carousel': '轮播图管理',
+          '/admin/tags': '标签管理',
+          '/admin/memories': '记忆管理',
+          '/admin/messages': '留言管理',
+          '/admin/users': '用户管理',
+        } %}
+        {{ _crumb_map.get(request.path, request.path.split('/')[-1].replace('-',' ').title()) }}
+      </span>
+      <span style="flex:1"></span>
+      <a href="/admin" class="admin-back-btn"><i class="fas fa-arrow-left"></i> 返回后台首页</a>
+    </div>
+    {% endif %}
+
     <main class="container">
       {% with messages = get_flashed_messages() %} {% if messages %}
       <div class="flash-messages">
@@ -668,45 +734,61 @@
       {% endif %} {% endwith %} {% block content %}{% endblock %}
     </main>
 
+    {# ═══ 后台页面：前台实时预览面板 ═══ #}
+    {% if request.path.startswith('/admin') %}
+    <div id="frontendPreview" class="fep-wrap" style="display:none;">
+      <div class="fep-bar">
+        <div class="fep-bar-left">
+          <span class="fep-title"><i class="fas fa-eye"></i> 前台预览</span>
+          <span class="fep-url" id="fepUrl"></span>
+        </div>
+        <div class="fep-bar-right">
+          <button class="fep-btn fep-refresh" onclick="refreshPreview()" title="刷新预览"><i class="fas fa-sync-alt"></i></button>
+          <button class="fep-btn fep-toggle" onclick="togglePreviewSize()" id="fepToggleBtn" title="切换大小"><i class="fas fa-expand-alt"></i></button>
+          <button class="fep-btn fep-close" onclick="closePreview()" title="关闭预览"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+      <div class="fep-body" id="fepBody">
+        <iframe id="fepIframe" sandbox="allow-same-origin allow-scripts allow-forms" loading="lazy"></iframe>
+      </div>
+    </div>
+    <button class="fep-fab" id="fepFab" onclick="openPreview()" title="预览前台页面">
+      <i class="fas fa-eye"></i>
+      <span>前台预览</span>
+    </button>
+    {% endif %}
+
     <footer>
       <div class="footer-inner">
         <div>
           <div class="footer-brand">
-            <i class="fas fa-mountain" style="margin-right: 8px; color: var(--cinnabar)"></i
-            >乡村记忆
+            {% if site_config and site_config.logo_icon %}<i class="{{ site_config.logo_icon }}" style="margin-right: 8px; color: var(--cinnabar)"></i>{% endif %}{{ site_config.footer_brand if site_config and site_config.footer_brand else '乡村记忆' }}
           </div>
           <p class="footer-desc">
-            记录乡村的点滴变化，传承乡土文化记忆。<br />让每一份乡愁都有处安放，让每一个故事都被铭记。
+            {{ site_config.footer_about if site_config and site_config.footer_about else '记录乡村的点滴变化，传承乡土文化记忆。<br />让每一份乡愁都有处安放，让每一个故事都被铭记。' }}
           </p>
         </div>
+        {% for group in (site_config.footer_link_groups if site_config else []) %}
         <div>
-          <div class="footer-title">快速导航</div>
+          <div class="footer-title">{{ group.title }}</div>
           <ul class="footer-links">
-            <li><a href="/news">新闻动态</a></li>
-            <li><a href="/village">村情概况</a></li>
-            <li><a href="/government">政务公开</a></li>
-            <li><a href="/services">便民服务</a></li>
+            {% for link in group.links %}
+            <li><a href="{{ link.url }}">{{ link.label }}</a></li>
+            {% endfor %}
           </ul>
         </div>
-        <div>
-          <div class="footer-title">记忆空间</div>
-          <ul class="footer-links">
-            <li><a href="/timeline">时间轴</a></li>
-            <li><a href="/memories">怀旧记录</a></li>
-            <li><a href="/message">留言互动</a></li>
-          </ul>
-        </div>
-        <div>
-          <div class="footer-title">关于我们</div>
-          <ul class="footer-links">
-            <li><a href="/contact">联系我们</a></li>
-            <li><a href="/login">用户登录</a></li>
-            <li><a href="/register">注册账户</a></li>
-          </ul>
-        </div>
+        {% endfor %}
       </div>
+      {% if friend_links %}
+      <div class="footer-friends" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 16px; margin-bottom: 8px;">
+        <span class="footer-title" style="margin-right: 12px;">友情链接：</span>
+        {% for fl in friend_links %}
+        <a href="{{ fl.url }}" target="_blank" rel="noopener noreferrer" style="margin-right: 16px; color: var(--ink-muted); font-size: 13px;">{{ fl.name }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
       <div class="footer-bottom">
-        <p>&copy; 2024 乡村记忆系统 | 用心的记录，留住温暖的回忆</p>
+        <p>&copy; {{ now.year }} {{ site_config.footer_copyright if site_config and site_config.footer_copyright else '乡村记忆系统 | 用心的记录，留住温暖的回忆' }}</p>
       </div>
     </footer>
 
@@ -736,6 +818,96 @@
         }
       });
     </script>
+
+    {# ═══ 前台预览面板 JS（仅后台页面加载） ═══ #}
+    {% if request.path.startswith('/admin') %}
+    <script>
+      // 后台 URL → 前台预览 URL 映射
+      const PREVIEW_MAP = {
+        '/admin':            '/',
+        '/admin/':           '/',
+        '/admin/village':    '/village',
+        '/admin/news':       '/news',
+        '/admin/government': '/government',
+        '/admin/services':   '/services',
+        '/admin/people':     '/people/1',
+        '/admin/contact':    '/contact',
+        '/admin/site-settings': '/',
+        '/admin/home-features': '/',
+        '/admin/friend-links':  '/',
+        '/admin/village-highlights': '/village',
+        '/admin/village-stats':     '/village',
+        '/admin/logo':             '/',
+        '/admin/carousel':         '/',
+        '/admin/tags':             '/news',
+        '/admin/memories':         '/',
+        '/admin/messages':         '/',
+      };
+
+      let fepLarge = false;
+      let currentPreviewUrl = '';
+
+      function getPreviewUrl() {
+        const path = window.location.pathname;
+        // 最长前缀匹配
+        let best = '';
+        for (const [prefix, url] of Object.entries(PREVIEW_MAP)) {
+          if (path.startsWith(prefix) && prefix.length > best.length) {
+            best = prefix;
+          }
+        }
+        return PREVIEW_MAP[best] || '/';
+      }
+
+      function openPreview() {
+        currentPreviewUrl = getPreviewUrl();
+        const wrap = document.getElementById('frontendPreview');
+        const iframe = document.getElementById('fepIframe');
+        const urlEl = document.getElementById('fepUrl');
+        wrap.style.display = 'flex';
+        wrap.classList.add('fep-small');
+        wrap.classList.remove('fep-large');
+        iframe.src = currentPreviewUrl;
+        urlEl.textContent = currentPreviewUrl;
+        document.getElementById('fepFab').style.display = 'none';
+        fepLarge = false;
+        updateToggleIcon();
+      }
+
+      function closePreview() {
+        document.getElementById('frontendPreview').style.display = 'none';
+        document.getElementById('fepFab').style.display = 'flex';
+        document.getElementById('fepIframe').src = '';
+      }
+
+      function togglePreviewSize() {
+        const wrap = document.getElementById('frontendPreview');
+        fepLarge = !fepLarge;
+        wrap.classList.toggle('fep-large', fepLarge);
+        wrap.classList.toggle('fep-small', !fepLarge);
+        updateToggleIcon();
+      }
+
+      function updateToggleIcon() {
+        const btn = document.getElementById('fepToggleBtn');
+        btn.innerHTML = fepLarge
+          ? '<i class="fas fa-compress-alt"></i>'
+          : '<i class="fas fa-expand-alt"></i>';
+        btn.title = fepLarge ? '缩小' : '放大';
+      }
+
+      function refreshPreview() {
+        const iframe = document.getElementById('fepIframe');
+        if (iframe.src) { iframe.src = iframe.src; }
+      }
+
+      // ESC 关闭预览
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePreview();
+      });
+    </script>
+    {% endif %}
+
     {% block scripts %}{% endblock %}
   </body>
 </html>

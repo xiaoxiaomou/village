@@ -24,6 +24,14 @@ from models import (
     Memory,
     People,
     Tag,
+    HomeFeature,
+)
+from models import (
+    SiteConfig,
+    FriendLink,
+    VillageHighlight,
+    VillageStat,
+    HomeFeature,
 )
 from models import (
     Message,
@@ -36,24 +44,12 @@ from models import (
     SiteContact,
 )
 from datetime import datetime
+from routes.decorators import admin_required
+from core.serializers import paginate_to_dict
 import logging
 
 admin_bp = Blueprint("admin", __name__)
 logger = logging.getLogger(__name__)
-
-
-def admin_required(f):
-    from functools import wraps
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user" not in session:
-            return jsonify({"msg": "未登录"}), 401
-        if session.get("role") != "admin":
-            return jsonify({"msg": "无权限"}), 403
-        return f(*args, **kwargs)
-
-    return decorated_function
 
 
 # ═══ 页面路由 ═══
@@ -84,13 +80,22 @@ def admin_news():
     if request.method == "POST":
         title = request.form.get("title")
         content = request.form.get("content")
-        new_news = News(title=title, content=content)
+        new_news = News(
+            title=title,
+            content=content,
+            image_url=request.form.get("image_url", "") or None,
+            category_id=request.form.get("category_id", type=int) or None,
+            author=request.form.get("author", "") or None,
+        )
         db.session.add(new_news)
         db.session.commit()
         flash("新闻添加成功")
         return redirect(url_for("admin.admin_news"))
     news_list = News.query.order_by(News.create_time.desc()).all()
-    return render_template("admin_news.html", news_list=news_list)
+    categories = Category.query.order_by(Category.id).all()
+    return render_template(
+        "admin_news.html", news_list=news_list, categories=categories
+    )
 
 
 @admin_bp.route("/admin/news/<int:news_id>", methods=["PUT", "DELETE"])
@@ -100,14 +105,27 @@ def edit_news(news_id):
     if not news:
         return jsonify({"msg": "新闻不存在"}), 404
     if request.method == "PUT":
-        data = request.json
+        data = request.get_json(silent=True) or {}
         news.title = data.get("title", news.title)
         news.content = data.get("content", news.content)
+        if "image_url" in data:
+            news.image_url = data.get("image_url") or None
+        if "category_id" in data:
+            news.category_id = data.get("category_id") or None
+        if "author" in data:
+            news.author = data.get("author") or None
         db.session.commit()
         return jsonify(
             {
                 "msg": "新闻更新成功",
-                "news": {"id": news.id, "title": news.title, "content": news.content},
+                "news": {
+                    "id": news.id,
+                    "title": news.title,
+                    "content": news.content,
+                    "image_url": news.image_url,
+                    "category_id": news.category_id,
+                    "author": news.author,
+                },
             }
         )
     db.session.delete(news)
@@ -344,6 +362,89 @@ def admin_village():
     return render_template("admin_village.html", village_list=infos)
 
 
+# ═══ 村情页面文案配置（SiteConfig 中 /village 相关字段） ═══
+
+
+@admin_bp.route("/admin/village-config", methods=["GET", "POST"])
+@admin_required
+def admin_village_config():
+    """村情页面文案：封面副标题 / KPI 标签 / 区块标题副文案，均存 SiteConfig。"""
+    import json
+
+    config = SiteConfig.get()
+
+    if request.method == "POST":
+        data = request.get_json(silent=True) or request.form
+
+        # 纯文本字段
+        config.hero_subtitle = data.get("hero_subtitle", config.hero_subtitle or "")
+        config.intro_title = data.get("intro_title", config.intro_title or "")
+        config.intro_subtitle = data.get("intro_subtitle", config.intro_subtitle or "")
+        config.features_title = data.get("features_title", config.features_title or "")
+        config.features_subtitle = data.get(
+            "features_subtitle", config.features_subtitle or ""
+        )
+        config.village_info_title = data.get(
+            "village_info_title", config.village_info_title or ""
+        )
+
+        # JSON 字段：stat_labels
+        raw_labels = data.get("stat_labels", "")
+        if raw_labels:
+            try:
+                parsed = json.loads(raw_labels)
+                if isinstance(parsed, dict):
+                    config.stat_labels = json.dumps(parsed, ensure_ascii=False)
+            except json.JSONDecodeError:
+                if request.is_json:
+                    return jsonify({"msg": "KPI 标签 JSON 格式错误"}), 400
+                flash("KPI 标签 JSON 格式错误")
+                return redirect(url_for("admin.admin_village"))
+
+        # JSON 字段：home_stats（KPI 大数字）
+        raw_stats = data.get("home_stats", "")
+        if raw_stats:
+            try:
+                parsed = json.loads(raw_stats)
+                if isinstance(parsed, dict):
+                    config.home_stats = json.dumps(parsed, ensure_ascii=False)
+            except json.JSONDecodeError:
+                if request.is_json:
+                    return jsonify({"msg": "KPI 数字 JSON 格式错误"}), 400
+                flash("KPI 数字 JSON 格式错误")
+                return redirect(url_for("admin.admin_village"))
+
+        db.session.add(config)
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"保存村情页面文案失败: {e}")
+            if request.is_json:
+                return jsonify({"msg": "保存失败"}), 500
+            flash("保存失败，请稍后再试")
+            return redirect(url_for("admin.admin_village"))
+
+        if request.is_json:
+            return jsonify({"msg": "村情页面文案已保存"})
+        flash("村情页面文案已保存")
+        return redirect(url_for("admin.admin_village"))
+
+    # GET → 返回当前值（JSON）
+    return jsonify(
+        {
+            "hero_subtitle": config.hero_subtitle or "",
+            "stat_labels": config.stat_labels or "{}",
+            "home_stats": config.home_stats or "{}",
+            "intro_title": config.intro_title or "",
+            "intro_subtitle": config.intro_subtitle or "",
+            "features_title": config.features_title or "",
+            "features_subtitle": config.features_subtitle or "",
+            "village_info_title": config.village_info_title or "",
+        }
+    )
+
+
 @admin_bp.route("/admin/village/<int:vid>", methods=["PUT", "DELETE"])
 @admin_required
 def edit_village(vid):
@@ -375,7 +476,11 @@ def admin_government():
                 return jsonify({"msg": "标题不能为空"}), 400
             flash("标题不能为空")
             return redirect(url_for("admin.admin_government"))
-        gov = Government(title=title, file_url=data.get("file_url", ""))
+        gov = Government(
+            title=title,
+            content=data.get("content", ""),
+            file_url=data.get("file_url", ""),
+        )
         db.session.add(gov)
         db.session.commit()
         if request.is_json:
@@ -407,6 +512,8 @@ def edit_government(gov_id):
         data = request.json
         gov.title = data.get("title", gov.title)
         gov.file_url = data.get("file_url", gov.file_url)
+        if "content" in data:
+            gov.content = data.get("content", gov.content)
         db.session.commit()
         return jsonify(
             {
@@ -568,6 +675,282 @@ def admin_contact_save():
     return jsonify({"msg": "联系信息保存成功"})
 
 
+# ═══ 站点设置（全局配置） ═══
+
+
+@admin_bp.route("/admin/site-settings", methods=["GET", "POST"])
+@admin_required
+def admin_site_settings():
+    """站点全局设置：标题/Logo/导航/页脚/快速入口/统计。"""
+    config = SiteConfig.get()
+    if request.method == "POST":
+        # 普通字段
+        config.site_title = request.form.get("site_title", config.site_title)
+        config.site_slogan = request.form.get("site_slogan", "")
+        config.logo_url = request.form.get("logo_url", "")
+        config.logo_name = request.form.get("logo_name", config.logo_name)
+        config.logo_icon = request.form.get("logo_icon", "fas fa-mountain")
+        config.footer_brand = request.form.get("footer_brand", config.footer_brand)
+        config.footer_about = request.form.get("footer_about", config.footer_about)
+        config.footer_copyright = request.form.get(
+            "footer_copyright", config.footer_copyright
+        )
+        config.about_content = request.form.get("about_content", "")
+
+        # 村情页面可见文本（/village 后台可配，T2）
+        config.hero_subtitle = request.form.get("hero_subtitle", config.hero_subtitle)
+        config.intro_title = request.form.get("intro_title", config.intro_title)
+        config.intro_subtitle = request.form.get(
+            "intro_subtitle", config.intro_subtitle
+        )
+        config.features_title = request.form.get("features_title", config.features_title)
+        config.features_subtitle = request.form.get(
+            "features_subtitle", config.features_subtitle
+        )
+        config.village_info_title = request.form.get(
+            "village_info_title", config.village_info_title
+        )
+
+        # JSON 字段：nav_menu / footer_links / quick_links / home_stats / stat_labels
+        import json
+
+        json_fields = {
+            "nav_menu": "导航菜单",
+            "footer_links": "页脚链接",
+            "quick_links": "快速入口",
+            "home_stats": "首页统计",
+            "stat_labels": "村情KPI标签",
+        }
+        for field, label in json_fields.items():
+            raw = request.form.get(field, "")
+            if raw:
+                try:
+                    parsed = json.loads(raw)
+                except json.JSONDecodeError:
+                    flash(f"{label} JSON 格式错误，已忽略本次修改")
+                    continue
+                setattr(config, field, json.dumps(parsed, ensure_ascii=False))
+
+        # 确保单行存在
+        if config.id != 1 or not SiteConfig.query.first():
+            existing = SiteConfig.query.first()
+            if existing and existing.id != config.id:
+                config.id = existing.id
+        db.session.add(config)
+        try:
+            db.session.commit()
+            flash("站点设置已保存")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"保存站点设置失败: {e}")
+            flash("保存失败，请稍后再试")
+        return redirect(url_for("admin.admin_site_settings"))
+
+    return render_template("admin_site_settings.html", config=config)
+
+
+# ═══ 首页特色服务管理 ═══
+
+
+@admin_bp.route("/admin/home-features", methods=["GET", "POST"])
+@admin_required
+def admin_home_features():
+    """首页特色服务卡片：增删改 + 排序/显隐。"""
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        if not title:
+            flash("标题不能为空")
+            return redirect(url_for("admin.admin_home_features"))
+        feature = HomeFeature(
+            title=title,
+            description=request.form.get("description", ""),
+            icon=request.form.get("icon", "fa-leaf"),
+            icon_color=request.form.get("icon_color", "red"),
+            link=request.form.get("link", "/services"),
+            sort_order=request.form.get("sort_order", 0, type=int),
+            is_active=request.form.get("is_active") == "on",
+        )
+        db.session.add(feature)
+        db.session.commit()
+        flash("特色服务已添加")
+        return redirect(url_for("admin.admin_home_features"))
+
+    features = HomeFeature.query.order_by(
+        HomeFeature.sort_order, HomeFeature.id
+    ).all()
+    return render_template("admin_home_features.html", features=features)
+
+
+@admin_bp.route("/admin/home-features/<int:fid>", methods=["PUT", "DELETE"])
+@admin_required
+def edit_home_feature(fid):
+    feature = HomeFeature.query.get(fid)
+    if not feature:
+        return jsonify({"msg": "特色服务不存在"}), 404
+    if request.method == "PUT":
+        data = request.get_json(silent=True) or {}
+        feature.title = data.get("title", feature.title)
+        feature.description = data.get("description", feature.description)
+        feature.icon = data.get("icon", feature.icon)
+        feature.icon_color = data.get("icon_color", feature.icon_color)
+        feature.link = data.get("link", feature.link)
+        feature.sort_order = data.get("sort_order", feature.sort_order)
+        feature.is_active = data.get("is_active", feature.is_active)
+        db.session.commit()
+        return jsonify({"msg": "特色服务更新成功"})
+    db.session.delete(feature)
+    db.session.commit()
+    return jsonify({"msg": "特色服务已删除"})
+
+
+# ═══ 友情链接管理 ═══
+
+
+@admin_bp.route("/admin/friend-links", methods=["GET", "POST"])
+@admin_required
+def admin_friend_links():
+    """友情链接：增删改。"""
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        if not name:
+            flash("链接名称不能为空")
+            return redirect(url_for("admin.admin_friend_links"))
+        link = FriendLink(
+            name=name,
+            url=request.form.get("url", ""),
+            logo_url=request.form.get("logo_url", ""),
+            description=request.form.get("description", ""),
+            sort_order=request.form.get("sort_order", 0, type=int),
+            is_active=request.form.get("is_active") == "on",
+        )
+        db.session.add(link)
+        db.session.commit()
+        flash("友情链接已添加")
+        return redirect(url_for("admin.admin_friend_links"))
+
+    links = FriendLink.query.order_by(
+        FriendLink.sort_order, FriendLink.id
+    ).all()
+    return render_template("admin_friend_links.html", links=links)
+
+
+@admin_bp.route("/admin/friend-links/<int:lid>", methods=["PUT", "DELETE"])
+@admin_required
+def edit_friend_link(lid):
+    link = FriendLink.query.get(lid)
+    if not link:
+        return jsonify({"msg": "友情链接不存在"}), 404
+    if request.method == "PUT":
+        data = request.get_json(silent=True) or {}
+        link.name = data.get("name", link.name)
+        link.url = data.get("url", link.url)
+        link.logo_url = data.get("logo_url", link.logo_url)
+        link.description = data.get("description", link.description)
+        link.sort_order = data.get("sort_order", link.sort_order)
+        link.is_active = data.get("is_active", link.is_active)
+        db.session.commit()
+        return jsonify({"msg": "友情链接更新成功"})
+    db.session.delete(link)
+    db.session.commit()
+    return jsonify({"msg": "友情链接已删除"})
+
+
+# ═══ 村情·乡村特色管理 ═══
+
+
+@admin_bp.route("/admin/village-highlights", methods=["GET", "POST"])
+@admin_required
+def admin_village_highlights():
+    """村情·乡村特色卡片：增删改。"""
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        if not title:
+            flash("标题不能为空")
+            return redirect(url_for("admin.admin_village_highlights"))
+        highlight = VillageHighlight(
+            title=title,
+            description=request.form.get("description", ""),
+            icon=request.form.get("icon", "fas fa-leaf"),
+            sort_order=request.form.get("sort_order", 0, type=int),
+        )
+        db.session.add(highlight)
+        db.session.commit()
+        flash("乡村特色已添加")
+        return redirect(url_for("admin.admin_village_highlights"))
+
+    highlights = VillageHighlight.query.order_by(
+        VillageHighlight.sort_order, VillageHighlight.id
+    ).all()
+    return render_template("admin_village_highlights.html", highlights=highlights)
+
+
+@admin_bp.route("/admin/village-highlights/<int:hid>", methods=["PUT", "DELETE"])
+@admin_required
+def edit_village_highlight(hid):
+    highlight = VillageHighlight.query.get(hid)
+    if not highlight:
+        return jsonify({"msg": "乡村特色不存在"}), 404
+    if request.method == "PUT":
+        data = request.get_json(silent=True) or {}
+        highlight.title = data.get("title", highlight.title)
+        highlight.description = data.get("description", highlight.description)
+        highlight.icon = data.get("icon", highlight.icon)
+        highlight.sort_order = data.get("sort_order", highlight.sort_order)
+        db.session.commit()
+        return jsonify({"msg": "乡村特色更新成功"})
+    db.session.delete(highlight)
+    db.session.commit()
+    return jsonify({"msg": "乡村特色已删除"})
+
+
+# ═══ 村情·村庄信息管理 ═══
+
+
+@admin_bp.route("/admin/village-stats", methods=["GET", "POST"])
+@admin_required
+def admin_village_stats():
+    """村情·村庄信息指标：增删改。"""
+    if request.method == "POST":
+        label = request.form.get("label", "").strip()
+        if not label:
+            flash("指标名称不能为空")
+            return redirect(url_for("admin.admin_village_stats"))
+        stat = VillageStat(
+            label=label,
+            value=request.form.get("value", ""),
+            group_name=request.form.get("group_name", "其他"),
+            sort_order=request.form.get("sort_order", 0, type=int),
+        )
+        db.session.add(stat)
+        db.session.commit()
+        flash("村庄信息指标已添加")
+        return redirect(url_for("admin.admin_village_stats"))
+
+    stats = VillageStat.query.order_by(
+        VillageStat.group_name, VillageStat.sort_order, VillageStat.id
+    ).all()
+    return render_template("admin_village_stats.html", stats=stats)
+
+
+@admin_bp.route("/admin/village-stats/<int:sid>", methods=["PUT", "DELETE"])
+@admin_required
+def edit_village_stat(sid):
+    stat = VillageStat.query.get(sid)
+    if not stat:
+        return jsonify({"msg": "村庄信息指标不存在"}), 404
+    if request.method == "PUT":
+        data = request.get_json(silent=True) or {}
+        stat.label = data.get("label", stat.label)
+        stat.value = data.get("value", stat.value)
+        stat.group_name = data.get("group_name", stat.group_name)
+        stat.sort_order = data.get("sort_order", stat.sort_order)
+        db.session.commit()
+        return jsonify({"msg": "村庄信息指标更新成功"})
+    db.session.delete(stat)
+    db.session.commit()
+    return jsonify({"msg": "村庄信息指标已删除"})
+
+
 # ═══ 用户审核 ═══
 
 
@@ -658,8 +1041,8 @@ def api_admin_media():
     query = MediaFile.query.order_by(MediaFile.created_at.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     return jsonify(
-        {
-            "data": [
+        paginate_to_dict(
+            [
                 {
                     "id": m.id,
                     "title": m.title,
@@ -673,13 +1056,8 @@ def api_admin_media():
                 }
                 for m in pagination.items
             ],
-            "pagination": {
-                "page": page,
-                "per_page": per_page,
-                "total": pagination.total,
-                "pages": pagination.pages,
-            },
-        }
+            pagination,
+        )
     )
 
 
@@ -691,8 +1069,8 @@ def api_admin_logs():
     query = AuditLog.query.order_by(AuditLog.created_at.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     return jsonify(
-        {
-            "data": [
+        paginate_to_dict(
+            [
                 {
                     "id": l.id,
                     "action": l.action,
@@ -702,13 +1080,8 @@ def api_admin_logs():
                 }
                 for l in pagination.items
             ],
-            "pagination": {
-                "page": page,
-                "per_page": per_page,
-                "total": pagination.total,
-                "pages": pagination.pages,
-            },
-        }
+            pagination,
+        )
     )
 
 

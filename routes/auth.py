@@ -15,34 +15,9 @@ from flask import (
 from werkzeug.security import generate_password_hash
 from models import db, User, PendingUser, Notification, AuditLog
 from datetime import datetime
+from routes.decorators import login_required, admin_required
 
 auth_bp = Blueprint("auth", __name__)
-
-
-def login_required(f):
-    from functools import wraps
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user" not in session:
-            return jsonify({"msg": "未登录"}), 401
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-def admin_required(f):
-    from functools import wraps
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user" not in session:
-            return jsonify({"msg": "未登录"}), 401
-        if session.get("role") != "admin":
-            return jsonify({"msg": "无权限"}), 403
-        return f(*args, **kwargs)
-
-    return decorated_function
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])

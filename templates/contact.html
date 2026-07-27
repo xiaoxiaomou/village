@@ -224,30 +224,13 @@
             <h3>🕒 办公时间</h3>
             
             <div class="service-hours">
-                <div class="hours-title">📅 工作日安排</div>
-                <div class="hours-item">
-                    <span>周一至周五</span>
-                    <span>8:30 - 17:30</span>
-                </div>
-                <div class="hours-item">
-                    <span>周六</span>
-                    <span>9:00 - 16:00</span>
-                </div>
-                <div class="hours-item">
-                    <span>周日</span>
-                    <span>休息</span>
-                </div>
-                <div class="hours-item">
-                    <span>午休时间</span>
-                    <span>12:00 - 14:00</span>
-                </div>
+                <div class="hours-title">📅 办公时间</div>
+                <p style="margin:0; line-height:1.8; color:#666; white-space: pre-line;">{{ contact.work_hours or '周一至周五 8:30 - 17:30\n周六 9:00 - 16:00\n周日 休息\n午休时间 12:00 - 14:00' }}</p>
             </div>
             
             <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
                 <strong>⚠️ 特别提醒：</strong><br>
-                • 法定节假日休息<br>
-                • 紧急事务请拨打24小时热线<br>
-                • 建议提前电话预约
+                <span style="white-space: pre-line;">{{ contact.work_note or '法定节假日休息\n紧急事务请拨打24小时热线\n建议提前电话预约' }}</span>
             </div>
         </div>
     </div>

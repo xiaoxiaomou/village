@@ -1,0 +1,1029 @@
+/* ═══════════════════════════════════════════════════════════════
+   纪念录式多媒体记忆页面 — 共享样式
+   全部引用 base.html / style.css 设计令牌（--cinnabar/--gold/--jade/
+   --paper/--ink-* 等），不写死十六进制色值；标题用 --font-display。
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ===== 页面区块标题（纪念风） ===== */
+.mem-page-head {
+  margin-bottom: var(--space-8);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.mem-page-head h1 {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--ink-dark);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+.mem-page-head h1 i {
+  color: var(--cinnabar);
+  margin-right: var(--space-2);
+}
+.mem-page-head p {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  margin: var(--space-1) 0 0;
+}
+
+/* ===== 筛选/搜索栏（复用既有 token） ===== */
+.mem-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+.mem-filter-bar input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+}
+.mem-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-8);
+}
+.mem-tag-cloud a {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  color: var(--ink-light);
+  background: var(--paper-warm);
+  border: 1px solid var(--paper-deep);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+.mem-tag-cloud a:hover {
+  color: var(--cinnabar);
+  border-color: var(--cinnabar-light);
+  background: var(--cinnabar-pale);
+  transform: translateY(-2px);
+}
+.mem-tag-cloud a.is-active {
+  color: var(--paper);
+  background: var(--cinnabar);
+  border-color: var(--cinnabar);
+}
+
+/* ════════════════ 时间线（金线中轴 + 朱砂节点 + 右卡片） ════════════════ */
+.tl {
+  position: relative;
+  padding: 0;
+  margin: 0;
+}
+/* 金线中轴 */
+.tl-axis {
+  position: absolute;
+  left: 148px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-light) 100%);
+  border-radius: var(--radius-full);
+  opacity: 0.85;
+}
+
+.tl-item {
+  position: relative;
+  padding-left: 196px;
+  margin-bottom: var(--space-8);
+}
+/* 朱砂节点 */
+.tl-node {
+  position: absolute;
+  left: 148px;
+  top: 30px;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cinnabar);
+  border: 3px solid var(--paper);
+  box-shadow: 0 0 0 3px var(--cinnabar-pale);
+  z-index: 2;
+}
+.tl-node::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--paper);
+  opacity: 0.65;
+}
+/* 日期（桌面端浮于中轴左侧） */
+.tl-date {
+  position: absolute;
+  left: 0;
+  top: 26px;
+  width: 124px;
+  text-align: right;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink-light);
+  letter-spacing: 0.02em;
+}
+.tl-date small {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+/* 卡片 */
+.tl-card {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--paper-deep);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5) var(--space-6);
+  transition: box-shadow var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+}
+.tl-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+/* 卡片指向中轴的小尖角 */
+.tl-card::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 30px;
+  width: 14px;
+  height: 14px;
+  background: var(--paper);
+  border-left: 1px solid var(--paper-deep);
+  border-bottom: 1px solid var(--paper-deep);
+  transform: rotate(45deg);
+}
+
+.tl-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.tl-card-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink-dark);
+  line-height: 1.4;
+  margin: 0;
+}
+.tl-card-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.tl-card-title a:hover {
+  color: var(--cinnabar);
+}
+.tl-type-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--jade);
+  background: var(--jade-pale);
+  border: 1px solid rgba(90, 138, 127, 0.25);
+  white-space: nowrap;
+}
+.tl-type-badge.is-photo {
+  color: var(--gold);
+  background: var(--gold-pale);
+  border-color: rgba(184, 149, 106, 0.25);
+}
+.tl-type-badge.is-video {
+  color: var(--cinnabar);
+  background: var(--cinnabar-pale);
+  border-color: rgba(196, 92, 72, 0.25);
+}
+.tl-type-badge.is-audio {
+  color: var(--ink-light);
+  background: var(--paper-warm);
+  border-color: var(--paper-deep);
+}
+
+.tl-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  margin-bottom: var(--space-3);
+}
+.tl-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tl-card-meta i {
+  color: var(--gold);
+  font-size: 0.8rem;
+}
+/* 地点展示（T04 收尾）：黛绿小字，仅引用 --jade 设计令牌，不写死十六进制。
+   时间线卡片 / 网格卡片 / 详情页 meta 区共用此 class。 */
+.mem-locations {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--jade);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.tl-card-body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  line-height: 1.85;
+  font-size: 0.95rem;
+  margin: 0 0 var(--space-4);
+}
+.tl-card-body p {
+  margin: 0;
+}
+
+/* 卡片内媒体（缩略图网格 + 视频） */
+.tl-card-media {
+  margin-bottom: var(--space-4);
+}
+.tl-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: var(--space-3);
+}
+.tl-media-grid img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--paper-deep);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.tl-media-grid img:hover {
+  transform: scale(1.04);
+}
+.tl-video-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.tl-video-list video {
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: var(--ink-dark);
+}
+
+.tl-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.tl-card-tags a {
+  font-size: 0.78rem;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  color: var(--jade);
+  background: var(--jade-pale);
+  border: 1px solid rgba(90, 138, 127, 0.2);
+}
+.tl-card-tags a:hover {
+  color: var(--paper);
+  background: var(--jade);
+}
+
+.tl-card-foot {
+  border-top: 1px solid var(--paper-deep);
+  padding-top: var(--space-3);
+}
+.tl-card-foot a {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cinnabar);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tl-card-foot a:hover {
+  color: var(--cinnabar-light);
+}
+
+/* ════════════════ 空状态（庄重引导） ════════════════ */
+.tl-empty {
+  position: relative;
+  text-align: center;
+  padding: 72px var(--space-6);
+  background: var(--paper);
+  border: 1px solid var(--paper-deep);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.tl-empty .mem-empty-seal {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--space-4);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  color: var(--paper);
+  background: linear-gradient(135deg, var(--cinnabar), var(--cinnabar-light));
+  box-shadow: 0 6px 18px rgba(196, 92, 72, 0.3);
+}
+.tl-empty h3 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--ink-dark);
+  margin: 0 0 var(--space-2);
+}
+.tl-empty p {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+  margin: 0 auto var(--space-5);
+  max-width: 420px;
+  line-height: 1.8;
+}
+
+/* ════════════════ 纪念画廊（详情页） ════════════════ */
+.mem-gallery {
+  margin: var(--space-5) 0;
+}
+.mem-gallery-main {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--paper-deep);
+  box-shadow: var(--shadow-sm);
+  background: var(--ink-dark);
+  cursor: zoom-in;
+}
+.mem-gallery-main img {
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  display: block;
+}
+.mem-gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.mem-gallery-thumbs .mem-thumb {
+  width: 100%;
+  height: 84px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+.mem-gallery-thumbs .mem-thumb:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+}
+.mem-gallery-thumbs .mem-thumb.is-active {
+  border-color: var(--cinnabar);
+}
+
+.mem-videos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-5) 0;
+}
+.mem-video-item {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--paper-deep);
+  box-shadow: var(--shadow-sm);
+  background: var(--ink-dark);
+}
+.mem-video-item video {
+  width: 100%;
+  display: block;
+  max-height: 420px;
+}
+
+/* ════════════════ 上传区（新建/编辑） ════════════════ */
+.mem-upload-zone {
+  border: 2px dashed var(--paper-deep);
+  border-radius: var(--radius-lg);
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  background: var(--paper-warm);
+  color: var(--ink-muted);
+}
+.mem-upload-zone:hover,
+.mem-upload-zone.is-dragover {
+  border-color: var(--cinnabar-light);
+  background: var(--cinnabar-pale);
+  color: var(--cinnabar);
+}
+.mem-upload-zone i {
+  font-size: 1.8rem;
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--gold);
+}
+.mem-upload-zone p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+.mem-upload-zone small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+.mem-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.mem-thumb {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--paper-deep);
+  background: var(--paper-warm);
+  aspect-ratio: 1 / 1;
+  cursor: grab;
+  transition: box-shadow var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+.mem-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+.mem-thumb.dragging {
+  opacity: 0.4;
+  box-shadow: var(--shadow-lg);
+  cursor: grabbing;
+}
+.mem-thumb .mem-thumb-handle {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(26, 26, 46, 0.55);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  cursor: grab;
+}
+.mem-thumb .mem-thumb-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(196, 92, 72, 0.9);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.mem-thumb .mem-thumb-remove:hover {
+  background: var(--cinnabar);
+}
+.mem-thumb .mem-thumb-order {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(26, 26, 46, 0.6);
+  color: var(--paper);
+  font-size: 0.7rem;
+}
+.mem-thumb.is-uploading::after {
+  content: "上传中…";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(250, 248, 243, 0.7);
+  color: var(--cinnabar);
+  font-size: 0.8rem;
+}
+
+.mem-video-zone {
+  margin-top: var(--space-4);
+}
+.mem-video-zone label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ink);
+  margin-bottom: var(--space-2);
+}
+.mem-video-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.mem-video-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--jade-pale);
+  border: 1px solid rgba(90, 138, 127, 0.25);
+  font-size: 0.82rem;
+  color: var(--jade);
+  max-width: 260px;
+}
+.mem-video-chip i {
+  font-size: 1rem;
+}
+.mem-video-chip .mem-video-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mem-video-chip .mem-thumb-remove {
+  position: static;
+  width: 20px;
+  height: 20px;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ════════════════ 详情页纪念风 ════════════════ */
+.mem-detail {
+  background: var(--paper);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--paper-deep);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-8);
+  position: relative;
+  overflow: hidden;
+}
+.mem-detail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--cinnabar), var(--gold), var(--jade));
+}
+.mem-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-light);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-5);
+}
+.mem-back-link:hover {
+  color: var(--cinnabar);
+}
+.mem-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--paper-deep);
+}
+.mem-detail-title {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--ink-dark);
+  line-height: 1.35;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+/* 朱砂印章感日期戳 */
+.mem-seal {
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  border: 2px solid var(--cinnabar);
+  border-radius: 12px;
+  color: var(--cinnabar);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  line-height: 1.2;
+  transform: rotate(-4deg);
+  background: var(--cinnabar-pale);
+}
+.mem-seal .mem-seal-day {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.mem-seal .mem-seal-y {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+.mem-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  margin: var(--space-4) 0;
+}
+.mem-detail-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mem-detail-meta i {
+  color: var(--gold);
+}
+.mem-detail-content {
+  font-family: var(--font-body);
+  line-height: 1.95;
+  font-size: 1.02rem;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* 个人感受（引用样式，温柔底色） */
+.mem-feeling {
+  margin: var(--space-6) 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--paper-warm);
+  border-left: 4px solid var(--cinnabar);
+  position: relative;
+}
+.mem-feeling::before {
+  content: "\201C";
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  color: var(--cinnabar-pale);
+  line-height: 1;
+}
+.mem-feeling h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--cinnabar);
+  margin: 0 0 var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mem-feeling p {
+  margin: 0;
+  line-height: 1.9;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+.mem-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+.mem-detail-tags a {
+  font-size: 0.82rem;
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  color: var(--jade);
+  background: var(--jade-pale);
+  border: 1px solid rgba(90, 138, 127, 0.2);
+}
+.mem-detail-tags a:hover {
+  color: var(--paper);
+  background: var(--jade);
+}
+.mem-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--paper-deep);
+}
+.mem-detail-actions .btn {
+  font-size: 0.9rem;
+}
+
+/* 灯箱（全屏看图） */
+.mem-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(26, 26, 46, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  padding: var(--space-6);
+}
+.mem-lightbox img {
+  max-width: 92%;
+  max-height: 92%;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ════════════════ 响应式：移动端时间线贴左 ════════════════ */
+@media (max-width: 768px) {
+  .tl-axis {
+    left: 14px;
+  }
+  .tl-item {
+    padding-left: 44px;
+  }
+  .tl-node {
+    left: 14px;
+    top: 8px;
+  }
+  .tl-date {
+    position: static;
+    width: auto;
+    text-align: left;
+    margin: 0 0 var(--space-3);
+    padding-left: 30px;
+  }
+  .tl-date small {
+    display: inline;
+    margin-left: 6px;
+  }
+  .tl-card::before {
+    display: none;
+  }
+  .mem-detail {
+    padding: var(--space-5);
+  }
+  .mem-detail-header {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+  .mem-seal {
+    margin-bottom: var(--space-3);
+  }
+  .mem-detail-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* ════════════════ 补齐项：视图切换 / 网格视图 / 年份分隔 / 标签徽章 ════════════════ */
+
+/* 视图切换（时间线 / 网格）—— 默认时间线，网格为可切换次要视图 */
+.mem-view-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background: var(--paper-warm);
+  border: 1px solid var(--paper-deep);
+  margin-bottom: var(--space-6);
+}
+.mem-view-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink-light);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+.mem-view-toggle button i {
+  font-size: 0.85rem;
+}
+.mem-view-toggle button:hover {
+  color: var(--cinnabar);
+}
+.mem-view-toggle button.is-active {
+  color: var(--paper);
+  background: linear-gradient(135deg, var(--cinnabar), var(--cinnabar-light));
+  box-shadow: 0 3px 10px rgba(196, 92, 72, 0.25);
+}
+.mem-view[hidden] {
+  display: none;
+}
+
+/* 网格视图（纪念风卡片：半透明宣纸底 + 朱砂描边 + 柔和阴影） */
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-5);
+}
+.memory-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border: 1px solid var(--paper-deep);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out);
+}
+.memory-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+  border-color: var(--cinnabar-light);
+}
+.memory-card-cover {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  background: var(--paper-warm);
+  overflow: hidden;
+}
+.memory-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.memory-card-cover--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--cinnabar-pale), var(--gold-pale));
+}
+.memory-card-cover--empty i {
+  font-size: 2.4rem;
+  color: var(--cinnabar);
+  opacity: 0.8;
+}
+.memory-card-body {
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.memory-card-date {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+.memory-card-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink-dark);
+  margin: 0;
+  line-height: 1.4;
+}
+.memory-card:hover .memory-card-title {
+  color: var(--cinnabar);
+}
+.memory-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.memory-card-tags .tag-badge {
+  font-size: 0.72rem;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+  color: var(--jade);
+  background: var(--jade-pale);
+  border: 1px solid rgba(90, 138, 127, 0.2);
+}
+.memory-card-people {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+.memory-card-people a {
+  color: var(--cinnabar);
+  text-decoration: none;
+}
+.memory-card-people a:hover {
+  text-decoration: underline;
+}
+
+/* 通用标签徽章（标签云 / 网格 / 卡片共用纪念风） */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  color: var(--ink-light);
+  background: var(--paper-warm);
+  border: 1px solid var(--paper-deep);
+  text-decoration: none;
+  transition: transform var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+.tag-badge:hover {
+  color: var(--cinnabar);
+  border-color: var(--cinnabar-light);
+  background: var(--cinnabar-pale);
+  transform: translateY(-2px);
+}
+.tag-badge.is-active {
+  color: var(--paper);
+  background: var(--cinnabar);
+  border-color: var(--cinnabar);
+}
+
+/* 时间线年份分隔（朱砂大号年份 + 金线） */
+.tl-year-sep {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-6);
+  padding-left: 196px;
+}
+.tl-year-sep .tl-year-num {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cinnabar);
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+.tl-year-sep .tl-year-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold) 0%, transparent 100%);
+}
+
+/* 卡片 / 详情页内人物档案链接 */
+.tl-card-meta a,
+.mem-detail-meta a {
+  color: var(--cinnabar);
+  text-decoration: none;
+}
+.tl-card-meta a:hover,
+.mem-detail-meta a:hover {
+  text-decoration: underline;
+}
+
+/* 移动端：年份分隔与小网格适配 */
+@media (max-width: 768px) {
+  .tl-year-sep {
+    padding-left: 44px;
+  }
+  .memory-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}

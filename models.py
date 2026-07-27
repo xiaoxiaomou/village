@@ -11,6 +11,18 @@ import json
 db = SQLAlchemy()
 
 
+def _json_list(text):
+    """将 JSON 文本解析为列表；解析失败或类型不符时返回空列表。
+
+    仅捕获 ``json.JSONDecodeError`` / ``TypeError``，避免吞掉其它异常。
+    """
+    try:
+        result = json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    return result if isinstance(result, list) else []
+
+
 class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
@@ -153,34 +165,19 @@ class Memory(db.Model):
     )
 
     def get_photos(self):
-        try:
-            return json.loads(self.photo_urls) or []
-        except:
-            return []
+        return _json_list(self.photo_urls)
 
     def get_videos(self):
-        try:
-            return json.loads(self.video_urls) or []
-        except:
-            return []
+        return _json_list(self.video_urls)
 
     def get_tags(self):
-        try:
-            return json.loads(self.tags) or []
-        except:
-            return []
+        return _json_list(self.tags)
 
     def get_people(self):
-        try:
-            return json.loads(self.people_involved) or []
-        except:
-            return []
+        return _json_list(self.people_involved)
 
     def get_locations(self):
-        try:
-            return json.loads(self.locations) or []
-        except:
-            return []
+        return _json_list(self.locations)
 
 
 class Tag(db.Model):
@@ -354,3 +351,243 @@ class HomeFeature(db.Model):
     sort_order = db.Column(db.Integer, default=0)  # 排序（越小越靠前）
     is_active = db.Column(db.Boolean, default=True)  # 是否在前台展示
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class SiteConfig(db.Model):
+    """站点级全局配置（单行表，id 固定 = 1）。
+
+    站点标题、Logo、导航菜单、页脚、快速入口、首页统计等均来自此表，
+    通过 ``SiteConfig.get()`` 单例获取；表为空/缺失时返回内存默认实例，
+    保证模板渲染不崩溃。
+    """
+
+    __tablename__ = "site_config"
+    id = db.Column(db.Integer, primary_key=True)
+    site_title = db.Column(db.String(100), default="乡村记忆")  # 站点标题
+    site_slogan = db.Column(db.Text, default="")  # 站点副标题/标语
+    logo_url = db.Column(db.String(255), default="")  # 图片 Logo 访问 URL
+    logo_name = db.Column(db.String(100), default="乡村记忆")  # 文字 Logo 名称
+    logo_icon = db.Column(db.String(50), default="fas fa-mountain")  # 文字 Logo 图标
+    nav_menu = db.Column(db.Text, default="[]")  # 导航菜单 JSON
+    footer_brand = db.Column(db.Text, default="")  # 页脚品牌名
+    footer_about = db.Column(db.Text, default="")  # 页脚简介文案
+    footer_links = db.Column(db.Text, default="[]")  # 页脚链接分组 JSON
+    footer_copyright = db.Column(db.Text, default="")  # 版权后缀（不含年份）
+    quick_links = db.Column(db.Text, default="[]")  # 首页快速入口 JSON
+    home_stats = db.Column(db.Text, default="{}")  # 首页/村情统计 JSON
+    about_content = db.Column(db.Text, default="")  # 关于我们页正文（富文本）
+    # ─── 村情页面可见文本（/village 后台可配，T1） ───
+    hero_subtitle = db.Column(
+        db.Text, default="生态宜居 · 产业兴旺 · 乡风文明"
+    )  # 封面副标题
+    stat_labels = db.Column(db.Text, default="{}")  # KPI 标签 JSON: {population,area,output,satisfaction}
+    intro_title = db.Column(db.Text, default="关于我们的村庄")  # 「关于我们的村庄」区块标题
+    intro_subtitle = db.Column(db.Text, default="山水田园间，品味乡村魅力")  # 「关于我们的村庄」副文案
+    features_title = db.Column(db.Text, default="乡村特色")  # 「乡村特色」区块标题
+    features_subtitle = db.Column(db.Text, default="生态、生产、生活融合发展")  # 「乡村特色」副文案
+    village_info_title = db.Column(db.Text, default="村庄信息")  # 「村庄信息」区块标题（P1）
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    @classmethod
+    def default_values(cls):
+        """返回默认配置字典（用于种子初始化与兜底实例）。"""
+        nav_menu = [
+            {"label": "首页", "url": "/", "icon": "fas fa-home", "sort_order": 1, "is_active": True},
+            {"label": "新闻", "url": "/news", "icon": "fas fa-newspaper", "sort_order": 2, "is_active": True},
+            {"label": "村情", "url": "/village", "icon": "fas fa-map-marked-alt", "sort_order": 3, "is_active": True},
+            {"label": "政务", "url": "/government", "icon": "fas fa-landmark", "sort_order": 4, "is_active": True},
+            {"label": "服务", "url": "/services", "icon": "fas fa-concierge-bell", "sort_order": 5, "is_active": True},
+            {"label": "留言", "url": "/message", "icon": "fas fa-comments", "sort_order": 6, "is_active": True},
+            {"label": "联系", "url": "/contact", "icon": "fas fa-phone-alt", "sort_order": 7, "is_active": True},
+            {"label": "时间轴", "url": "/timeline", "icon": "fas fa-clock", "sort_order": 8, "is_active": True},
+            {"label": "怀旧", "url": "/memories", "icon": "fas fa-images", "sort_order": 9, "is_active": True},
+        ]
+        footer_links = [
+            {
+                "title": "快速导航",
+                "links": [
+                    {"label": "新闻动态", "url": "/news"},
+                    {"label": "村情概况", "url": "/village"},
+                    {"label": "政务公开", "url": "/government"},
+                    {"label": "便民服务", "url": "/services"},
+                ],
+            },
+            {
+                "title": "记忆空间",
+                "links": [
+                    {"label": "时间轴", "url": "/timeline"},
+                    {"label": "怀旧记录", "url": "/memories"},
+                    {"label": "留言互动", "url": "/message"},
+                ],
+            },
+            {
+                "title": "关于我们",
+                "links": [
+                    {"label": "联系我们", "url": "/contact"},
+                    {"label": "用户登录", "url": "/login"},
+                    {"label": "注册账户", "url": "/register"},
+                ],
+            },
+        ]
+        quick_links = [
+            {"label": "新闻动态", "url": "/news", "icon": "fas fa-newspaper", "color": "red", "sort_order": 1},
+            {"label": "村情概况", "url": "/village", "icon": "fas fa-map-marked-alt", "color": "jade", "sort_order": 2},
+            {"label": "政务公开", "url": "/government", "icon": "fas fa-landmark", "color": "gold", "sort_order": 3},
+            {"label": "便民服务", "url": "/services", "icon": "fas fa-concierge-bell", "color": "ink", "sort_order": 4},
+            {"label": "留言互动", "url": "/message", "icon": "fas fa-comments", "color": "red", "sort_order": 5},
+        ]
+        home_stats = {
+            "population": "2500+",
+            "area": "15km²",
+            "output": "1200万",
+            "satisfaction": "98%",
+        }
+        stat_labels = {
+            "population": "常住人口",
+            "area": "村庄面积",
+            "output": "年农业产值",
+            "satisfaction": "村民满意度",
+        }
+        return {
+            "site_title": "乡村记忆",
+            "site_slogan": "",
+            "logo_url": "",
+            "logo_name": "乡村记忆",
+            "logo_icon": "fas fa-mountain",
+            "nav_menu": json.dumps(nav_menu, ensure_ascii=False),
+            "footer_brand": "乡村记忆",
+            "footer_about": "记录乡村的点滴变化，传承乡土文化记忆。",
+            "footer_links": json.dumps(footer_links, ensure_ascii=False),
+            "footer_copyright": "用心的记录，留住温暖的回忆",
+            "quick_links": json.dumps(quick_links, ensure_ascii=False),
+            "home_stats": json.dumps(home_stats, ensure_ascii=False),
+            "about_content": (
+                "<p>乡村记忆系统致力于记录乡村的点滴变化，传承乡土文化记忆。"
+                "这里收藏着村庄的故事、人物与风景，让每一份乡愁都有处安放。</p>"
+            ),
+            # ─── 以下为本次新增（村情页面可见文本，T1） ───
+            "hero_subtitle": "生态宜居 · 产业兴旺 · 乡风文明",
+            "stat_labels": json.dumps(stat_labels, ensure_ascii=False),
+            "intro_title": "关于我们的村庄",
+            "intro_subtitle": "山水田园间，品味乡村魅力",
+            "features_title": "乡村特色",
+            "features_subtitle": "生态、生产、生活融合发展",
+            "village_info_title": "村庄信息",
+        }
+
+    @classmethod
+    def get(cls):
+        """返回 id=1 的配置行；若无（表缺失/未初始化）返回内存默认实例。"""
+        try:
+            row = cls.query.first()
+        except Exception:
+            row = None
+        if row is None:
+            row = cls(id=1, **cls.default_values())
+        return row
+
+    @property
+    def nav_items(self):
+        """解析导航菜单，过滤禁用项并按 sort_order 排序。"""
+        try:
+            items = json.loads(self.nav_menu) if self.nav_menu else []
+        except (json.JSONDecodeError, TypeError):
+            items = []
+        if not isinstance(items, list):
+            items = []
+        items = [i for i in items if i.get("is_active", True)]
+        items.sort(key=lambda x: x.get("sort_order", 0))
+        return items
+
+    @property
+    def footer_link_groups(self):
+        """解析页脚链接分组。"""
+        try:
+            groups = json.loads(self.footer_links) if self.footer_links else []
+        except (json.JSONDecodeError, TypeError):
+            groups = []
+        return groups if isinstance(groups, list) else []
+
+    @property
+    def quick_link_items(self):
+        """解析首页快速入口，按 sort_order 排序。"""
+        try:
+            items = json.loads(self.quick_links) if self.quick_links else []
+        except (json.JSONDecodeError, TypeError):
+            items = []
+        if not isinstance(items, list):
+            items = []
+        items.sort(key=lambda x: x.get("sort_order", 0))
+        return items
+
+    @property
+    def home_stats_dict(self):
+        """解析首页/村情统计，缺失键用兜底值补全。"""
+        try:
+            d = json.loads(self.home_stats) if self.home_stats else {}
+        except (json.JSONDecodeError, TypeError):
+            d = {}
+        if not isinstance(d, dict):
+            d = {}
+        d.setdefault("population", "2500+")
+        d.setdefault("area", "15km²")
+        d.setdefault("output", "1200万")
+        d.setdefault("satisfaction", "98%")
+        return d
+
+    @property
+    def labels_dict(self):
+        """解析 KPI 标签 JSON；缺失键用默认中文标签补全（模型级兜底，防模板硬编码）。"""
+        default_labels = {
+            "population": "常住人口",
+            "area": "村庄面积",
+            "output": "年农业产值",
+            "satisfaction": "村民满意度",
+        }
+        try:
+            d = json.loads(self.stat_labels) if self.stat_labels else {}
+        except (json.JSONDecodeError, TypeError):
+            d = {}
+        if not isinstance(d, dict):
+            d = {}
+        for k, v in default_labels.items():
+            d.setdefault(k, v)
+        return d
+
+
+class FriendLink(db.Model):
+    """友情链接（前台页脚渲染）。"""
+
+    __tablename__ = "friend_links"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # 链接名称
+    url = db.Column(db.String(255), default="")  # 跳转地址
+    logo_url = db.Column(db.String(255), default="")  # 站点图标（可选）
+    description = db.Column(db.Text, default="")  # 备注
+    sort_order = db.Column(db.Integer, default=0)  # 排序
+    is_active = db.Column(db.Boolean, default=True)  # 是否展示
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class VillageHighlight(db.Model):
+    """村情·乡村特色卡片（前台可配）。"""
+
+    __tablename__ = "village_highlights"
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)  # 卡片标题
+    description = db.Column(db.Text, default="")  # 文案
+    icon = db.Column(db.String(50), default="fas fa-leaf")  # FontAwesome 图标类名
+    sort_order = db.Column(db.Integer, default=0)  # 排序
+
+
+class VillageStat(db.Model):
+    """村情·村庄信息指标（前台可配）。"""
+
+    __tablename__ = "village_stats"
+    id = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.String(100), nullable=False)  # 指标名
+    value = db.Column(db.String(100), default="")  # 指标值
+    group_name = db.Column(db.String(50), default="其他")  # 分组
+    sort_order = db.Column(db.Integer, default=0)  # 排序

@@ -424,42 +424,30 @@
   <div class="village-hero-bg" id="heroBg"></div>
   <div class="village-hero-overlay">
     <h1>{{ village_info.title if village_info else '美丽乡村' }}</h1>
-    <p>生态宜居 · 产业兴旺 · 乡风文明</p>
+    <p>{{ site_config.hero_subtitle }}</p>
   </div>
 </div>
 
-{% if village_info %}
-<!-- 数据统计 -->
+<!-- 数据统计（全局配置，始终可见；KPI 服务端渲染，零 JS 兜底） -->
 <section class="stats-section">
   <div class="stats-grid">
+    {% set stat_keys = ["population", "area", "output", "satisfaction"] %}
+    {% for key in stat_keys %}
     <div class="stat-item">
-      <div class="stat-number" id="statPopulation">2,500+</div>
+      <div class="stat-number">{{ site_config.home_stats_dict.get(key, '') }}</div>
       <div class="stat-divider"></div>
-      <div class="stat-label">常 住 人 口</div>
+      <div class="stat-label">{{ site_config.labels_dict.get(key, '') }}</div>
     </div>
-    <div class="stat-item">
-      <div class="stat-number" id="statArea">15km²</div>
-      <div class="stat-divider"></div>
-      <div class="stat-label">村 庄 面 积</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-number" id="statOutput">1200万</div>
-      <div class="stat-divider"></div>
-      <div class="stat-label">年农业产值</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-number" id="statSatisfaction">98%</div>
-      <div class="stat-divider"></div>
-      <div class="stat-label">村民满意度</div>
-    </div>
+    {% endfor %}
   </div>
 </section>
 
+{% if village_info %}
 <!-- 村庄介绍 -->
 <section>
   <div class="section-header">
-    <h2>关于我们的村庄</h2>
-    <p>山水田园间，品味乡村魅力</p>
+    <h2>{{ site_config.intro_title }}</h2>
+    <p>{{ site_config.intro_subtitle }}</p>
     <div class="section-divider"></div>
   </div>
   <div class="intro-card">
@@ -467,79 +455,6 @@
     <p>{{ village_info.content }}</p>
   </div>
 </section>
-
-<!-- 乡村特色 -->
-<section>
-  <div class="section-header">
-    <h2>乡村特色</h2>
-    <p>生态、生产、生活融合发展</p>
-    <div class="section-divider"></div>
-  </div>
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon green">
-        <i class="fas fa-leaf"></i>
-      </div>
-      <h4>生态环境</h4>
-      <p>山清水秀，空气清新，森林覆盖率高，是天然的生态氧吧</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon cinnabar">
-        <i class="fas fa-home"></i>
-      </div>
-      <h4>民居特色</h4>
-      <p>传统村落格局保存完好，白墙黛瓦与现代设施完美融合</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon gold">
-        <i class="fas fa-hands-helping"></i>
-      </div>
-      <h4>人文风情</h4>
-      <p>淳朴民风，热情好客，丰富的民俗文化和传统手工艺</p>
-    </div>
-  </div>
-</section>
-
-<!-- 村庄信息 -->
-<div class="info-grid">
-  <div class="info-card">
-    <h4><i class="fas fa-tree"></i> 自然资源</h4>
-    <ul>
-      <li><span class="label">耕地面积</span><span class="value">约2800亩</span></li>
-      <li><span class="label">山林面积</span><span class="value">约5000亩</span></li>
-      <li><span class="label">水域面积</span><span class="value">约200亩</span></li>
-      <li><span class="label">森林覆盖率</span><span class="value">65%</span></li>
-    </ul>
-  </div>
-  <div class="info-card">
-    <h4><i class="fas fa-users"></i> 人口概况</h4>
-    <ul>
-      <li><span class="label">户数</span><span class="value">约620户</span></li>
-      <li><span class="label">劳动力</span><span class="value">约1500人</span></li>
-      <li><span class="label">外出务工</span><span class="value">约400人</span></li>
-      <li><span class="label">党员</span><span class="value">68人</span></li>
-    </ul>
-  </div>
-  <div class="info-card">
-    <h4><i class="fas fa-industry"></i> 产业发展</h4>
-    <ul>
-      <li><span class="label">主导产业</span><span class="value">水稻种植</span></li>
-      <li><span class="label">特色产业</span><span class="value">乡村旅游</span></li>
-      <li><span class="label">合作社</span><span class="value">5家</span></li>
-      <li><span class="label">电商平台</span><span class="value">3个</span></li>
-    </ul>
-  </div>
-  <div class="info-card">
-    <h4><i class="fas fa-road"></i> 基础设施</h4>
-    <ul>
-      <li><span class="label">道路硬化</span><span class="value">100%</span></li>
-      <li><span class="label">自来水</span><span class="value">100%</span></li>
-      <li><span class="label">网络覆盖</span><span class="value">98%</span></li>
-      <li><span class="label">路灯安装</span><span class="value">156盏</span></li>
-    </ul>
-  </div>
-</div>
-
 {% else %}
 <!-- 空状态 -->
 <div class="empty-state">
@@ -547,6 +462,56 @@
   <p>暂无村庄信息，请联系管理员添加</p>
 </div>
 {% endif %}
+
+<!-- 乡村特色（可配：后台 VillageHighlight 维护） -->
+<section>
+  <div class="section-header">
+    <h2>{{ site_config.features_title }}</h2>
+    <p>{{ site_config.features_subtitle }}</p>
+    <div class="section-divider"></div>
+  </div>
+  <div class="features-grid">
+    {% for h in highlights %}
+    <div class="feature-card">
+      <div class="feature-icon gold">
+        <i class="{{ h.icon }}"></i>
+      </div>
+      <h4>{{ h.title }}</h4>
+      <p>{{ h.description }}</p>
+    </div>
+    {% else %}
+    <div class="empty-state" style="grid-column: 1 / -1;">
+      <i class="fas fa-leaf"></i>
+      <p>暂无乡村特色，请在后台「村情·乡村特色」配置</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- 村庄信息（可配：后台 VillageStat 维护） -->
+<section>
+  <div class="section-header">
+    <h2>{{ site_config.village_info_title }}</h2>
+    <div class="section-divider"></div>
+  </div>
+  <div class="info-grid">
+  {% for group in stat_groups %}
+  <div class="info-card">
+    <h4><i class="{{ group.icon }}"></i> {{ group.group_name }}</h4>
+    <ul>
+      {% for s in group['items'] %}
+      <li><span class="label">{{ s.label }}</span><span class="value">{{ s.value }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% else %}
+  <div class="empty-state" style="grid-column: 1 / -1;">
+    <i class="fas fa-info-circle"></i>
+    <p>暂无村庄信息指标，请在后台「村情·村庄信息」配置</p>
+  </div>
+  {% endfor %}
+</div>
+</section>
 {% endblock %}
 
 {% block scripts %}
@@ -571,38 +536,9 @@
     }
   }
 
-  // 加载统计数据
-  async function loadStats() {
-    try {
-      const res = await fetch("/api/home/stats");
-      const data = await res.json();
-      
-      const populationEl = document.getElementById("statPopulation");
-      const areaEl = document.getElementById("statArea");
-      const outputEl = document.getElementById("statOutput");
-      const satisfactionEl = document.getElementById("statSatisfaction");
-      
-      if (data.population) {
-        populationEl.textContent = data.population;
-      }
-      if (data.area) {
-        areaEl.textContent = data.area;
-      }
-      if (data.output) {
-        outputEl.textContent = data.output;
-      }
-      if (data.satisfaction) {
-        satisfactionEl.textContent = data.satisfaction;
-      }
-    } catch (e) {
-      console.error("加载统计数据失败:", e);
-    }
-  }
-
   // 页面加载完成后初始化
   document.addEventListener("DOMContentLoaded", function() {
     loadCoverImage();
-    loadStats();
   });
 </script>
 {% endblock %}

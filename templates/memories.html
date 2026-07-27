@@ -1,111 +1,158 @@
 {% extends "base.html" %}
+{% from "macros/memory_card.html" import render_card, render_grid_card %}
 {% block title %}怀旧记录 - 乡村记忆系统{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/memorial.css') }}" />
 <style>
-    .memory-grid { display: grid; gap: 20px; }
-    .memory-header { display: flex; justify-content: space-between; align-items: center; }
-    .memory-actions { display: flex; gap: 10px; }
-    /* 整张卡片可点击进入详情 */
-    .memory-card { position: relative; cursor: pointer; transition: box-shadow .2s, transform .2s; }
-    .memory-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.08); transform: translateY(-2px); }
-    /* 覆盖整卡的透明跳转层,放最底,内部真实链接(标签)需提层级 */
-    .memory-card .card-link {
-        position: absolute; inset: 0; z-index: 0;
-        display: block; color: inherit; text-decoration: none;
-    }
-    /* 卡片内需要独立点击的元素(标签)提上来,优先于 card-link */
-    .memory-card .memory-meta,
-    .memory-card .memory-content,
-    .memory-card .memory-media,
-    .memory-card .memory-tags { position: relative; z-index: 1; }
-    .memory-card .memory-tags a { position: relative; z-index: 2; }
+  /* 时间线页面专属：筛选栏输入框对齐令牌 */
+  .mem-filter-bar input[type="text"],
+  .mem-filter-bar select {
+    padding: 10px 16px;
+    border: 2px solid var(--paper-deep);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: #fff;
+    color: var(--ink);
+    transition: border-color var(--duration-fast) var(--ease-out);
+  }
+  .mem-filter-bar input[type="text"]:focus,
+  .mem-filter-bar select:focus {
+    border-color: var(--jade);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(90, 138, 127, 0.1);
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<h2 class="section-title"><i class="fas fa-images"></i> 怀旧记录</h2>
+<header class="mem-page-head">
+  <div>
+    <h1><i class="fas fa-images"></i> 怀旧记录</h1>
+    <p>沿着时光的脉络，回溯每一段被珍藏的乡村记忆。</p>
+  </div>
+  <a href="/memories/new" class="btn btn-primary">
+    <i class="fas fa-plus"></i> 新建记忆
+  </a>
+</header>
 
-<div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="搜索记忆..." style="flex:1; min-width:200px;">
-    <button class="btn-primary" id="searchBtn"><i class="fas fa-search"></i> 搜索</button>
-    <select id="tagFilter">
-        <option value="">所有标签</option>
-        {% for tag in tags %}
-        <option value="{{ tag.name }}">{{ tag.name }}</option>
-        {% endfor %}
-    </select>
-    <a href="/memories/new" class="btn-primary" style="padding:8px 20px;"><i class="fas fa-plus"></i> 新建记忆</a>
-</div>
-
-<div class="tag-cloud">
-    <a href="/memories" class="tag-badge">全部</a>
-    {% for tag in tags %}
-    <a href="/memories?tag={{ tag.name }}" class="tag-badge">{{ tag.name }}</a>
+<div class="mem-filter-bar">
+  <input type="text" id="memSearch" placeholder="搜索记忆标题或内容…" value="{{ request.args.get('search', '') }}" />
+  <button class="btn btn-secondary" id="memSearchBtn"><i class="fas fa-search"></i> 搜索</button>
+  <select id="memTagFilter">
+    <option value="">全部标签</option>
+    {% for t in tags %}
+    <option value="{{ t.name }}" {% if t.name == tag %}selected{% endif %}>{{ t.name }}</option>
     {% endfor %}
+  </select>
 </div>
 
-<div class="memory-grid" id="memoriesContainer">
+{% if tags %}
+<div class="mem-tag-cloud">
+  <a href="/memories" class="tag-badge {% if not tag %}is-active{% endif %}">全部</a>
+  {% for t in tags %}
+  <a href="/memories?tag={{ t.name }}" class="tag-badge {% if t.name == tag %}is-active{% endif %}">{{ t.name }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="mem-view-toggle" role="group" aria-label="视图切换">
+  <button type="button" id="viewTimeline" class="is-active"><i class="fas fa-stream"></i> 时间线</button>
+  <button type="button" id="viewGrid"><i class="fas fa-th-large"></i> 网格</button>
+</div>
+
+{% if memories %}
+<div class="mem-view" id="memTimelineView">
+  <div class="tl">
+    <div class="tl-axis" aria-hidden="true"></div>
+    {% set ns = namespace(last_year='') %}
     {% for memory in memories %}
-    <div class="memory-card">
-        <a class="card-link" href="/memories/{{ memory.id }}" aria-label="查看{{ memory.title }}详情"></a>
-        <div class="memory-header">
-            <h3 class="memory-title"><a href="/memories/{{ memory.id }}" style="color:inherit;text-decoration:none;">{{ memory.title }}</a></h3>
-            <div class="memory-actions">
-                <small style="color:#999;">{{ memory.date }}</small>
-            </div>
-        </div>
-        <div class="memory-meta">
-            {% if memory.people %}
-            <span><i class="fas fa-user"></i> {{ memory.people }}</span>
-            {% endif %}
-            {% if memory.type == 'photo' %}
-            <span><i class="fas fa-camera"></i> 照片</span>
-            {% elif memory.type == 'video' %}
-            <span><i class="fas fa-video"></i> 视频</span>
-            {% elif memory.type == 'audio' %}
-            <span><i class="fas fa-microphone"></i> 语音</span>
-            {% endif %}
-        </div>
-        <div class="memory-content">{{ memory.content[:200] }}{% if memory.content|length > 200 %}...{% endif %}</div>
-        {% if memory.photo_urls %}
-        <div class="memory-media">
-            <div class="image-grid">
-                {% for url in memory.photo_urls_list[:3] %}
-                <img src="{{ url }}" alt="照片">
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-        {% if memory.tags %}
-        <div class="memory-tags">
-                {% for tag_name in memory.tag_names %}
-                <a href="/memories?tag={{ tag_name }}" class="tag-badge">{{ tag_name }}</a>
-                {% endfor %}
-        </div>
-        {% endif %}
-    </div>
+      {% set cur_year = memory.date[0:4] if memory.date else '' %}
+      {% if cur_year and cur_year != ns.last_year %}
+      <div class="tl-year-sep">
+        <span class="tl-year-num">{{ cur_year }}</span>
+        <span class="tl-year-line" aria-hidden="true"></span>
+      </div>
+      {% set ns.last_year = cur_year %}
+      {% endif %}
+      {{ render_card(memory) }}
     {% endfor %}
+  </div>
+</div>
+
+<div class="mem-view" id="memGridView" hidden>
+  <div class="memory-grid">
+    {% for memory in memories %}
+    {{ render_grid_card(memory) }}
+    {% endfor %}
+  </div>
 </div>
 
 {% if total_pages > 1 %}
-<div class="pagination">
-    {% if page > 1 %}
-    <a href="?page={{ page - 1 }}{% if tag %}&tag={{ tag }}{% endif %}">上一页</a>
-    {% endif %}
-    <span class="active">{{ page }}</span>
-    {% if page < total_pages %}
-    <a href="?page={{ page + 1 }}{% if tag %}&tag={{ tag }}{% endif %}">下一页</a>
-    {% endif %}
+<nav class="pagination" aria-label="分页">
+  {% if page > 1 %}
+  <a href="?page={{ page - 1 }}{% if tag %}&tag={{ tag }}{% endif %}">上一页</a>
+  {% endif %}
+  <span class="current">{{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}
+  <a href="?page={{ page + 1 }}{% if tag %}&tag={{ tag }}{% endif %}">下一页</a>
+  {% endif %}
+</nav>
+{% endif %}
+
+{% else %}
+<div class="tl-empty">
+  <div class="mem-empty-seal"><i class="fas fa-leaf"></i></div>
+  <h3>尚无声响，开始记录第一段记忆</h3>
+  <p>时光匆匆，总有值得被温柔收藏的瞬间。为村庄、为故人、为某片田野留下第一段记忆吧。</p>
+  <a href="/memories/new" class="btn btn-primary"><i class="fas fa-plus"></i> 开始记录</a>
 </div>
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/memorial-upload.js') }}"></script>
 <script>
-document.getElementById('tagFilter').addEventListener('change', function() {
+  // 标签筛选
+  document.getElementById("memTagFilter").addEventListener("change", function () {
     const tag = this.value;
-    window.location.href = '/memories' + (tag ? '?tag=' + encodeURIComponent(tag) : '');
-});
+    const base = "/memories";
+    window.location.href = tag ? base + "?tag=" + encodeURIComponent(tag) : base;
+  });
+
+  // 搜索（保留当前标签筛选）
+  function doSearch() {
+    const q = document.getElementById("memSearch").value.trim();
+    const params = new URLSearchParams();
+    if (q) params.set("search", q);
+    const currentTag = "{{ tag | default('', true) }}";
+    if (currentTag) params.set("tag", currentTag);
+    const qs = params.toString();
+    window.location.href = "/memories" + (qs ? "?" + qs : "");
+  }
+  document.getElementById("memSearchBtn").addEventListener("click", doSearch);
+  document.getElementById("memSearch").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") doSearch();
+  });
+
+  // 视图切换：默认时间线，网格为可切换次要视图（不改 URL 参数契约）
+  (function () {
+    const btnTimeline = document.getElementById("viewTimeline");
+    const btnGrid = document.getElementById("viewGrid");
+    const viewTimeline = document.getElementById("memTimelineView");
+    const viewGrid = document.getElementById("memGridView");
+    if (!btnTimeline || !btnGrid || !viewTimeline || !viewGrid) return;
+    function setView(view) {
+      const isTimeline = view === "timeline";
+      viewTimeline.hidden = !isTimeline;
+      viewGrid.hidden = isTimeline;
+      btnTimeline.classList.toggle("is-active", isTimeline);
+      btnGrid.classList.toggle("is-active", !isTimeline);
+    }
+    btnTimeline.addEventListener("click", function () { setView("timeline"); });
+    btnGrid.addEventListener("click", function () { setView("grid"); });
+    setView("timeline"); // 默认时间线
+  })();
 </script>
 {% endblock %}

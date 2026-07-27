@@ -26,8 +26,12 @@ from models import (
     SiteContact,
     HomeFeature,
     VillageCarousel,
+    People,
+    SiteConfig,
+    MediaFile,
+    VillageHighlight,
+    VillageStat,
 )
-from datetime import datetime
 import logging
 
 main_bp = Blueprint("main", __name__)
@@ -47,8 +51,18 @@ def index():
             .order_by(VillageCarousel.sort_order, VillageCarousel.id)
             .all()
         )
-        return render_template("index.html", features=features, carousels=carousel)
+        # 首页「最新动态」：拉取最新新闻（与后台新闻库打通）
+        home_news = (
+            News.query.order_by(News.create_time.desc()).limit(6).all()
+        )
+        return render_template(
+            "index.html",
+            features=features,
+            carousels=carousel,
+            home_news=home_news,
+        )
     except Exception:
+        logger.error("首页渲染失败", exc_info=True)
         return render_template("base.html")
 
 
@@ -117,6 +131,7 @@ def news_detail(news_id):
         )
         db.session.commit()
     except Exception:
+        logger.debug("新闻浏览量+1 失败")
         pass
 
     news_data = {
@@ -152,7 +167,39 @@ def village_page():
         if info
         else None
     )
-    return render_template("village.html", village_info=village_info)
+    # 村情·乡村特色卡片（可配）
+    highlights = (
+        VillageHighlight.query.order_by(
+            VillageHighlight.sort_order, VillageHighlight.id
+        ).all()
+    )
+    # 村情·村庄信息指标（按分组聚合，可配）
+    stats = VillageStat.query.order_by(
+        VillageStat.group_name, VillageStat.sort_order, VillageStat.id
+    ).all()
+    group_icons = {
+        "自然资源": "fas fa-tree",
+        "人口概况": "fas fa-users",
+        "产业发展": "fas fa-industry",
+        "基础设施": "fas fa-road",
+    }
+    stat_groups = []
+    group_map = {}
+    for s in stats:
+        if s.group_name not in group_map:
+            group_map[s.group_name] = {
+                "group_name": s.group_name,
+                "icon": group_icons.get(s.group_name, "fas fa-circle"),
+                "items": [],
+            }
+            stat_groups.append(group_map[s.group_name])
+        group_map[s.group_name]["items"].append(s)
+    return render_template(
+        "village.html",
+        village_info=village_info,
+        highlights=highlights,
+        stat_groups=stat_groups,
+    )
 
 
 # ─── 政务公开 ───
@@ -310,6 +357,44 @@ def message_test_page():
         return render_template("message_simple.html", messages=messages)
     except Exception as e:
         return f"页面错误: {str(e)}", 500
+
+
+# ─── 人物档案前台详情页 ───
+
+
+@main_bp.route("/people/<int:pid>")
+def person_page(pid):
+    """人物档案公共详情页（替换旧纯 JSON 返回点）。"""
+    person = People.query.get(pid)
+    if not person:
+        abort(404)
+    return render_template("person.html", person=person)
+
+
+# ─── 关于我们 ───
+
+
+@main_bp.route("/about")
+def about_page():
+    """关于我们公共页（正文读 SiteConfig.about_content）。"""
+    config = SiteConfig.get()
+    return render_template(
+        "about.html", about_content=config.about_content or ""
+    )
+
+
+# ─── 媒体库前台浏览页 ───
+
+
+@main_bp.route("/media")
+def media_page():
+    """媒体库公共浏览页：仅展示公开媒体文件。"""
+    medias = (
+        MediaFile.query.filter_by(is_public=True)
+        .order_by(MediaFile.created_at.desc())
+        .all()
+    )
+    return render_template("media.html", medias=medias)
 
 
 # ─── 文件服务 ───

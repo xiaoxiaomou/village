@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}{{ person.name if person else '人物档案' }} - {{ site_config.site_title if site_config else '乡村记忆系统' }}{% endblock %}
+
+{% block head %}
+<style>
+  .person-container {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .person-hero {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    background: white;
+    border-radius: 20px;
+    padding: 36px;
+    border: 1px solid var(--paper-deep);
+    box-shadow: 0 2px 12px var(--shadow-soft);
+    margin-bottom: 32px;
+  }
+  .person-photo {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--paper-deep);
+    flex-shrink: 0;
+  }
+  .person-photo-placeholder {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--jade-pale), #fff);
+    color: var(--jade);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    flex-shrink: 0;
+  }
+  .person-name {
+    font-family: "Noto Serif SC", serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    margin: 0 0 8px;
+  }
+  .person-meta {
+    color: var(--ink-light);
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  .person-meta i {
+    margin-right: 6px;
+    color: var(--cinnabar);
+  }
+  .person-bio {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    border: 1px solid var(--paper-deep);
+    line-height: 1.9;
+    color: var(--ink);
+  }
+  .person-bio h3 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 18px;
+    margin: 0 0 16px;
+    color: var(--ink-dark);
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+    color: var(--ink-light);
+    text-decoration: none;
+  }
+  .back-link:hover { color: var(--cinnabar); }
+  @media (max-width: 640px) {
+    .person-hero { flex-direction: column; text-align: center; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="person-container">
+  <a href="/tags?mode=people" class="back-link"><i class="fas fa-arrow-left"></i> 返回人物列表</a>
+
+  <div class="person-hero">
+    {% if person.photo_url %}
+    <img src="{{ person.photo_url }}" alt="{{ person.name }}" class="person-photo" />
+    {% else %}
+    <div class="person-photo-placeholder">
+      <i class="fas fa-user"></i>
+    </div>
+    {% endif %}
+    <div>
+      <h1 class="person-name">{{ person.name }}</h1>
+      {% if person.relation %}
+      <div class="person-meta"><i class="fas fa-tag"></i> {{ person.relation }}</div>
+      {% endif %}
+      {% if person.birth_year %}
+      <div class="person-meta"><i class="fas fa-birthday-cake"></i> {{ person.birth_year }} 年</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="person-bio">
+    <h3><i class="fas fa-quote-left"></i> 人物简介</h3>
+    {% if person.bio %}
+    <p>{{ person.bio }}</p>
+    {% else %}
+    <p style="color: var(--ink-muted);">暂无简介，期待更多人来书写这段乡村记忆。</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -18,6 +18,9 @@ from models import (
     User,
 )
 from datetime import datetime, date
+from routes.decorators import login_required, admin_required
+from core.serializers import paginate_to_dict
+from core.upload import save_uploaded_file
 import json
 import collections
 import os
@@ -28,32 +31,6 @@ logger = logging.getLogger(__name__)
 
 
 # ═══ 辅助函数 ═══
-
-
-def login_required(f):
-    from functools import wraps
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user" not in session:
-            return jsonify({"msg": "未登录"}), 401
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-def admin_required(f):
-    from functools import wraps
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user" not in session:
-            return jsonify({"msg": "未登录"}), 401
-        if session.get("role") != "admin":
-            return jsonify({"msg": "无权限"}), 403
-        return f(*args, **kwargs)
-
-    return decorated_function
 
 
 def _parse_date(value):
@@ -78,6 +55,22 @@ def _filter_by_tag(query, tag_filter):
     if str(tag_filter).isdigit():
         return query.filter(MemoryTag.tag_id == int(tag_filter))
     return query.filter(Tag.name == tag_filter)
+
+
+def _resolve_people_list(names, pid_map):
+    """将人物姓名列表映射为 [{'name': str, 'pid': int|None}]。
+
+    pid 取自 People 模型的 id（通过 pid_map 名称->id 一次性映射）。
+    若姓名在 People 中无匹配记录，pid 为 None，调用方须降级为纯文本
+    （避免指向 /people/<pid> 产生 404 死链）。
+    仅用于模板渲染期属性，不影响任何 JSON 契约。
+    """
+    result = []
+    for name in names or []:
+        if not name:
+            continue
+        result.append({"name": name, "pid": pid_map.get(name)})
+    return result
 
 
 def _sync_memory_tags(memory_id, tag_ids):
@@ -136,7 +129,11 @@ def memories_page():
     per_page = 10
     tag_filter = request.args.get("tag", "", type=str)
     search = request.args.get("search", "", type=str)
-    query = Memory.query.order_by(Memory.create_time.desc())
+    # 重设计：按记忆日期（date_recorded）降序回溯时间线；
+    # 同日以创建时间降序作为稳定次序。不改 URL 与 JSON 契约。
+    query = Memory.query.order_by(
+        Memory.date_recorded.desc(), Memory.create_time.desc()
+    )
     query = _filter_by_tag(query, tag_filter)
     if search:
         query = query.filter(
@@ -156,11 +153,13 @@ def memories_page():
         )
         for mid, nm in rows:
             tag_name_map.setdefault(mid, []).append(nm)
+    pid_map = {p.name: p.id for p in People.query.all()}
     for m in memories:
         m.tag_names = tag_name_map.get(m.id, [])
         m.date = str(m.date_recorded) if m.date_recorded else ""
         m.type = m.memory_type
         m.people = ", ".join(m.get_people()) if m.get_people() else ""
+        m.people_list = _resolve_people_list(m.get_people(), pid_map)
         m.feeling = m.reflection
         m.photo_urls_list = m.get_photos()
         m.video_urls_list = m.get_videos()
@@ -190,6 +189,10 @@ def memory_detail_page(mid):
         "date": str(memory.date_recorded) if memory.date_recorded else "",
         "type": memory.memory_type,
         "people": ", ".join(memory.get_people()) if memory.get_people() else "",
+        "people_list": _resolve_people_list(
+            memory.get_people(), {p.name: p.id for p in People.query.all()}
+        ),
+        "locations": memory.get_locations(),
         "feeling": memory.reflection,
         "photo_urls_list": memory.get_photos(),
         "video_urls_list": memory.get_videos(),
@@ -211,6 +214,7 @@ def edit_memory_page(mid):
     memory.people = ", ".join(memory.get_people()) if memory.get_people() else ""
     memory.feeling = memory.reflection
     memory.photo_urls_list = memory.get_photos()
+    memory.video_urls_list = memory.get_videos()
     return render_template("edit_memory.html", memory=memory, tags=tags)
 
 
@@ -359,15 +363,7 @@ def api_memories():
         )
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     return jsonify(
-        {
-            "data": [_memory_to_dict(m) for m in pagination.items],
-            "pagination": {
-                "page": page,
-                "per_page": per_page,
-                "total": pagination.total,
-                "pages": pagination.pages,
-            },
-        }
+        paginate_to_dict([_memory_to_dict(m) for m in pagination.items], pagination)
     )
 
 
@@ -422,10 +418,14 @@ def api_new_memory():
 ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "gif", "webp", "bmp"}
 ALLOWED_VIDEO_EXTS = {"mp4", "webm", "mov", "avi"}
 ALLOWED_EXTS = ALLOWED_IMAGE_EXTS | ALLOWED_VIDEO_EXTS
-MAX_FILE_SIZE = 20 * 1024 * 1024
+MAX_FILE_SIZE = 50 * 1024 * 1024  # PM 拍板：视频上限 50MB（原 20MB）
+# ⚠️ 部署前置：须同步调高服务器 / Nginx 的 client_max_body_size（建议 ≥ 60MB 余量），
+# 否则即便前端与后端放宽到 50MB，网关层仍会截断大文件上传。
+# 前端 memorial-upload.js 的 MAX_SIZE 已同步为 50MB。
 
 
 def _allowed_file(filename):
+    """判断文件名扩展名是否在允许集合内（供上传校验与单元测试复用）。"""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTS
 
 
@@ -447,35 +447,25 @@ def api_media():
         file = request.files["file"]
         if file.filename == "":
             return jsonify({"msg": "没有选择文件"}), 400
-        if not _allowed_file(file.filename):
-            return jsonify(
-                {"msg": "不支持的文件格式，仅支持: " + ", ".join(sorted(ALLOWED_EXTS))}
-            ), 400
-        file.seek(0, 2)
-        file_size = file.tell()
-        file.seek(0)
-        if file_size > MAX_FILE_SIZE:
-            return jsonify(
-                {"msg": f"文件大小不能超过 {MAX_FILE_SIZE // 1024 // 1024}MB"}
-            ), 400
-        import uuid
-        from werkzeug.utils import secure_filename
         from flask import current_app
 
-        ext = file.filename.rsplit(".", 1)[1].lower()
-        unique_name = f"{uuid.uuid4().hex}.{ext}"
+        ext = file.filename.rsplit(".", 1)[1].lower() if "." in file.filename else ""
         file_type = "image" if ext in ALLOWED_IMAGE_EXTS else "video"
-        upload_folder = os.path.join(
-            current_app.config.get("UPLOAD_FOLDER", "uploads"), file_type + "s"
+        result = save_uploaded_file(
+            file,
+            upload_folder=current_app.config.get("UPLOAD_FOLDER", "uploads"),
+            url_prefix="/uploads",
+            subfolder=f"{file_type}s",
+            allowed_exts=ALLOWED_EXTS,
+            max_size=MAX_FILE_SIZE,
         )
-        os.makedirs(upload_folder, exist_ok=True)
-        file_path = os.path.join(upload_folder, unique_name)
-        file.save(file_path)
+        if not result["ok"]:
+            return jsonify({"msg": result["error"]}), result["code"]
         media = MediaFile(
             user_id=user.id,
             file_type=file_type,
-            file_url=f"/uploads/{file_type}s/{unique_name}",
-            file_size=file_size,
+            file_url=result["url"],
+            file_size=result["size"],
             original_name=file.filename,
             title=request.form.get("title", ""),
             description=request.form.get("description", ""),
@@ -515,8 +505,8 @@ def api_media():
         )
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     return jsonify(
-        {
-            "data": [
+        paginate_to_dict(
+            [
                 {
                     "id": m.id,
                     "title": m.title,
@@ -534,13 +524,8 @@ def api_media():
                 }
                 for m in pagination.items
             ],
-            "pagination": {
-                "page": page,
-                "per_page": per_page,
-                "total": pagination.total,
-                "pages": pagination.pages,
-            },
-        }
+            pagination,
+        )
     )
 
 
@@ -653,8 +638,8 @@ def api_notifications():
     )
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     return jsonify(
-        {
-            "data": [
+        paginate_to_dict(
+            [
                 {
                     "id": n.id,
                     "title": n.title,
@@ -665,13 +650,8 @@ def api_notifications():
                 }
                 for n in pagination.items
             ],
-            "pagination": {
-                "page": page,
-                "per_page": per_page,
-                "total": pagination.total,
-                "pages": pagination.pages,
-            },
-        }
+            pagination,
+        )
     )
 
 
