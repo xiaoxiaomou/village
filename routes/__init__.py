@@ -126,4 +126,17 @@ def create_app(config_name="default"):
     def favicon():
         return "", 204
 
+    # 自愈式加列：确保 site_config 表含 SiteConfig 模型定义的全部列（向前兼容旧库）。
+    # 比对直接取自模型定义，新增字段（如 hero_title）无需手工维护列清单；幂等、可重复运行。
+    # 放在 app factory 内，使测试 / 脚本通过 create_app() 创建应用时也能自动补齐，
+    # 避免「模型已加列但旧库无列」导致的 OperationalError。
+    try:
+        with app.app_context():
+            db.create_all()
+            from models import ensure_site_config_columns
+
+            ensure_site_config_columns(db)
+    except Exception as _heal_err:  # noqa: BLE001
+        app.logger.warning(f"自愈式加列跳过（不影响启动）: {_heal_err}")
+
     return app

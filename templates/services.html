@@ -1,42 +1,343 @@
-{% extends "base.html" %} {% block title %}便民服务{% endblock %} {% block content %}
-<div class="container mt-4">
-  <h2 class="mb-4">便民服务</h2>
-  <div class="row" id="services-container">
-    <!-- 服务列表将通过JavaScript动态加载 -->
+{% extends "base.html" %} {% block title %}便民服务 - 美丽乡村{% endblock %} {% block head %}
+<style>
+  /* ===== 便民服务列表页 · 金色主题（仅引用 base.html 设计令牌） ===== */
+  .svc-page {
+    --accent: var(--gold);
+    --accent-light: var(--gold-light);
+    --accent-pale: var(--paper-warm);
+    --accent2: var(--cinnabar);
+  }
+
+  /* ── Hero 全幅图 ── */
+  .svc-hero {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    min-height: 380px;
+    display: flex;
+    align-items: flex-end;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 8px;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent);
+  }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(26, 26, 46, 0.28) 0%, var(--ink-dark) 100%);
+    opacity: 0.62;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 52px 48px;
+    width: 100%;
+    color: var(--paper);
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    color: var(--paper);
+    opacity: 0.9;
+  }
+  .breadcrumb a {
+    color: var(--paper);
+    opacity: 0.85;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .breadcrumb a:hover {
+    opacity: 1;
+    color: var(--gold-light);
+  }
+  .breadcrumb .sep {
+    opacity: 0.5;
+  }
+  .svc-hero h1 {
+    color: var(--paper);
+    font-size: clamp(32px, 5vw, 50px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin: 0 0 12px;
+    text-shadow: 0 2px 16px rgba(26, 26, 46, 0.35);
+  }
+  .hero-sub {
+    color: var(--paper);
+    font-size: clamp(14px, 2vw, 18px);
+    letter-spacing: 2px;
+    opacity: 0.95;
+    margin: 0;
+  }
+
+  /* ── 波浪分隔 ── */
+  .svc-wave {
+    line-height: 0;
+    margin: -1px 0;
+  }
+  .svc-wave svg {
+    display: block;
+    width: 100%;
+    height: 70px;
+  }
+  .svc-wave path {
+    fill: var(--accent-pale);
+  }
+
+  /* ── 服务卡片网格 ── */
+  .svc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 36px;
+  }
+  .svc-card {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    padding: 28px 26px;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-normal) var(--ease-out),
+      box-shadow var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal) var(--ease-out);
+  }
+  .svc-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent-light);
+  }
+  .svc-card-ic {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-md);
+    background: var(--accent-pale);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 18px;
+    transition: background var(--duration-fast) var(--ease-out);
+  }
+  .svc-card:hover .svc-card-ic {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    color: var(--paper);
+  }
+  .svc-card-name {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    margin: 0 0 10px;
+  }
+  .svc-card-desc {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--ink-muted);
+    margin: 0 0 18px;
+    flex: 1;
+  }
+  .svc-card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    transition: gap var(--duration-fast) var(--ease-out);
+  }
+  .svc-card:hover .svc-card-link {
+    gap: 10px;
+  }
+  .svc-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-muted);
+    font-size: 15px;
+  }
+  .svc-loading i {
+    margin-right: 8px;
+  }
+
+  /* ── 返回顶部 ── */
+  #backToTop {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 200;
+  }
+  #backToTop.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* ── 响应式 ── */
+  @media (max-width: 768px) {
+    .hero-content {
+      padding: 36px 22px;
+    }
+    .svc-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="svc-page">
+  <!-- HERO -->
+  <section class="svc-hero">
+    <div
+      class="hero-bg"
+      style="background-image:url('https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=1600&q=80');"
+    ></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="/"><i class="fas fa-home"></i> 首页</a>
+        <span class="sep">/</span>
+        <span>便民服务</span>
+      </nav>
+      <h1>便民服务</h1>
+      <p class="hero-sub">贴心服务 · 便捷生活</p>
+    </div>
+  </section>
+
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
+  </div>
+
+  <!-- 服务卡片网格（JS 动态加载） -->
+  <div class="svc-grid" id="services-container">
+    <p class="svc-loading"><i class="fas fa-spinner fa-spin"></i> 正在加载便民服务…</p>
   </div>
 </div>
-
+{% endblock %} {% block scripts %}
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    // 获取服务列表
-    fetch("/api/services")
-      .then((response) => response.json())
-      .then((data) => {
-        const container = document.getElementById("services-container");
-        data.forEach((service) => {
-          const serviceCard = document.createElement("div");
-          serviceCard.className = "col-md-4 mb-4";
-          serviceCard.innerHTML = `
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">${service.name}</h5>
-                                <a href="/services/${service.id}" class="btn btn-primary">查看详情</a>
-                            </div>
-                        </div>
-                    `;
-          container.appendChild(serviceCard);
-        });
-
-        // 如果没有数据，显示提示信息
-        if (data.length === 0) {
-          container.innerHTML = '<div class="col-12"><p>暂无便民服务信息</p></div>';
-        }
-      })
-      .catch((error) => {
-        console.error("获取服务列表失败:", error);
-        document.getElementById("services-container").innerHTML =
-          '<div class="col-12"><p>获取服务列表失败，请稍后再试</p></div>';
+  (function () {
+    // 返回顶部
+    var btn = document.getElementById("backToTop");
+    if (btn) {
+      window.addEventListener("scroll", function () {
+        if (window.scrollY > 400) btn.classList.add("show");
+        else btn.classList.remove("show");
       });
-  });
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+
+    // 动态加载便民服务（保留原有 /api/services 契约）
+    var ICONS = [
+      "fas fa-seedling",
+      "fas fa-hand-holding-heart",
+      "fas fa-bus",
+      "fas fa-file-alt",
+      "fas fa-clinic-medical",
+      "fas fa-graduation-cap",
+      "fas fa-home",
+      "fas fa-water",
+      "fas fa-leaf",
+      "fas fa-utensils",
+    ];
+    var container = document.getElementById("services-container");
+
+    function emptyState() {
+      container.innerHTML =
+        '<div class="empty-state">' +
+        '<i class="far fa-handshake"></i>' +
+        "<p>暂无便民服务信息</p>" +
+        '<a href="/contact" class="btn btn-secondary">联系我们</a>' +
+        "</div>";
+    }
+
+    function errorState() {
+      container.innerHTML =
+        '<div class="empty-state">' +
+        '<i class="fas fa-exclamation-triangle"></i>' +
+        "<p>服务列表加载失败，请稍后重试</p>" +
+        "</div>";
+    }
+
+    function buildCard(service, index) {
+      var card = document.createElement("article");
+      card.className = "svc-card";
+
+      var icon = document.createElement("div");
+      icon.className = "svc-card-ic";
+      var ic = document.createElement("i");
+      ic.className = ICONS[index % ICONS.length];
+      icon.appendChild(ic);
+
+      var name = document.createElement("h3");
+      name.className = "svc-card-name";
+      name.textContent = service.name || "未命名服务";
+
+      var desc = document.createElement("p");
+      desc.className = "svc-card-desc";
+      desc.textContent = service.description
+        ? service.description
+        : "暂无详细介绍，点击查看详情了解更多服务信息。";
+
+      var link = document.createElement("a");
+      link.className = "svc-card-link";
+      link.href = "/services/" + service.id;
+      link.textContent = "查看详情 ";
+      var arrow = document.createElement("i");
+      arrow.className = "fas fa-arrow-right";
+      link.appendChild(arrow);
+
+      card.appendChild(icon);
+      card.appendChild(name);
+      card.appendChild(desc);
+      card.appendChild(link);
+      return card;
+    }
+
+    fetch("/api/services")
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || data.length === 0) {
+          emptyState();
+          return;
+        }
+        container.innerHTML = "";
+        data.forEach(function (service, i) {
+          container.appendChild(buildCard(service, i));
+        });
+      })
+      .catch(function (err) {
+        console.error("获取服务列表失败:", err);
+        errorState();
+      });
+  })();
 </script>
 {% endblock %}

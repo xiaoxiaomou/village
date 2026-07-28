@@ -1,87 +1,988 @@
 {% extends "base.html" %}
-{% from "macros/media_gallery.html" import render_gallery %}
 {% block title %}{{ memory.title }} - 乡村记忆系统{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/memorial.css') }}" />
 <style>
-  /* 详情页专属微调（其余样式在 memorial.css，均引用设计令牌） */
-  .mem-detail-content { margin: var(--space-4) 0; }
+  /* ===== 详情页：与 /memories 信息流同款的「沉浸式大卡」（仅引用 base.html 设计令牌，零硬编码色值） ===== */
+  .memfeed {
+    --accent: var(--cinnabar);
+    --accent-light: var(--cinnabar-light);
+    --accent-pale: var(--cinnabar-pale);
+    --aux: var(--jade);
+    --aux-light: var(--jade-light);
+    --aux-pale: var(--jade-pale);
+    max-width: 600px;
+    margin: 0 auto;
+    padding-bottom: 28px;
+  }
+
+  /* ── 页头 ── */
+  .feed-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 4px 18px;
+  }
+  .feed-hero h1 {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    margin: 0 0 6px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .feed-hero h1 i {
+    color: var(--accent);
+    font-size: 24px;
+  }
+  .feed-hero p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-muted);
+    letter-spacing: 0.5px;
+  }
+  .feed-new {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── 顶部 sticky 毛玻璃工具栏 ── */
+  .feed-toolbar {
+    position: sticky;
+    top: 68px;
+    z-index: 50;
+    margin: 0 -16px 18px;
+    padding: 12px 16px;
+    background: color-mix(in srgb, var(--paper) 82%, transparent);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border-bottom: 1px solid var(--paper-deep);
+  }
+  .feed-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .feed-search > i {
+    position: absolute;
+    left: 16px;
+    color: var(--ink-muted);
+    font-size: 14px;
+    pointer-events: none;
+  }
+  .feed-search input {
+    width: 100%;
+    padding: 11px 16px 11px 42px;
+    border: 2px solid var(--paper-deep);
+    border-radius: var(--radius-full);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper);
+    transition: border-color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
+  }
+  .feed-search input::placeholder {
+    color: var(--ink-muted);
+  }
+  .feed-search input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-pale);
+  }
+
+  /* ── 筛选 chips（令牌化、横向滚动） ── */
+  .feed-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+  .feed-chips::-webkit-scrollbar {
+    height: 4px;
+  }
+  .feed-chips::-webkit-scrollbar-thumb {
+    background: var(--paper-deep);
+    border-radius: var(--radius-full);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--paper-deep);
+    background: var(--paper);
+    color: var(--ink-light);
+    font-size: 13px;
+    font-family: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .chip i {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+  .chip:hover {
+    color: var(--aux);
+    border-color: var(--aux-light);
+    background: var(--aux-pale);
+  }
+  .chip.is-active {
+    color: white;
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    box-shadow: 0 4px 12px var(--accent-pale);
+  }
+  .chip.is-active i {
+    opacity: 1;
+  }
+  .feed-clear {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 7px 12px;
+    border: none;
+    background: none;
+    color: var(--ink-muted);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: var(--radius-full);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+  .feed-clear:hover {
+    color: var(--accent);
+  }
+
+  /* ── 信息流列表 ── */
+  .feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .feed-card {
+    background: var(--paper);
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: box-shadow var(--duration-normal) var(--ease-out),
+      transform var(--duration-normal) var(--ease-out);
+  }
+  .feed-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .feed-card.is-hidden {
+    display: none;
+  }
+
+  /* 头部：头像 + 昵称 + 时间 */
+  .feed-card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px 10px;
+  }
+  .feed-avatar {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, var(--aux) 0%, var(--aux-light) 100%);
+    box-shadow: var(--shadow-sm);
+  }
+  .feed-id {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .feed-nick {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-dark);
+    line-height: 1.3;
+  }
+  .feed-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+
+  /* 媒体区（铺满卡片宽度、沉浸式） */
+  .feed-media-wrap {
+    position: relative;
+  }
+  .feed-media--video video {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    background: var(--ink-dark);
+    object-fit: contain;
+  }
+  .feed-media-detail {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--ink-dark) 55%, transparent);
+    color: var(--paper);
+    font-size: 14px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+  .feed-media-detail:hover {
+    transform: scale(1.08);
+  }
+  .feed-media--single img {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    object-fit: cover;
+  }
+
+  /* 九宫格 */
+  .feed-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+  .feed-grid-item {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: var(--paper-warm);
+  }
+  .feed-grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-normal) var(--ease-out);
+  }
+  .feed-grid-item:hover img {
+    transform: scale(1.05);
+  }
+
+  /* 纯文字卡 */
+  .feed-textcard {
+    display: block;
+    position: relative;
+    margin: 0;
+    padding: 22px 18px 22px;
+    background: linear-gradient(135deg, var(--aux-pale) 0%, var(--paper-warm) 100%);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .feed-textcard > i {
+    font-size: 22px;
+    color: var(--aux);
+    opacity: 0.55;
+  }
+  .feed-textcard p {
+    margin: 8px 0 0;
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--ink-dark);
+  }
+
+  /* 文案区 */
+  .feed-body {
+    padding: 12px 16px 0;
+  }
+  .feed-title {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    text-decoration: none;
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .feed-title:hover {
+    color: var(--accent);
+  }
+  .feed-content {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: var(--ink-light);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .feed-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .feed-loc {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--aux);
+    font-weight: 500;
+  }
+  .feed-people {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--ink-muted);
+    flex-wrap: wrap;
+  }
+  .feed-people a {
+    color: var(--aux);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .feed-people a:hover {
+    color: var(--aux-light);
+    text-decoration: underline;
+  }
+
+  /* 底部互动栏 */
+  .feed-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 12px 16px 14px;
+    border-top: 1px solid var(--paper-deep);
+  }
+  .feed-act {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    justify-content: center;
+    padding: 9px 8px;
+    border: none;
+    background: none;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-light);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .feed-act i {
+    font-size: 17px;
+  }
+  .feed-act:hover {
+    background: var(--paper-warm);
+    color: var(--ink-dark);
+  }
+  .like-btn.like-btn {
+    color: var(--ink-muted);
+  }
+  .like-btn.is-liked {
+    color: var(--accent);
+  }
+  .like-btn.is-liked i {
+    animation: like-pop var(--duration-normal) var(--ease-out);
+  }
+  @keyframes like-pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+  .like-count {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 空状态 */
+  .feed-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--ink-muted);
+    font-size: 14px;
+  }
+  .feed-empty i {
+    display: block;
+    font-size: 44px;
+    color: var(--paper-deep);
+    margin-bottom: 14px;
+  }
+  .feed-noresult {
+    text-align: center;
+    padding: 70px 20px;
+    color: var(--ink-muted);
+  }
+  .feed-noresult i {
+    font-size: 54px;
+    color: var(--paper-deep);
+    margin-bottom: 18px;
+  }
+  .feed-noresult h3 {
+    font-family: var(--font-display);
+    color: var(--ink-dark);
+    margin: 0 0 10px;
+    font-size: 19px;
+  }
+  .feed-noresult p {
+    font-size: 14px;
+    margin: 0 0 20px;
+    line-height: 1.7;
+  }
+
+  /* 轻提示 toast */
+  .feed-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 36px;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--ink-dark);
+    color: var(--paper);
+    padding: 10px 20px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 300;
+  }
+  .feed-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ══════════ 详情页专属扩展（与列表同视觉语言，仅放大/追加信息） ══════════ */
+  /* 顶部留白 */
+  .md-page {
+    padding-top: 20px;
+  }
+  /* 详情卡不做 hover 上浮，避免大卡抖动 */
+  .md-card:hover {
+    transform: none;
+    box-shadow: var(--shadow-md);
+  }
+  /* 朱砂色 @ 装饰 */
+  .md-at {
+    color: var(--cinnabar);
+    font-weight: 600;
+    margin-right: 2px;
+  }
+  /* 标题首行加粗（比列表略大） */
+  .md-title {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    line-height: 1.5;
+    margin-bottom: 10px;
+    word-break: break-word;
+  }
+  /* 正文：比列表卡略大，阅读舒适 */
+  .md-card .feed-content {
+    font-size: 16px;
+    line-height: 1.85;
+    color: var(--ink);
+  }
+  /* 视频大卡（沉浸，contain 避免裁切） */
+  .memVideo {
+    display: block;
+    width: 100%;
+    max-height: 70vh;
+    background: var(--ink-dark);
+    object-fit: contain;
+  }
+  .md-card .feed-media--video video {
+    max-height: 70vh;
+  }
+  /* 单图大图：contain 避免裁切重要信息 */
+  .md-card .feed-media--single img {
+    max-height: 70vh;
+    object-fit: contain;
+    background: var(--ink-dark);
+  }
+  /* 音频播放器 */
+  .md-audio {
+    padding: 12px 16px;
+    background: var(--paper-warm);
+    border-top: 1px solid var(--paper-deep);
+  }
+  .md-audio audio {
+    width: 100%;
+  }
+  /* 个人感受：左侧 --gold 边框 + 浅色底 引用块 */
+  .md-feeling {
+    margin: 14px 16px 0;
+    padding: 14px 16px;
+    border-left: 4px solid var(--gold);
+    background: var(--paper-warm);
+    border-radius: var(--radius-md);
+  }
+  .md-feeling-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .md-feeling p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--ink-light);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  /* 标签胶囊 */
+  .md-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 16px 0;
+  }
+  .md-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    background: var(--cinnabar-pale);
+    color: var(--cinnabar);
+    font-size: 13px;
+    text-decoration: none;
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .md-tag:hover {
+    background: var(--cinnabar-light);
+    color: white;
+  }
+  .md-tag i {
+    font-size: 11px;
+  }
+  /* 底部操作条：返回 / 编辑 / 删除 / 时间轴 */
+  .md-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 16px;
+    border-top: 1px solid var(--paper-deep);
+  }
+  .md-foot-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--paper-deep);
+    background: var(--paper);
+    color: var(--ink-light);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .md-foot-btn:hover {
+    background: var(--paper-warm);
+    color: var(--ink-dark);
+  }
+  .md-foot-btn.md-back {
+    margin-right: auto;
+    color: var(--cinnabar);
+    border-color: var(--cinnabar-pale);
+    background: var(--cinnabar-pale);
+  }
+  .md-foot-btn.md-back:hover {
+    background: var(--cinnabar-light);
+    color: white;
+  }
+  .md-foot-btn.md-del {
+    color: var(--cinnabar);
+    border-color: var(--cinnabar-pale);
+  }
+  .md-foot-btn.md-del:hover {
+    background: var(--cinnabar);
+    color: white;
+  }
+
+  /* 上一篇 / 下一篇：信息流风格胶囊切换（令牌化，零硬编码色值） */
+  .md-nav {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    margin: 16px 16px 0;
+  }
+  .md-nav-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px 14px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--cinnabar-pale);
+    background: var(--cinnabar-pale);
+    color: var(--cinnabar);
+    text-decoration: none;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out),
+      background var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+  .md-nav-prev {
+    justify-content: flex-start;
+  }
+  .md-nav-next {
+    justify-content: flex-end;
+  }
+  .md-nav-btn > i {
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .md-nav-txt {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.3;
+  }
+  .md-nav-next .md-nav-txt {
+    align-items: flex-end;
+  }
+  .md-nav-label {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.75;
+  }
+  .md-nav-title {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .md-nav-btn:hover {
+    background: var(--cinnabar);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  /* 无相邻项时置灰且不响应点击 */
+  .md-nav-btn.is-disabled {
+    background: var(--paper-warm);
+    border-color: var(--paper-deep);
+    color: var(--ink-muted);
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* ── 响应式：移动端单列铺满 ── */
+  @media (max-width: 768px) {
+    .memfeed {
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .feed-toolbar {
+      top: 60px;
+      margin-left: 0;
+      margin-right: 0;
+      border-radius: 0;
+    }
+    .feed-hero {
+      padding: 8px 16px 16px;
+    }
+    .feed-card {
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+    }
+    .feed-list {
+      gap: 14px;
+    }
+    /* 详情页移动端适配 */
+    .md-card {
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+    }
+    .md-title {
+      font-size: 18px;
+    }
+    .md-card .feed-content {
+      font-size: 15px;
+    }
+    .memVideo,
+    .md-card .feed-media--video video,
+    .md-card .feed-media--single img {
+      max-height: 60vh;
+    }
+    .md-foot {
+      padding: 14px 16px;
+    }
+    .md-nav {
+      gap: 8px;
+    }
+    .md-nav-btn {
+      padding: 10px 12px;
+    }
+    .md-nav-title {
+      font-size: 13px;
+    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<a href="/memories" class="mem-back-link"><i class="fas fa-arrow-left"></i> 返回记忆列表</a>
+{% set nick = (memory.people_list[0].name if memory.people_list else '村民') %}
+{% set like_seed = (memory.id * 13 % 47) + 3 %}
+{% set raw_date = memory.date if memory.date else (memory.create_time[:10] if memory.create_time else '') %}
+{% if raw_date and raw_date|length >= 10 %}
+  {% set time_text = raw_date[0:4] ~ '年' ~ raw_date[5:7]|int ~ '月' ~ raw_date[8:10]|int ~ '日' %}
+{% else %}
+  {% set time_text = '时光深处' %}
+{% endif %}
 
-<div class="mem-detail">
-  <div class="mem-detail-header">
-    <h1 class="mem-detail-title">{{ memory.title }}</h1>
-    {% if memory.date and memory.date|string|length >= 10 %}
-    <div class="mem-seal" title="{{ memory.date }}">
-      <span class="mem-seal-day">{{ memory.date[5:] }}</span>
-      <span class="mem-seal-y">{{ memory.date[0:4] }} 年</span>
+<section class="memfeed md-page">
+  <article class="feed-card md-card">
+    <!-- 头部：头像 + 昵称 + 时间（与列表同视觉） -->
+    <div class="feed-card-head">
+      <div class="feed-avatar">{{ nick[0] }}</div>
+      <div class="feed-id">
+        <span class="feed-nick"><span class="md-at">@</span>{{ nick }}</span>
+        <span class="feed-time">
+          <i class="far fa-clock"></i> {{ time_text }}
+        </span>
+      </div>
+    </div>
+
+    <!-- 媒体区：视频 > 多图九宫格 > 单图大图 > 纯文字 -->
+    <div class="feed-media-wrap">
+      {% if memory.video_urls_list %}
+      <div class="feed-media feed-media--video">
+        {% for v in memory.video_urls_list %}
+        <video class="memVideo" src="{{ v }}" controls preload="metadata"></video>
+        {% endfor %}
+      </div>
+      {% elif memory.photo_urls_list | length == 1 %}
+      <div class="feed-media feed-media--single">
+        <img src="{{ memory.photo_urls_list[0] }}" alt="{{ memory.title or '记忆图片' }}" />
+      </div>
+      {% elif memory.photo_urls_list | length > 1 %}
+      <div class="feed-grid">
+        {% for url in memory.photo_urls_list[:9] %}
+        <div class="feed-grid-item"><img src="{{ url }}" alt="" loading="lazy" /></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if memory.audio_url %}
+      <div class="md-audio">
+        <audio controls src="{{ memory.audio_url }}"></audio>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- 文案区 -->
+    <div class="feed-body">
+      {% if memory.title %}<div class="md-title">{{ memory.title }}</div>{% endif %}
+      {% if memory.content %}<div class="feed-content">{{ memory.content | safe }}</div>{% endif %}
+
+      <div class="feed-meta">
+        {% if memory.locations %}
+        <span class="feed-loc"><i class="fas fa-map-marker-alt"></i> {{ memory.locations | join(' · ') }}</span>
+        {% endif %}
+        {% if memory.people_list %}
+        <span class="feed-people">
+          <i class="fas fa-user-friends"></i>
+          {% for p in memory.people_list %}
+            {% if p.pid %}<a href="/people/{{ p.pid }}">{{ p.name }}</a>
+            {% else %}<span>{{ p.name }}</span>{% endif %}{% if not loop.last %}、{% endif %}
+          {% endfor %}
+        </span>
+        {% endif %}
+        {% if memory.author %}
+        <span class="feed-people"><i class="fas fa-pen-nib"></i> {{ memory.author }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 个人感受 -->
+    {% if memory.feeling %}
+    <div class="md-feeling">
+      <div class="md-feeling-head"><i class="fas fa-heart"></i> 个人感受</div>
+      <p>{{ memory.feeling }}</p>
     </div>
     {% endif %}
-  </div>
 
-  <div class="mem-detail-meta">
-    {% if memory.people_list %}
-    <span><i class="fas fa-users"></i>
-      {% for p in memory.people_list %}{% if p.pid %}<a class="mem-person-link" href="/people/{{ p.pid }}">{{ p.name }}</a>{% else %}{{ p.name }}{% endif %}{% if not loop.last %}、{% endif %}{% endfor %}
-    </span>
-    {% endif %}
-    {% if memory.locations %}
-    <span class="mem-locations">📍 {{ memory.locations | join(' · ') }}</span>
-    {% endif %}
-    {% if memory.author %}
-    <span><i class="fas fa-user"></i> {{ memory.author }}</span>
-    {% endif %}
-    {% set type_labels = {'text': '文字', 'photo': '照片', 'video': '视频', 'audio': '语音'} %}
-    <span><i class="fas fa-tag"></i> {{ type_labels.get(memory.type, '文字') }}</span>
-  </div>
-
-  <div class="mem-detail-content">{{ memory.content }}</div>
-
-  {{ render_gallery(memory.photo_urls_list, memory.video_urls_list) }}
-
-  {% if memory.audio_url %}
-  <div class="mem-videos">
-    <div class="mem-video-item" style="grid-template-columns: 1fr;">
-      <audio controls style="width:100%;">
-        <source src="{{ memory.audio_url }}" type="audio/wav" />
-        您的浏览器不支持音频播放
-      </audio>
+    <!-- 标签 -->
+    {% if memory.tags and memory.tags | length %}
+    <div class="md-tags">
+      {% for t in memory.tags %}
+      <a class="md-tag" href="/memories?tag={{ t }}"><i class="fas fa-hashtag"></i> {{ t }}</a>
+      {% endfor %}
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
-  {% if memory.feeling %}
-  <div class="mem-feeling">
-    <h3><i class="fas fa-heart"></i> 个人感受</h3>
-    <p>{{ memory.feeling }}</p>
-  </div>
-  {% endif %}
+    <!-- 互动栏：点赞 / 评论 / 分享（与列表一致） -->
+    <div class="feed-actions">
+      <button type="button" class="feed-act like-btn" data-count="{{ like_seed }}" aria-pressed="false">
+        <i class="far fa-heart"></i><span class="like-count">{{ like_seed }}</span>
+      </button>
+      <button type="button" class="feed-act md-comment">
+        <i class="far fa-comment"></i><span>评论</span>
+      </button>
+      <button type="button" class="feed-act share-btn" data-id="{{ memory.id }}">
+        <i class="fas fa-share-alt"></i><span>分享</span>
+      </button>
+    </div>
 
-  {% if memory.tags and memory.tags|length %}
-  <div class="mem-detail-tags">
-    {% for tag_name in memory.tags %}
-    <a href="/memories?tag={{ tag_name }}"><i class="fas fa-hashtag"></i> {{ tag_name }}</a>
-    {% endfor %}
-  </div>
-  {% endif %}
+    <!-- 上一篇 / 下一篇：连续刷记忆（信息流风格胶囊切换） -->
+    <div class="md-nav">
+      {% if prev %}
+      <a class="md-nav-btn md-nav-prev" href="/memories/{{ prev.id }}" aria-label="上一篇：{{ prev.title }}">
+        <i class="fas fa-chevron-left"></i>
+        <span class="md-nav-txt">
+          <span class="md-nav-label">上一篇</span>
+          <span class="md-nav-title">{{ prev.title }}</span>
+        </span>
+      </a>
+      {% else %}
+      <span class="md-nav-btn md-nav-prev is-disabled" aria-disabled="true">
+        <i class="fas fa-chevron-left"></i>
+        <span class="md-nav-txt">
+          <span class="md-nav-label">上一篇</span>
+          <span class="md-nav-title">已是第一篇</span>
+        </span>
+      </span>
+      {% endif %}
 
-  <div class="mem-detail-actions">
-    <a href="/memories/{{ memory.id }}/edit" class="btn btn-primary"><i class="fas fa-edit"></i> 编辑</a>
-    <button class="btn btn-secondary" onclick="deleteMemory({{ memory.id }})"><i class="fas fa-trash"></i> 删除</button>
-    <a href="/timeline" class="btn btn-secondary"><i class="fas fa-clock"></i> 时间轴</a>
-  </div>
-</div>
+      {% if next %}
+      <a class="md-nav-btn md-nav-next" href="/memories/{{ next.id }}" aria-label="下一篇：{{ next.title }}">
+        <span class="md-nav-txt">
+          <span class="md-nav-label">下一篇</span>
+          <span class="md-nav-title">{{ next.title }}</span>
+        </span>
+        <i class="fas fa-chevron-right"></i>
+      </a>
+      {% else %}
+      <span class="md-nav-btn md-nav-next is-disabled" aria-disabled="true">
+        <span class="md-nav-txt">
+          <span class="md-nav-label">下一篇</span>
+          <span class="md-nav-title">已是最后一篇</span>
+        </span>
+        <i class="fas fa-chevron-right"></i>
+      </span>
+      {% endif %}
+    </div>
+
+    <!-- 底部操作条：返回 / 编辑 / 删除 / 时间轴 -->
+    <div class="md-foot">
+      <a class="md-foot-btn md-back" href="/memories"><i class="fas fa-arrow-left"></i> 返回记忆列表</a>
+      <a class="md-foot-btn" href="/memories/{{ memory.id }}/edit"><i class="fas fa-edit"></i> 编辑</a>
+      <button type="button" class="md-foot-btn md-del" onclick="deleteMemory({{ memory.id }})"><i class="fas fa-trash"></i> 删除</button>
+      <a class="md-foot-btn" href="/timeline"><i class="fas fa-clock"></i> 时间轴</a>
+    </div>
+  </article>
+</section>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/memorial-upload.js') }}"></script>
 <script>
-  // 删除记忆（沿用既有 DELETE /api/memories/<id> 契约）
+  (function () {
+    "use strict";
+
+    // 轻提示 toast（与列表同款）
+    function mdToast(msg) {
+      var t = document.getElementById("mdToast");
+      if (!t) {
+        t = document.createElement("div");
+        t.id = "mdToast";
+        t.className = "feed-toast";
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(t._timer);
+      t._timer = setTimeout(function () { t.classList.remove("show"); }, 1800);
+    }
+
+    // 点赞：纯前端视觉切换（爱心变朱砂红 + 计数变化），与列表一致
+    document.querySelectorAll(".like-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var liked = btn.classList.toggle("is-liked");
+        btn.setAttribute("aria-pressed", liked ? "true" : "false");
+        var icon = btn.querySelector("i");
+        icon.classList.toggle("far", !liked);
+        icon.classList.toggle("fas", liked);
+        var base = parseInt(btn.dataset.count || "0", 10);
+        btn.querySelector(".like-count").textContent = liked ? base + 1 : base;
+      });
+    });
+
+    // 评论：占位提示（纯前端）
+    var commentBtn = document.querySelector(".md-comment");
+    if (commentBtn) {
+      commentBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        mdToast("评论功能开发中");
+      });
+    }
+
+    // 分享：调用系统分享或复制链接（纯前端）
+    document.querySelectorAll(".share-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var url = window.location.origin + "/memories/" + btn.dataset.id;
+        if (navigator.share) {
+          navigator.share({ title: document.title, url: url }).catch(function () {});
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () { mdToast("记忆链接已复制"); }).catch(function () { mdToast("链接：" + url); });
+        } else {
+          mdToast("链接：" + url);
+        }
+      });
+    });
+  })();
+
+  // 删除记忆（沿用既有 DELETE /api/memories/<id> 契约，showMessage 来自 memorial-upload.js）
   async function deleteMemory(id) {
     if (!confirm("确定要删除这段记忆吗？此操作不可恢复。")) return;
     try {

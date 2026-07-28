@@ -1,355 +1,581 @@
-{% extends "base.html" %}
-{% block title %}联系我们 - 乡村信息平台{% endblock %}
-
-{% block head %}
+{% extends "base.html" %} {% block title %}联系我们 - 美丽乡村{% endblock %} {% block head %}
 <style>
-    .contact-container {
-        max-width: 1000px;
-        margin: 0 auto;
+  /* ===== 联系我们页 · 朱砂主题（仅引用 base.html 设计令牌） ===== */
+  .contact-page {
+    --accent: var(--cinnabar);
+    --accent-light: var(--cinnabar-light);
+    --accent-pale: var(--cinnabar-pale);
+    --accent2: var(--gold);
+  }
+
+  /* ── Hero 全幅图 ── */
+  .svc-hero {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    min-height: 380px;
+    display: flex;
+    align-items: flex-end;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 8px;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent);
+  }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(26, 26, 46, 0.28) 0%, var(--ink-dark) 100%);
+    opacity: 0.62;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 52px 48px;
+    width: 100%;
+    color: var(--paper);
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    color: var(--paper);
+    opacity: 0.9;
+  }
+  .breadcrumb a {
+    color: var(--paper);
+    opacity: 0.85;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .breadcrumb a:hover {
+    opacity: 1;
+    color: var(--gold-light);
+  }
+  .breadcrumb .sep {
+    opacity: 0.5;
+  }
+  .svc-hero h1 {
+    color: var(--paper);
+    font-size: clamp(32px, 5vw, 50px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin: 0 0 12px;
+    text-shadow: 0 2px 16px rgba(26, 26, 46, 0.35);
+  }
+  .hero-sub {
+    color: var(--paper);
+    font-size: clamp(14px, 2vw, 18px);
+    letter-spacing: 2px;
+    opacity: 0.95;
+    margin: 0;
+  }
+
+  /* ── 波浪分隔 ── */
+  .svc-wave {
+    line-height: 0;
+    margin: -1px 0;
+  }
+  .svc-wave svg {
+    display: block;
+    width: 100%;
+    height: 70px;
+  }
+  .svc-wave path {
+    fill: var(--accent-pale);
+  }
+
+  /* ── 内容区块 ── */
+  .contact-blocks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 36px;
+  }
+  .contact-card {
+    background: white;
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 28px 30px;
+    transition: transform var(--duration-normal) var(--ease-out),
+      box-shadow var(--duration-normal) var(--ease-out);
+  }
+  .contact-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+  .contact-card.full {
+    grid-column: 1 / -1;
+  }
+  .contact-card h3 {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    margin: 0 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .contact-card h3 i {
+    color: var(--accent);
+  }
+
+  /* 基本信息图标网格 */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .info-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 14px 16px;
+    background: var(--paper-warm);
+    border-radius: var(--radius-md);
+  }
+  .info-ic {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    background: var(--accent-pale);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .info-text {
+    min-width: 0;
+  }
+  .info-label {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-bottom: 3px;
+  }
+  .info-value {
+    font-size: 14px;
+    color: var(--ink);
+    word-break: break-all;
+  }
+  .copyable {
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+  .copyable:hover {
+    color: var(--accent);
+  }
+  .copyable.copied {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* 办公时间 */
+  .work-hours {
+    white-space: pre-line;
+    color: var(--ink-light);
+    line-height: 1.9;
+    font-size: 14px;
+    margin: 0;
+  }
+  .work-note {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--paper-warm);
+    border-left: 4px solid var(--accent2);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    color: var(--ink-light);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .work-note strong {
+    color: var(--ink-dark);
+  }
+
+  /* 交通指引 */
+  .traffic-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  .traffic-grid h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .traffic-grid p {
+    margin: 0;
+    color: var(--ink-light);
+    line-height: 1.9;
+    font-size: 14px;
+    white-space: pre-line;
+  }
+  .traffic-grid ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--ink-light);
+    line-height: 1.9;
+    font-size: 14px;
+  }
+  .route-link-wrap {
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  /* 地图 */
+  .map-frame {
+    width: 100%;
+    min-height: 320px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--paper-warm);
+  }
+  .map-placeholder {
+    width: 100%;
+    min-height: 320px;
+    border: 2px dashed var(--paper-deep);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--paper-warm);
+    color: var(--ink-muted);
+    text-align: center;
+    padding: 20px;
+  }
+  .map-placeholder i {
+    font-size: 40px;
+    color: var(--paper-deep);
+  }
+  .map-placeholder p {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  /* 快速联系 CTA */
+  .cta {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    border-radius: var(--radius-xl);
+    padding: 40px 32px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+  }
+  .cta h3 {
+    color: var(--paper);
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  .cta p {
+    color: var(--paper);
+    opacity: 0.92;
+    margin: 0 0 22px;
+    font-size: 14px;
+  }
+  .cta-btns {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 26px;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--paper);
+    border: 1.5px solid var(--paper);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all var(--duration-normal) var(--ease-out);
+  }
+  .cta-btn:hover {
+    background: var(--paper);
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  /* ── 返回顶部 ── */
+  #backToTop {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 200;
+  }
+  #backToTop.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* ── 响应式 ── */
+  @media (max-width: 768px) {
+    .hero-content {
+      padding: 36px 22px;
     }
-    .contact-header {
-        text-align: center;
-        margin-bottom: 40px;
-        padding: 30px;
-        background: linear-gradient(135deg, #2d8cf0 0%, #43cea2 100%);
-        color: white;
-        border-radius: 10px;
+    .contact-blocks {
+      grid-template-columns: 1fr;
     }
-    .contact-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
-        margin-bottom: 40px;
+    .traffic-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
     }
-    .contact-card {
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border: 1px solid #e9ecef;
+    .cta-btns {
+      flex-direction: column;
+      align-items: stretch;
     }
-    .contact-card h3 {
-        color: #2d8cf0;
-        margin-bottom: 20px;
-        font-size: 20px;
-        display: flex;
-        align-items: center;
-    }
-    .contact-card h3::before {
-        content: '';
-        width: 4px;
-        height: 20px;
-        background: #43cea2;
-        margin-right: 10px;
-        border-radius: 2px;
-    }
-    .contact-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 5px;
-    }
-    .contact-icon {
-        width: 40px;
-        height: 40px;
-        background: #2d8cf0;
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 15px;
-        font-size: 18px;
-    }
-    .contact-info {
-        flex: 1;
-    }
-    .contact-label {
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 3px;
-    }
-    .contact-value {
-        color: #666;
-        font-size: 14px;
-    }
-    .map-container {
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border: 1px solid #e9ecef;
-        text-align: center;
-    }
-    .map-placeholder {
-        width: 100%;
-        height: 300px;
-        background: #f8f9fa;
-        border: 2px dashed #ddd;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #666;
-        font-size: 16px;
-    }
-    .quick-contact {
-        background: linear-gradient(135deg, #43cea2 0%, #2d8cf0 100%);
-        color: white;
-        padding: 30px;
-        border-radius: 10px;
-        text-align: center;
-        margin-top: 30px;
-    }
-    .quick-contact h3 {
-        margin-bottom: 20px;
-    }
-    .quick-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
-    .quick-btn {
-        background: rgba(255,255,255,0.2);
-        color: white;
-        padding: 12px 25px;
-        border: 2px solid rgba(255,255,255,0.3);
-        border-radius: 25px;
-        text-decoration: none;
-        transition: all 0.3s;
-        font-weight: bold;
-    }
-    .quick-btn:hover {
-        background: rgba(255,255,255,0.3);
-        border-color: rgba(255,255,255,0.5);
-        transform: translateY(-2px);
-    }
-    .service-hours {
-        background: #e8f5e8;
-        border: 1px solid #c3e6c3;
-        border-radius: 8px;
-        padding: 20px;
-        margin-top: 20px;
-    }
-    .hours-title {
-        color: #2d8cf0;
-        font-weight: bold;
-        margin-bottom: 15px;
-        font-size: 16px;
-    }
-    .hours-item {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        padding: 5px 0;
-        border-bottom: 1px dotted #ddd;
-    }
-    .hours-item:last-child {
-        border-bottom: none;
-    }
-    @media (max-width: 768px) {
-        .contact-grid {
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        .quick-buttons {
-            flex-direction: column;
-            align-items: center;
-        }
-        .quick-btn {
-            width: 200px;
-        }
-    }
+  }
 </style>
-{% endblock %}
-
-{% block content %}
-<div class="contact-container">
-    <div class="contact-header">
-        <h1>📞 联系我们</h1>
-        <p>我们随时为您提供服务，欢迎通过以下方式联系我们</p>
+{% endblock %} {% block content %}
+<div class="contact-page">
+  <!-- HERO -->
+  <section class="svc-hero">
+    <div
+      class="hero-bg"
+      style="background-image:url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1600&q=80');"
+    ></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="/"><i class="fas fa-home"></i> 首页</a>
+        <span class="sep">/</span>
+        <span>联系我们</span>
+      </nav>
+      <h1>联系我们</h1>
+      <p class="hero-sub">随时为您服务</p>
     </div>
-    
-    <div class="contact-grid">
-        <!-- 基本联系信息 -->
-        <div class="contact-card">
-            <h3>📍 基本信息</h3>
-            
-            <div class="contact-item">
-                <div class="contact-icon">🏛️</div>
-                <div class="contact-info">
-                    <div class="contact-label">村委会地址</div>
-                    <div class="contact-value">{{ contact.address or '美丽乡村示范村村委会大楼' }}</div>
-                </div>
-            </div>
+  </section>
 
-            <div class="contact-item">
-                <div class="contact-icon">📞</div>
-                <div class="contact-info">
-                    <div class="contact-label">联系电话</div>
-                    <div class="contact-value">{{ contact.phone or '0123-12345678' }}</div>
-                </div>
-            </div>
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
+  </div>
 
-            <div class="contact-item">
-                <div class="contact-icon">📱</div>
-                <div class="contact-info">
-                    <div class="contact-label">手机号码</div>
-                    <div class="contact-value">{{ contact.mobile or '138-0123-4567' }}</div>
-                </div>
+  <!-- 内容区块 -->
+  <div class="contact-blocks">
+    <!-- 基本信息 -->
+    <section class="contact-card">
+      <h3><i class="fas fa-info-circle"></i> 基本信息</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-ic"><i class="fas fa-map-marker-alt"></i></div>
+          <div class="info-text">
+            <div class="info-label">村委会地址</div>
+            <div class="info-value copyable" data-copy="{{ contact.address if contact and contact.address else '美丽乡村示范村村委会大楼' }}">
+              {{ contact.address if contact and contact.address else '美丽乡村示范村村委会大楼' }}
             </div>
-
-            <div class="contact-item">
-                <div class="contact-icon">📧</div>
-                <div class="contact-info">
-                    <div class="contact-label">电子邮箱</div>
-                    <div class="contact-value">{{ contact.email or 'village@example.com' }}</div>
-                </div>
-            </div>
-
-            <div class="contact-item">
-                <div class="contact-icon">🌐</div>
-                <div class="contact-info">
-                    <div class="contact-label">官方网站</div>
-                    <div class="contact-value">{{ contact.website or 'www.village-demo.com' }}</div>
-                </div>
-            </div>
+          </div>
         </div>
-        
-        <!-- 办公时间和服务 -->
-        <div class="contact-card">
-            <h3>🕒 办公时间</h3>
-            
-            <div class="service-hours">
-                <div class="hours-title">📅 办公时间</div>
-                <p style="margin:0; line-height:1.8; color:#666; white-space: pre-line;">{{ contact.work_hours or '周一至周五 8:30 - 17:30\n周六 9:00 - 16:00\n周日 休息\n午休时间 12:00 - 14:00' }}</p>
+        <div class="info-item">
+          <div class="info-ic"><i class="fas fa-phone"></i></div>
+          <div class="info-text">
+            <div class="info-label">联系电话</div>
+            <div class="info-value copyable" data-copy="{{ contact.phone if contact and contact.phone else '0123-12345678' }}">
+              {{ contact.phone if contact and contact.phone else '0123-12345678' }}
             </div>
-            
-            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
-                <strong>⚠️ 特别提醒：</strong><br>
-                <span style="white-space: pre-line;">{{ contact.work_note or '法定节假日休息\n紧急事务请拨打24小时热线\n建议提前电话预约' }}</span>
-            </div>
+          </div>
         </div>
-    </div>
-    
+        <div class="info-item">
+          <div class="info-ic"><i class="fas fa-mobile-alt"></i></div>
+          <div class="info-text">
+            <div class="info-label">手机号码</div>
+            <div class="info-value copyable" data-copy="{{ contact.mobile if contact and contact.mobile else '138-0123-4567' }}">
+              {{ contact.mobile if contact and contact.mobile else '138-0123-4567' }}
+            </div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-ic"><i class="fas fa-envelope"></i></div>
+          <div class="info-text">
+            <div class="info-label">电子邮箱</div>
+            <div class="info-value copyable" data-copy="{{ contact.email if contact and contact.email else 'village@example.com' }}">
+              {{ contact.email if contact and contact.email else 'village@example.com' }}
+            </div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-ic"><i class="fas fa-globe"></i></div>
+          <div class="info-text">
+            <div class="info-label">官方网站</div>
+            <div class="info-value copyable" data-copy="{{ contact.website if contact and contact.website else 'www.village-demo.com' }}">
+              {{ contact.website if contact and contact.website else 'www.village-demo.com' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 办公时间 -->
+    <section class="contact-card">
+      <h3><i class="far fa-clock"></i> 办公时间</h3>
+      <p class="work-hours">{{ contact.work_hours if contact and contact.work_hours else '周一至周五 8:30 - 17:30\n周六 9:00 - 16:00\n周日 休息\n午休时间 12:00 - 14:00' }}</p>
+      <div class="work-note">
+        <strong>⚠️ 特别提醒：</strong><br />
+        {{ contact.work_note if contact and contact.work_note else '法定节假日休息\n紧急事务请拨打24小时热线\n建议提前电话预约' }}
+      </div>
+    </section>
+
     <!-- 交通指引 -->
-    <div class="contact-card">
-        <h3>🚌 交通指引</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
-            <div>
-                <h4 style="color: #2d8cf0; margin-bottom: 10px;">🚌 公共交通</h4>
-                {% if contact.public_transit %}
-                <p style="margin: 0; line-height: 1.8; color: #666; white-space: pre-line;">{{ contact.public_transit }}</p>
-                {% else %}
-                <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                    <li>乘坐123路公交车到"村委会站"下车</li>
-                    <li>乘坐456路公交车到"乡村广场站"下车，步行5分钟</li>
-                    <li>地铁2号线"乡村站"A出口，转乘123路公交</li>
-                </ul>
-                {% endif %}
-            </div>
-            <div>
-                <h4 style="color: #2d8cf0; margin-bottom: 10px;">🚗 自驾路线</h4>
-                {% if contact.driving_route %}
-                <p style="margin: 0; line-height: 1.8; color: #666; white-space: pre-line;">{{ contact.driving_route }}</p>
-                {% else %}
-                <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                    <li>导航搜索"美丽乡村村委会"</li>
-                    <li>高速公路乡村出口下，直行3公里</li>
-                    <li>村委会大楼提供免费停车位</li>
-                </ul>
-                {% endif %}
-            </div>
+    <section class="contact-card full">
+      <h3><i class="fas fa-route"></i> 交通指引</h3>
+      <div class="traffic-grid">
+        <div>
+          <h4><i class="fas fa-bus"></i> 公共交通</h4>
+          {% if contact and contact.public_transit %}
+          <p>{{ contact.public_transit }}</p>
+          {% else %}
+          <ul>
+            <li>乘坐 123 路公交车到「村委会站」下车</li>
+            <li>乘坐 456 路公交车到「乡村广场站」下车，步行 5 分钟</li>
+            <li>地铁 2 号线「乡村站」A 出口，转乘 123 路公交</li>
+          </ul>
+          {% endif %}
         </div>
-        {% if contact.route_link %}
-        <div style="margin-top: 20px; text-align: center;">
-            <a href="{{ contact.route_link }}" target="_blank" rel="noopener noreferrer" class="quick-btn" style="display: inline-block; background: #2d8cf0; border-color: #2d8cf0;">🧭 路线规划</a>
+        <div>
+          <h4><i class="fas fa-car"></i> 自驾路线</h4>
+          {% if contact and contact.driving_route %}
+          <p>{{ contact.driving_route }}</p>
+          {% else %}
+          <ul>
+            <li>导航搜索「美丽乡村村委会」</li>
+            <li>高速公路乡村出口下，直行 3 公里</li>
+            <li>村委会大楼提供免费停车位</li>
+          </ul>
+          {% endif %}
         </div>
-        {% endif %}
-    </div>
-    
+      </div>
+      {% if contact and contact.route_link %}
+      <div class="route-link-wrap">
+        <a href="{{ contact.route_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+          <i class="fas fa-map-signs"></i> 路线规划
+        </a>
+      </div>
+      {% endif %}
+    </section>
+
     <!-- 地图位置 -->
-    <div class="map-container">
-        <h3 style="color: #2d8cf0; margin-bottom: 20px;">🗺️ 位置地图</h3>
-        {% if contact.map_embed %}
-        <div class="map-placeholder" style="border-style: solid;">
-            <div>
-                <p>📍 位置地图展示区域</p>
-                <p style="font-size: 14px; color: #999;">请在后台「联系信息」的地图嵌入处填写地图链接或嵌入代码</p>
-                {% if contact.map_embed.startswith('http') %}
-                <a href="{{ contact.map_embed }}" target="_blank" rel="noopener noreferrer" class="quick-btn" style="display:inline-block; margin-top:10px; background:#43cea2; border-color:#43cea2;">🗺️ 打开地图</a>
-                {% else %}
-                <div style="margin-top:10px;">{{ contact.map_embed | safe }}</div>
-                {% endif %}
-            </div>
+    <section class="contact-card full">
+      <h3><i class="fas fa-map-marked-alt"></i> 位置地图</h3>
+      {% if contact and contact.map_embed %}
+        {% if contact.map_embed.startswith('http') %}
+        <div class="map-placeholder">
+          <i class="fas fa-map"></i>
+          <p>点击下方按钮在地图中查看我们的位置</p>
+          <a href="{{ contact.map_embed }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+            <i class="fas fa-external-link-alt"></i> 打开地图
+          </a>
         </div>
         {% else %}
-        <div class="map-placeholder">
-            <div>
-                <p>📍 地图位置展示区域</p>
-                <p style="font-size: 14px; color: #999;">
-                    （此处可集成百度地图、高德地图等第三方地图服务）
-                </p>
-            </div>
-        </div>
+        <div class="map-frame">{{ contact.map_embed | safe }}</div>
         {% endif %}
-    </div>
-    
-    <!-- 快速联系 -->
-    <div class="quick-contact">
-        <h3>💬 快速联系我们</h3>
-        <p>选择最适合您的联系方式，我们将尽快为您服务</p>
-        <div class="quick-buttons">
-            <a href="/message" class="quick-btn">📝 在线留言</a>
-            {% if contact.phone %}<a href="tel:{{ contact.phone }}" class="quick-btn">📞 电话咨询</a>{% endif %}
-            {% if contact.email %}<a href="mailto:{{ contact.email }}" class="quick-btn">📧 邮件联系</a>{% endif %}
-            {% if contact.wechat %}<a href="#" class="quick-btn" onclick="alert('微信号：{{ contact.wechat }}')">💬 微信咨询</a>{% endif %}
-        </div>
-    </div>
-</div>
+      {% else %}
+      <div class="map-placeholder">
+        <i class="fas fa-map-marker-alt"></i>
+        <p>地图位置展示区域</p>
+        <p>（此处可集成百度地图、高德地图等第三方地图服务的嵌入代码或链接）</p>
+      </div>
+      {% endif %}
+    </section>
 
+    <!-- 快速联系 CTA -->
+    <section class="cta">
+      <h3><i class="fas fa-headset"></i> 快速联系我们</h3>
+      <p>选择最适合您的联系方式，我们将尽快为您服务</p>
+      <div class="cta-btns">
+        <a href="/message" class="cta-btn"><i class="fas fa-comment-dots"></i> 在线留言</a>
+        {% if contact and contact.phone %}<a href="tel:{{ contact.phone }}" class="cta-btn"><i class="fas fa-phone"></i> 电话咨询</a>{% endif %}
+        {% if contact and contact.email %}<a href="mailto:{{ contact.email }}" class="cta-btn"><i class="fas fa-envelope"></i> 邮件联系</a>{% endif %}
+        {% if contact and contact.wechat %}<a href="#" class="cta-btn" data-wechat="{{ contact.wechat }}" onclick="copyWechat(event, this)"><i class="fab fa-weixin"></i> 微信咨询</a>{% endif %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
 <script>
-// 添加一些交互效果
-document.addEventListener('DOMContentLoaded', function() {
-    // 为联系卡片添加悬停效果
-    const cards = document.querySelectorAll('.contact-card');
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px)';
-            this.style.transition = 'transform 0.3s ease';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
+  (function () {
+    // 返回顶部
+    var btn = document.getElementById("backToTop");
+    if (btn) {
+      window.addEventListener("scroll", function () {
+        if (window.scrollY > 400) btn.classList.add("show");
+        else btn.classList.remove("show");
+      });
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+
+    // 点击复制联系信息
+    function flashCopied(el) {
+      el.classList.add("copied");
+      var original = el.textContent;
+      el.textContent = "已复制 ✓";
+      setTimeout(function () {
+        el.classList.remove("copied");
+        el.textContent = original;
+      }, 1500);
+    }
+    document.querySelectorAll(".copyable").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var text = el.getAttribute("data-copy") || el.textContent.trim();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            flashCopied(el);
+          });
+        }
+      });
+      el.title = "点击复制";
     });
-    
-    // 复制联系信息到剪贴板
-    const contactValues = document.querySelectorAll('.contact-value');
-    contactValues.forEach(value => {
-        value.addEventListener('click', function() {
-            const text = this.textContent;
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(() => {
-                    // 显示复制成功提示
-                    const originalText = this.textContent;
-                    this.textContent = '已复制！';
-                    this.style.color = '#28a745';
-                    setTimeout(() => {
-                        this.textContent = originalText;
-                        this.style.color = '#666';
-                    }, 1500);
-                });
-            }
+
+    // 复制微信号
+    window.copyWechat = function (e, el) {
+      e.preventDefault();
+      var wx = el.getAttribute("data-wechat");
+      if (wx && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(wx).then(function () {
+          var original = el.innerHTML;
+          el.innerHTML = '<i class="fab fa-weixin"></i> 微信号已复制';
+          setTimeout(function () {
+            el.innerHTML = original;
+          }, 1500);
         });
-        
-        // 添加点击提示
-        value.style.cursor = 'pointer';
-        value.title = '点击复制';
-    });
-});
+      } else {
+        alert("微信号：" + wx);
+      }
+    };
+  })();
 </script>
 {% endblock %}

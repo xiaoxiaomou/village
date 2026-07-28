@@ -1,0 +1,663 @@
+{% extends "base.html" %} {% block title %}乡村旅游 - 乡村记忆{% endblock %} {% block head %}
+<style>
+  /* ===== 乡村旅游详情页 · 暖色主题（仅引用 base.html 设计令牌） ===== */
+  .svc-page {
+    --accent: var(--cinnabar);
+    --accent-light: var(--cinnabar-light);
+    --accent-pale: var(--cinnabar-pale);
+    --accent2: var(--gold);
+  }
+
+  /* ── Hero 全幅图 ── */
+  .svc-hero {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    min-height: 420px;
+    display: flex;
+    align-items: flex-end;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 8px;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent);
+  }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--ink-dark);
+    opacity: 0.5;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 52px 48px;
+    width: 100%;
+    color: var(--paper);
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    color: var(--paper);
+    opacity: 0.9;
+  }
+  .breadcrumb a {
+    color: var(--paper);
+    opacity: 0.85;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .breadcrumb a:hover {
+    opacity: 1;
+    color: var(--gold-light);
+  }
+  .breadcrumb .sep {
+    opacity: 0.5;
+  }
+  .svc-hero h1 {
+    color: var(--paper);
+    font-size: clamp(34px, 5vw, 52px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin: 0 0 12px;
+    text-shadow: 0 2px 16px rgba(26, 26, 46, 0.35);
+  }
+  .hero-sub {
+    color: var(--paper);
+    font-size: clamp(15px, 2vw, 19px);
+    letter-spacing: 2px;
+    opacity: 0.95;
+    margin: 0;
+  }
+
+  /* ── 通用区块 ── */
+  .svc-section {
+    padding: 60px 0;
+  }
+  .svc-section.alt {
+    background: var(--paper-warm);
+    border-radius: var(--radius-xl);
+  }
+  .svc-section-head {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .svc-section-head .eyebrow {
+    display: inline-block;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .svc-section-head h2 {
+    font-size: clamp(26px, 3.4vw, 34px);
+    position: relative;
+    display: inline-block;
+    margin: 0;
+  }
+  .svc-section-head h2::after {
+    content: "";
+    display: block;
+    width: 64px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    margin: 14px auto 0;
+    border-radius: 2px;
+  }
+  .svc-section-head p {
+    color: var(--ink-muted);
+    max-width: 700px;
+    margin: 14px auto 0;
+    font-size: 15px;
+  }
+  .svc-lead {
+    max-width: 840px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 17px;
+    color: var(--ink-light);
+    line-height: 1.95;
+  }
+
+  /* ── 民宿卡片 ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+  .stay-card {
+    background: var(--paper);
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-normal) var(--ease-out),
+      box-shadow var(--duration-normal) var(--ease-out);
+  }
+  .stay-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+  .stay-card .cover {
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent-pale);
+  }
+  .stay-card .body {
+    padding: 22px 24px 26px;
+  }
+  .stay-card h4 {
+    font-size: 19px;
+    margin: 0 0 10px;
+    color: var(--ink-dark);
+  }
+  .stay-card p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.8;
+    margin: 0 0 14px;
+  }
+  .stay-card .meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--accent);
+    background: var(--accent-pale);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+  }
+
+  /* ── 路线步骤 ── */
+  .route-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    counter-reset: step;
+  }
+  .route-step {
+    position: relative;
+    background: var(--paper);
+    border: 1px solid var(--accent-pale);
+    border-radius: var(--radius-lg);
+    padding: 30px 26px 28px;
+  }
+  .route-step .num {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    color: var(--paper);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .route-step h4 {
+    font-size: 18px;
+    margin: 0 0 10px;
+    color: var(--ink-dark);
+  }
+  .route-step p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.8;
+    margin: 0;
+  }
+
+  /* ── 图标网格 ── */
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 24px;
+  }
+  .icon-card {
+    background: var(--paper);
+    border: 1px solid var(--accent-pale);
+    border-radius: var(--radius-lg);
+    padding: 30px 26px;
+    transition: transform var(--duration-normal) var(--ease-out),
+      box-shadow var(--duration-normal) var(--ease-out);
+  }
+  .icon-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+  .icon-card .ic {
+    width: 58px;
+    height: 58px;
+    border-radius: var(--radius-md);
+    background: var(--accent-pale);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 18px;
+  }
+  .icon-card h4 {
+    font-size: 18px;
+    margin: 0 0 10px;
+    color: var(--ink-dark);
+  }
+  .icon-card p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.8;
+    margin: 0;
+  }
+
+  /* ── 民俗时间轴 ── */
+  .timeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+  }
+  .tl-card {
+    position: relative;
+    background: var(--paper);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    padding: 26px 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .tl-card .ic {
+    color: var(--accent);
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  .tl-card h4 {
+    font-size: 18px;
+    margin: 0 0 10px;
+    color: var(--ink-dark);
+  }
+  .tl-card p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.8;
+    margin: 0;
+  }
+
+  /* ── 游玩指南信息面板 ── */
+  .guide-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+  .guide-item {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    background: var(--paper);
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+  }
+  .guide-item .ic {
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-md);
+    background: var(--accent-pale);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .guide-item h4 {
+    font-size: 16px;
+    margin: 0 0 6px;
+    color: var(--ink-dark);
+  }
+  .guide-item p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ── 波浪分隔 ── */
+  .svc-wave {
+    line-height: 0;
+    margin: -1px 0;
+  }
+  .svc-wave svg {
+    display: block;
+    width: 100%;
+    height: 70px;
+  }
+  .svc-wave path {
+    fill: var(--accent-pale);
+  }
+
+  /* ── 底部 CTA ── */
+  .svc-cta {
+    text-align: center;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border-radius: var(--radius-xl);
+    padding: 60px 32px;
+    color: var(--paper);
+  }
+  .svc-cta h2 {
+    color: var(--paper);
+    font-size: clamp(24px, 3vw, 32px);
+    margin: 0 0 12px;
+  }
+  .svc-cta p {
+    color: var(--paper);
+    opacity: 0.92;
+    margin: 0 0 28px;
+  }
+  .svc-cta .btn-light {
+    background: var(--paper);
+    color: var(--accent);
+    box-shadow: var(--shadow-md);
+  }
+  .svc-cta .btn-light:hover {
+    transform: translateY(-2px);
+    color: var(--accent);
+  }
+  .svc-cta .btn-ghost {
+    background: transparent;
+    color: var(--paper);
+    border: 1px solid rgba(250, 248, 243, 0.5);
+  }
+  .svc-cta .btn-ghost:hover {
+    background: rgba(250, 248, 243, 0.12);
+    color: var(--paper);
+  }
+
+  /* ── 返回顶部 ── */
+  #backToTop {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 200;
+  }
+  #backToTop.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* ── 响应式 ── */
+  @media (max-width: 768px) {
+    .kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .hero-content {
+      padding: 36px 22px;
+    }
+    .svc-section {
+      padding: 42px 0;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="svc-page">
+  <!-- HERO -->
+  <section class="svc-hero">
+    <div
+      class="hero-bg"
+      style="background-image:url('https://images.unsplash.com/photo-1444723121867-7a241cacace9?auto=format&fit=crop&w=1600&q=80');"
+    ></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="/"><i class="fas fa-home"></i> 首页</a>
+        <span class="sep">/</span>
+        <a href="/services">特色服务</a>
+        <span class="sep">/</span>
+        <span>乡村旅游</span>
+      </nav>
+      <h1>乡村旅游</h1>
+      <p class="hero-sub">民宿体验 · 文化之旅 · 乡村美食</p>
+    </div>
+  </section>
+
+  <!-- 引导语 -->
+  <section class="svc-section">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <p class="svc-lead">
+        在青山绿水间放慢脚步，住进一栋老屋改造的民宿，尝一口地道的农家饭菜，听一段流传百年的乡音故事。我们把最质朴的乡村生活，打包成一场温柔的旅行。
+      </p>
+    </div>
+  </section>
+
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
+  </div>
+
+  <!-- 特色民宿 -->
+  <section class="svc-section alt">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-home"></i> STAY</span>
+        <h2>特色民宿</h2>
+        <p>总有一处院落，装得下你对田园生活的全部想象。</p>
+      </div>
+      <div class="card-grid">
+        <div class="stay-card">
+          <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80');"></div>
+          <div class="body">
+            <h4>农家乐</h4>
+            <p>住农家院、干农家活、吃农家饭，体验最本真的田园日常，适合亲子与团建。</p>
+            <span class="meta"><i class="fas fa-users"></i> 家庭友好</span>
+          </div>
+        </div>
+        <div class="stay-card">
+          <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=600&q=80');"></div>
+          <div class="body">
+            <h4>精品民宿</h4>
+            <p>老宅新生，保留夯土墙与木梁，配现代舒适设施，于古意中静享慢生活。</p>
+            <span class="meta"><i class="fas fa-spa"></i> 慢生活</span>
+          </div>
+        </div>
+        <div class="stay-card">
+          <div class="cover" style="background-image:url('https://images.unsplash.com/photo-1504280390367-361c6d9f405f?auto=format&fit=crop&w=600&q=80');"></div>
+          <div class="body">
+            <h4>露营基地</h4>
+            <p>星空帐篷、篝火晚会与溪畔营地，亲近自然、释放压力，是年轻人的心头好。</p>
+            <span class="meta"><i class="fas fa-fire"></i> 户外野趣</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 旅游路线 -->
+  <section class="svc-section">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-map-marked-alt"></i> ROUTES</span>
+        <h2>旅游路线</h2>
+        <p>三条主题线路，总有一条适合今天的你。</p>
+      </div>
+      <div class="route-steps">
+        <div class="route-step">
+          <div class="num">1</div>
+          <h4>田园观光线</h4>
+          <p>油菜花海—茶山步道—稻田艺术，一路皆是治愈风景，随手一拍就是壁纸。</p>
+        </div>
+        <div class="route-step">
+          <div class="num">2</div>
+          <h4>文化体验线</h4>
+          <p>古村落—非遗工坊—村史馆，亲手触摸乡愁与技艺的温度，读懂村庄的来路。</p>
+        </div>
+        <div class="route-step">
+          <div class="num">3</div>
+          <h4>美食探索线</h4>
+          <p>早市尝鲜—农家灶台—手作小吃，用味蕾记住乡村，把烟火气装进记忆。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
+  </div>
+
+  <!-- 乡村美食 -->
+  <section class="svc-section alt">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-utensils"></i> LOCAL FOOD</span>
+        <h2>乡村美食</h2>
+        <p>柴火灶里出的家乡味，是城市里找不到的踏实。</p>
+      </div>
+      <div class="icon-grid">
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-drumstick-bite"></i></div>
+          <h4>地道农家菜</h4>
+          <p>土鸡汤、腊肉焖笋、柴火豆腐，慢火细炖，是记忆里最暖的滋味。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-leaf"></i></div>
+          <h4>时令野味</h4>
+          <p>春笋、蕨菜、山菌，顺时而食、鲜美当季，把山的馈赠端上桌。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-bread-slice"></i></div>
+          <h4>传统手作</h4>
+          <p>手工米粉、糍粑、酿豆腐，长辈手把手教的老手艺，越嚼越香。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-mug-hot"></i></div>
+          <h4>山野茶饮</h4>
+          <p>自制菊花茶、野山楂饮，清润解腻、返璞归真，饭后一盏最舒心。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 民俗文化 -->
+  <section class="svc-section">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-theater-masks"></i> FOLK CULTURE</span>
+        <h2>民俗文化</h2>
+        <p>乡音乡韵，是村庄生生不息的魂。</p>
+      </div>
+      <div class="timeline">
+        <div class="tl-card">
+          <div class="ic"><i class="fas fa-calendar-day"></i></div>
+          <h4>节庆活动</h4>
+          <p>春耕节、丰收祭、端午龙舟，热闹里藏着祖辈传下的仪式感。</p>
+        </div>
+        <div class="tl-card">
+          <div class="ic"><i class="fas fa-hands"></i></div>
+          <h4>非遗技艺</h4>
+          <p>竹编、扎染、木雕，指尖上的千年传承，可在工坊亲身体验。</p>
+        </div>
+        <div class="tl-card">
+          <div class="ic"><i class="fas fa-music"></i></div>
+          <h4>民间艺术</h4>
+          <p>花鼓戏、采茶歌、舞龙舞狮，乡音乡韵，代代相传未曾断。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
+  </div>
+
+  <!-- 游玩指南 -->
+  <section class="svc-section alt">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-compass"></i> TRAVEL GUIDE</span>
+        <h2>游玩指南</h2>
+        <p>出发前看一眼，玩得更从容。</p>
+      </div>
+      <div class="guide-panel">
+        <div class="guide-item">
+          <div class="ic"><i class="fas fa-sun"></i></div>
+          <div>
+            <h4>最佳季节</h4>
+            <p>3—5 月赏花踏青，9—11 月秋收采摘，气候宜人、景致最盛。</p>
+          </div>
+        </div>
+        <div class="guide-item">
+          <div class="ic"><i class="fas fa-bus"></i></div>
+          <div>
+            <h4>交通方式</h4>
+            <p>市区自驾约 1 小时，村口设旅游专线巴士与新能源充电桩。</p>
+          </div>
+        </div>
+        <div class="guide-item">
+          <div class="ic"><i class="fas fa-bed"></i></div>
+          <div>
+            <h4>住宿推荐</h4>
+            <p>民宿建议提前 1 周预订，节假日错峰出行体验更佳。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 底部 CTA -->
+  <section class="svc-section">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-cta">
+        <h2>准备好一场乡村之旅了吗？</h2>
+        <p>立即预订心仪民宿，或查看完整游玩攻略，开启你的慢时光。</p>
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+          <a href="/contact" class="btn btn-light"><i class="fas fa-calendar-check"></i> 立即预订</a>
+          <a href="/services" class="btn btn-ghost"><i class="fas fa-book-open"></i> 查看攻略</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <a href="#" id="backToTop" aria-label="返回顶部"><i class="fas fa-arrow-up"></i></a>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  (function () {
+    var btn = document.getElementById("backToTop");
+    if (!btn) return;
+    window.addEventListener("scroll", function () {
+      if (window.scrollY > 400) btn.classList.add("show");
+      else btn.classList.remove("show");
+    });
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  })();
+</script>
+{% endblock %}

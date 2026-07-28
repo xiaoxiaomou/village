@@ -14,12 +14,102 @@
     background: linear-gradient(135deg, var(--ink-dark) 0%, var(--ink) 100%);
   }
 
-  .village-hero-bg {
+  /* Hero 轮播图容器（复用 index.html 轮播风格与交互） */
+  .village-hero-carousel {
     position: absolute;
     inset: 0;
+    overflow: hidden;
+    border-radius: 20px;
+    z-index: 1;
+  }
+
+  .village-carousel-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .village-carousel-inner .carousel-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.6s ease-in-out;
     background-size: cover;
     background-position: center;
-    opacity: 0.6;
+  }
+
+  .village-carousel-inner .carousel-item.active {
+    opacity: 1;
+    z-index: 1;
+  }
+
+  /* 轮播控制按钮（参考 index.html .carousel-control：白色半透明圆按钮，hover 加深） */
+  .carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    backdrop-filter: blur(6px);
+  }
+
+  .carousel-control:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%) scale(1.08);
+  }
+
+  .carousel-prev {
+    left: 18px;
+  }
+
+  .carousel-next {
+    right: 18px;
+  }
+
+  /* 轮播指示器（参考 index.html .carousel-indicators） */
+  .carousel-indicators {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 20;
+  }
+
+  .carousel-indicators span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.4s;
+    border: 2px solid transparent;
+  }
+
+  .carousel-indicators span:hover {
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .carousel-indicators span.active {
+    background: var(--cinnabar, #c45c48);
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: scale(1.2);
   }
 
   .village-hero-overlay {
@@ -30,6 +120,8 @@
     flex-direction: column;
     justify-content: flex-end;
     padding: 36px 40px;
+    z-index: 10;
+    pointer-events: none;  /* 文字层不拦截点击，让下方轮播控制/指示器可点击 */
   }
 
   .village-hero h1 {
@@ -421,9 +513,18 @@
 {% block content %}
 <!-- 乡村封面 -->
 <div class="village-hero" id="villageHero">
-  <div class="village-hero-bg" id="heroBg"></div>
+  <!-- Hero 轮播图：复用 VillageCarousel 模型 + /api/carousel 接口 -->
+  <div class="village-hero-carousel" id="villageHeroCarousel">
+    <div class="village-carousel-inner" id="villageCarouselInner">
+      <!-- JS 动态填充 carousel-item -->
+    </div>
+    <button class="carousel-control carousel-prev" onclick="villagePrevSlide()" aria-label="上一张">‹</button>
+    <button class="carousel-control carousel-next" onclick="villageNextSlide()" aria-label="下一张">›</button>
+    <div class="carousel-indicators" id="villageCarouselIndicators"></div>
+  </div>
+  <!-- 悬浮文字（保持可配，主标题取 SiteConfig.hero_title） -->
   <div class="village-hero-overlay">
-    <h1>{{ village_info.title if village_info else '美丽乡村' }}</h1>
+    <h1>{{ site_config.hero_title or '美丽乡村' }}</h1>
     <p>{{ site_config.hero_subtitle }}</p>
   </div>
 </div>
@@ -516,29 +617,90 @@
 
 {% block scripts %}
 <script>
-  // 加载封面图
-  async function loadCoverImage() {
+  // 村情页 Hero 轮播：复用 /api/carousel（VillageCarousel 模型，后台 /admin/carousel 管理）
+  let villageCurrentSlide = 0;
+  let villageCarouselTimer = null;
+  let villageSlides = [];
+
+  async function loadVillageCarousel() {
     try {
-      const res = await fetch("/api/village");
+      const res = await fetch("/api/carousel");
       const data = await res.json();
-      if (data && data.image_url) {
-        document.getElementById("heroBg").style.backgroundImage = 
-          "url('" + data.image_url + "')";
-      } else {
-        // 默认背景图
-        document.getElementById("heroBg").style.backgroundImage = 
-          "url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1332&q=80')";
+      villageSlides = (data || []).filter(c => c.is_active).sort((a, b) => a.sort_order - b.sort_order);
+
+      const inner = document.getElementById("villageCarouselInner");
+      const indicators = document.getElementById("villageCarouselIndicators");
+
+      if (villageSlides.length === 0) {
+        // 无轮播图时降级为默认单图（保持原有 fallback 行为）
+        inner.innerHTML = '<div class="carousel-item active" style="background-image:url(\'https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1332&q=80\')"></div>';
+        return;
       }
+
+      // 构建轮播项
+      inner.innerHTML = villageSlides.map((c, i) =>
+        `<div class="carousel-item${i === 0 ? ' active' : ''}" style="background-image:url('${c.image_url}')"></div>`
+      ).join('');
+
+      // 构建指示器
+      indicators.innerHTML = villageSlides.map((_, i) =>
+        `<span class="${i === 0 ? 'active' : ''}" onclick="villageGoToSlide(${i})"></span>`
+      ).join('');
+
+      // 启动自动播放（5 秒间隔）
+      startVillageAutoPlay();
     } catch (e) {
-      console.log("加载封面图失败，使用默认图");
-      document.getElementById("heroBg").style.backgroundImage = 
-        "url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1332&q=80')";
+      console.log("加载轮播失败", e);
     }
   }
 
-  // 页面加载完成后初始化
-  document.addEventListener("DOMContentLoaded", function() {
-    loadCoverImage();
+  function villageNextSlide() {
+    if (villageSlides.length <= 1) return;
+    villageCurrentSlide = (villageCurrentSlide + 1) % villageSlides.length;
+    updateVillageSlide();
+  }
+
+  function villagePrevSlide() {
+    if (villageSlides.length <= 1) return;
+    villageCurrentSlide = (villageCurrentSlide - 1 + villageSlides.length) % villageSlides.length;
+    updateVillageSlide();
+  }
+
+  function villageGoToSlide(index) {
+    villageCurrentSlide = index;
+    updateVillageSlide();
+    resetVillageAutoPlay(); // 用户手动操作后重置计时器
+  }
+
+  function updateVillageSlide() {
+    const items = document.querySelectorAll("#villageCarouselInner .carousel-item");
+    const dots = document.querySelectorAll("#villageCarouselIndicators span");
+    items.forEach((item, i) => item.classList.toggle("active", i === villageCurrentSlide));
+    dots.forEach((dot, i) => dot.classList.toggle("active", i === villageCurrentSlide));
+  }
+
+  function startVillageAutoPlay() {
+    stopVillageAutoPlay();
+    villageCarouselTimer = setInterval(villageNextSlide, 5000);
+  }
+
+  function stopVillageAutoPlay() {
+    if (villageCarouselTimer) clearInterval(villageCarouselTimer);
+  }
+
+  function resetVillageAutoPlay() {
+    stopVillageAutoPlay();
+    startVillageAutoPlay();
+  }
+
+  // 鼠标悬停暂停自动播放（加分项）
+  document.addEventListener("DOMContentLoaded", function () {
+    const carouselEl = document.getElementById("villageHeroCarousel");
+    if (carouselEl) {
+      carouselEl.addEventListener("mouseenter", stopVillageAutoPlay);
+      carouselEl.addEventListener("mouseleave", startVillageAutoPlay);
+    }
+    loadVillageCarousel();
   });
 </script>
 {% endblock %}

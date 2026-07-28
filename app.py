@@ -13,47 +13,13 @@ if __name__ == "__main__":
     from models import db, User
 
     def _ensure_site_config_columns():
-        """自愈式加列：比对 site_config 表列集合，缺失则 ALTER 补齐并回填默认值。
+        """自愈式加列：复用 models.ensure_site_config_columns（比对 SiteConfig 模型列集合，幂等补齐）。
 
-        仅在旧库未执行 db_migrate_site_config.py 时兜底；幂等，可重复运行。
-        须已在应用上下文（app_context）内调用。
+        仅在旧库未执行迁移脚本时兜底；幂等，可重复运行。须已在应用上下文（app_context）内调用。
         """
-        from sqlalchemy import inspect as sa_inspect, text
-        from models import SiteConfig
+        from models import ensure_site_config_columns
 
-        # 模型新增的 7 个列（与 models.py / default_values 双写一致）
-        new_cols = [
-            "hero_subtitle",
-            "stat_labels",
-            "intro_title",
-            "intro_subtitle",
-            "features_title",
-            "features_subtitle",
-            "village_info_title",
-        ]
-        try:
-            existing_cols = {c["name"] for c in sa_inspect(db.engine).get_columns("site_config")}
-        except Exception:
-            # 表不存在时 db.create_all 已建好带新列的表，无需处理
-            return
-        missing_cols = [c for c in new_cols if c not in existing_cols]
-        if not missing_cols:
-            return
-
-        # 先加列（ALTER 后立即提交，使后续模型查询可见新列）
-        with db.engine.begin() as conn:
-            for col in missing_cols:
-                conn.execute(text(f"ALTER TABLE site_config ADD COLUMN {col} TEXT"))
-
-        # 再用默认值回填为 NULL 的列（仅当真实数据行存在时）
-        cfg = SiteConfig.query.first()
-        if cfg is not None:
-            defaults = SiteConfig.default_values()
-            for col in missing_cols:
-                if not getattr(cfg, col, None):
-                    setattr(cfg, col, defaults.get(col, ""))
-            db.session.commit()
-        print(f"[自愈] 已为 site_config 补齐缺失列并回填: {missing_cols}")
+        ensure_site_config_columns(db)
 
     with app.app_context():
         db.create_all()
@@ -114,7 +80,7 @@ if __name__ == "__main__":
                     description="推广绿色种植技术，发展有机农业，保护生态环境，提供健康农产品。",
                     icon="fa-leaf",
                     icon_color="red",
-                    link="/services",
+                    link="/services/ecological-agriculture",
                     sort_order=1,
                 ),
                 HomeFeature(
@@ -122,7 +88,7 @@ if __name__ == "__main__":
                     description="开发特色民宿，打造乡村旅游路线，让游客体验纯正的乡村生活和文化。",
                     icon="fa-home",
                     icon_color="jade",
-                    link="/services",
+                    link="/services/rural-tourism",
                     sort_order=2,
                 ),
                 HomeFeature(
@@ -130,7 +96,7 @@ if __name__ == "__main__":
                     description="提供政务咨询、医疗服务、教育资源等便民服务，解决村民生活难题。",
                     icon="fa-hands-helping",
                     icon_color="gold",
-                    link="/services",
+                    link="/services/convenience-services",
                     sort_order=3,
                 ),
             ]

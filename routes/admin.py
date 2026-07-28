@@ -377,6 +377,7 @@ def admin_village_config():
         data = request.get_json(silent=True) or request.form
 
         # 纯文本字段
+        config.hero_title = data.get("hero_title", config.hero_title or "")
         config.hero_subtitle = data.get("hero_subtitle", config.hero_subtitle or "")
         config.intro_title = data.get("intro_title", config.intro_title or "")
         config.intro_subtitle = data.get("intro_subtitle", config.intro_subtitle or "")
@@ -433,6 +434,7 @@ def admin_village_config():
     # GET → 返回当前值（JSON）
     return jsonify(
         {
+            "hero_title": config.hero_title or "",
             "hero_subtitle": config.hero_subtitle or "",
             "stat_labels": config.stat_labels or "{}",
             "home_stats": config.home_stats or "{}",

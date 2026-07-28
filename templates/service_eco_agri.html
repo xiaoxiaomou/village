@@ -1,0 +1,590 @@
+{% extends "base.html" %} {% block title %}生态农业 - 乡村记忆{% endblock %} {% block head %}
+<style>
+  /* ===== 生态农业详情页 · 绿色主题（仅引用 base.html 设计令牌） ===== */
+  .svc-page {
+    --accent: var(--jade);
+    --accent-light: var(--jade-light);
+    --accent-pale: var(--jade-pale);
+    --accent2: var(--cinnabar);
+  }
+
+  /* ── Hero 全幅图 ── */
+  .svc-hero {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    min-height: 420px;
+    display: flex;
+    align-items: flex-end;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 8px;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent);
+  }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--ink-dark);
+    opacity: 0.52;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 52px 48px;
+    width: 100%;
+    color: var(--paper);
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    color: var(--paper);
+    opacity: 0.9;
+  }
+  .breadcrumb a {
+    color: var(--paper);
+    opacity: 0.85;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .breadcrumb a:hover {
+    opacity: 1;
+    color: var(--gold-light);
+  }
+  .breadcrumb .sep {
+    opacity: 0.5;
+  }
+  .svc-hero h1 {
+    color: var(--paper);
+    font-size: clamp(34px, 5vw, 52px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin: 0 0 12px;
+    text-shadow: 0 2px 16px rgba(26, 26, 46, 0.35);
+  }
+  .hero-sub {
+    color: var(--paper);
+    font-size: clamp(15px, 2vw, 19px);
+    letter-spacing: 2px;
+    opacity: 0.95;
+    margin: 0;
+  }
+
+  /* ── 通用区块 ── */
+  .svc-section {
+    padding: 60px 0;
+  }
+  .svc-section.alt {
+    background: var(--paper-warm);
+    border-radius: var(--radius-xl);
+  }
+  .svc-section-head {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .svc-section-head .eyebrow {
+    display: inline-block;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .svc-section-head h2 {
+    font-size: clamp(26px, 3.4vw, 34px);
+    position: relative;
+    display: inline-block;
+    margin: 0;
+  }
+  .svc-section-head h2::after {
+    content: "";
+    display: block;
+    width: 64px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    margin: 14px auto 0;
+    border-radius: 2px;
+  }
+  .svc-section-head p {
+    color: var(--ink-muted);
+    max-width: 700px;
+    margin: 14px auto 0;
+    font-size: 15px;
+  }
+  .svc-lead {
+    max-width: 840px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 17px;
+    color: var(--ink-light);
+    line-height: 1.95;
+  }
+
+  /* ── 图文交错行 ── */
+  .svc-row {
+    display: flex;
+    gap: 56px;
+    align-items: center;
+    margin-bottom: 56px;
+  }
+  .svc-row:last-child {
+    margin-bottom: 0;
+  }
+  .svc-row.reverse {
+    flex-direction: row-reverse;
+  }
+  .svc-media {
+    flex: 1;
+    min-height: 300px;
+    border-radius: var(--radius-lg);
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent-pale);
+    box-shadow: var(--shadow-md);
+  }
+  .svc-text {
+    flex: 1;
+  }
+  .svc-text .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-pale);
+    padding: 5px 14px;
+    border-radius: var(--radius-full);
+    margin-bottom: 14px;
+  }
+  .svc-text h3 {
+    font-size: 24px;
+    margin: 0 0 14px;
+    color: var(--ink-dark);
+  }
+  .svc-text p {
+    color: var(--ink-light);
+    line-height: 1.9;
+    margin: 0;
+  }
+
+  /* ── 图标卡片网格 ── */
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 24px;
+  }
+  .icon-card {
+    background: var(--paper);
+    border: 1px solid var(--accent-pale);
+    border-radius: var(--radius-lg);
+    padding: 30px 26px;
+    transition: transform var(--duration-normal) var(--ease-out),
+      box-shadow var(--duration-normal) var(--ease-out);
+  }
+  .icon-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+  .icon-card .ic {
+    width: 58px;
+    height: 58px;
+    border-radius: var(--radius-md);
+    background: var(--accent-pale);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 18px;
+  }
+  .icon-card h4 {
+    font-size: 18px;
+    margin: 0 0 10px;
+    color: var(--ink-dark);
+  }
+  .icon-card p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.8;
+    margin: 0;
+  }
+
+  /* ── KPI 卡片 ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .kpi-card {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    color: var(--paper);
+    border-radius: var(--radius-lg);
+    padding: 34px 24px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+  }
+  .kpi-card .num {
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .kpi-card .unit {
+    font-size: 16px;
+    font-weight: 500;
+    margin-left: 4px;
+  }
+  .kpi-card .label {
+    margin-top: 10px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    opacity: 0.92;
+  }
+
+  /* ── 波浪分隔 ── */
+  .svc-wave {
+    line-height: 0;
+    margin: -1px 0;
+  }
+  .svc-wave svg {
+    display: block;
+    width: 100%;
+    height: 70px;
+  }
+  .svc-wave path {
+    fill: var(--accent-pale);
+  }
+
+  /* ── 底部 CTA ── */
+  .svc-cta {
+    text-align: center;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border-radius: var(--radius-xl);
+    padding: 60px 32px;
+    color: var(--paper);
+  }
+  .svc-cta h2 {
+    color: var(--paper);
+    font-size: clamp(24px, 3vw, 32px);
+    margin: 0 0 12px;
+  }
+  .svc-cta p {
+    color: var(--paper);
+    opacity: 0.92;
+    margin: 0 0 28px;
+  }
+  .svc-cta .btn-light {
+    background: var(--paper);
+    color: var(--accent);
+    box-shadow: var(--shadow-md);
+  }
+  .svc-cta .btn-light:hover {
+    transform: translateY(-2px);
+    color: var(--accent);
+  }
+  .svc-cta .btn-ghost {
+    background: transparent;
+    color: var(--paper);
+    border: 1px solid rgba(250, 248, 243, 0.5);
+  }
+  .svc-cta .btn-ghost:hover {
+    background: rgba(250, 248, 243, 0.12);
+    color: var(--paper);
+  }
+
+  /* ── 返回顶部 ── */
+  #backToTop {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 200;
+  }
+  #backToTop.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* ── 响应式 ── */
+  @media (max-width: 768px) {
+    .svc-row,
+    .svc-row.reverse {
+      flex-direction: column;
+      gap: 28px;
+    }
+    .svc-media {
+      width: 100%;
+      min-height: 220px;
+    }
+    .kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .hero-content {
+      padding: 36px 22px;
+    }
+    .svc-section {
+      padding: 42px 0;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="svc-page">
+  <!-- HERO -->
+  <section class="svc-hero">
+    <div
+      class="hero-bg"
+      style="background-image:url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=80');"
+    ></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="/"><i class="fas fa-home"></i> 首页</a>
+        <span class="sep">/</span>
+        <a href="/services">特色服务</a>
+        <span class="sep">/</span>
+        <span>生态农业</span>
+      </nav>
+      <h1>生态农业</h1>
+      <p class="hero-sub">绿色种植 · 有机农业 · 健康生活</p>
+    </div>
+  </section>
+
+  <!-- 引导语 -->
+  <section class="svc-section">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <p class="svc-lead">
+        我们坚持"绿水青山就是金山银山"的发展理念，以绿色、有机、可持续为核心，推动传统农业向现代生态农业转型。从一粒种子到一桌好菜，让土地更健康，让生活更安心。
+      </p>
+    </div>
+  </section>
+
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
+  </div>
+
+  <!-- 绿色种植技术 -->
+  <section class="svc-section alt">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-seedling"></i> GREEN PLANTING</span>
+        <h2>绿色种植技术</h2>
+        <p>从源头减少化学投入，用自然的方式种出安全的粮食与蔬果。</p>
+      </div>
+      <div class="icon-grid">
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-leaf"></i></div>
+          <h4>无公害种植</h4>
+          <p>严格控制化学农药与化肥使用，推广轮作休耕与间作套种，从源头保障农产品安全。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-recycle"></i></div>
+          <h4>有机肥料</h4>
+          <p>利用畜禽粪污、作物秸秆与沼液沼渣制成有机肥，改良土壤结构，持续提升地力。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-bug"></i></div>
+          <h4>生物防治</h4>
+          <p>引入害虫天敌、性诱剂与生物农药，以虫治虫、以菌抑菌，大幅减少环境残留。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 现代化农业 -->
+  <section class="svc-section">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-tractor"></i> SMART FARMING</span>
+        <h2>现代化农业</h2>
+        <p>科技进田，让种地更省力、更精准、更智慧。</p>
+      </div>
+
+      <div class="svc-row">
+        <div
+          class="svc-media"
+          style="background-image:url('https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80');"
+        ></div>
+        <div class="svc-text">
+          <span class="tag"><i class="fas fa-tint"></i> 智能灌溉</span>
+          <h3>智能灌溉系统</h3>
+          <p>基于土壤墒情与气象数据的滴灌、微喷系统，按需供水、精准到株，节水率达 40% 以上，让每一滴水都用在刀刃上。</p>
+        </div>
+      </div>
+
+      <div class="svc-row reverse">
+        <div
+          class="svc-media"
+          style="background-image:url('https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=900&q=80');"
+        ></div>
+        <div class="svc-text">
+          <span class="tag"><i class="fas fa-helicopter"></i> 无人机植保</span>
+          <h3>无人机精准飞防</h3>
+          <p>植保无人机按航线自动作业，单机日飞防超 300 亩，药液雾化更均匀、效率更高，也让农户远离药剂伤害。</p>
+        </div>
+      </div>
+
+      <div class="svc-row">
+        <div
+          class="svc-media"
+          style="background-image:url('https://images.unsplash.com/photo-1535083783855-76ae62b2914e?auto=format&fit=crop&w=900&q=80');"
+        ></div>
+        <div class="svc-text">
+          <span class="tag"><i class="fas fa-microchip"></i> 农业物联网</span>
+          <h3>农业物联网应用</h3>
+          <p>田间传感器实时回传温湿度、光照与病虫害信息，打开手机即可掌握每片地块的动态，实现可视化智慧管理。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 优质农产品 -->
+  <section class="svc-section alt">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-apple-alt"></i> QUALITY PRODUCE</span>
+        <h2>优质农产品</h2>
+        <p>从田间到餐桌全程可追溯，把最纯粹的自然滋味带回家。</p>
+      </div>
+      <div class="icon-grid">
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-carrot"></i></div>
+          <h4>有机蔬菜</h4>
+          <p>时令叶菜、根茎瓜果，零化学合成、鲜嫩可口，现摘现发锁住营养。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-apple-alt"></i></div>
+          <h4>生态水果</h4>
+          <p>应季鲜果自然成熟，糖度饱满、风味浓郁，咬一口便是阳光的味道。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-wheat-awn"></i></div>
+          <h4>绿色粮油</h4>
+          <p>生态稻米、菜籽油与杂粮，少加工、无添加，吃得健康更安心。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-egg"></i></div>
+          <h4>特色禽蛋</h4>
+          <p>林下散养土鸡与土鸡蛋，运动充足、肉质紧实、蛋黄饱满营养高。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
+  </div>
+
+  <!-- 生态保护 -->
+  <section class="svc-section">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-globe-asia"></i> ECO PROTECTION</span>
+        <h2>生态保护</h2>
+        <p>好生态是农业的根，我们用行动守护脚下的土地。</p>
+      </div>
+      <div class="icon-grid">
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-layer-group"></i></div>
+          <h4>秸秆还田</h4>
+          <p>秸秆粉碎翻压回田，培肥地力、杜绝焚烧，既守住蓝天也养肥土壤。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-water"></i></div>
+          <h4>水土保持</h4>
+          <p>坡改梯、生态沟渠与植被缓冲带，拦沙保土、涵养水源，守护一方青山绿水。</p>
+        </div>
+        <div class="icon-card">
+          <div class="ic"><i class="fas fa-dove"></i></div>
+          <h4>生物多样性</h4>
+          <p>保留田埂野花与湿地，为蜜蜂、蛙类与鸟类留出家园，让农田生机盎然。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 产业数据 KPI -->
+  <section class="svc-section alt">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-section-head">
+        <span class="eyebrow"><i class="fas fa-chart-line"></i> KEY FIGURES</span>
+        <h2>产业数据</h2>
+        <p>一组数字，记录生态农业结出的实在成果。</p>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="num">12,800<span class="unit">亩</span></div>
+          <div class="label">生态种植面积</div>
+        </div>
+        <div class="kpi-card">
+          <div class="num">3.6<span class="unit">万吨</span></div>
+          <div class="label">年绿色产量</div>
+        </div>
+        <div class="kpi-card">
+          <div class="num">1,240<span class="unit">户</span></div>
+          <div class="label">带动农户</div>
+        </div>
+        <div class="kpi-card">
+          <div class="num">18<span class="unit">家</span></div>
+          <div class="label">专业合作社</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 底部 CTA -->
+  <section class="svc-section">
+    <div class="svc-container" style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+      <div class="svc-cta">
+        <h2>想了解更多乡村产业？</h2>
+        <p>欢迎走进我们的生态基地，或联系我们获取合作与采购信息。</p>
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+          <a href="/services" class="btn btn-light"><i class="fas fa-th-large"></i> 了解更多服务</a>
+          <a href="/contact" class="btn btn-ghost"><i class="fas fa-envelope"></i> 联系我们</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <a href="#" id="backToTop" aria-label="返回顶部"><i class="fas fa-arrow-up"></i></a>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  (function () {
+    var btn = document.getElementById("backToTop");
+    if (!btn) return;
+    window.addEventListener("scroll", function () {
+      if (window.scrollY > 400) btn.classList.add("show");
+      else btn.classList.remove("show");
+    });
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,145 +1,308 @@
 {% extends "base.html" %} {% block title %}政务公开 - 美丽乡村{% endblock %} {% block head %}
 <style>
-  .gov-hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 40px 20px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    text-align: center;
-  }
-  .gov-hero h2 {
-    margin: 0 0 8px;
-    font-size: 28px;
-  }
-  .gov-hero p {
-    margin: 0;
-    opacity: 0.9;
-    font-size: 15px;
+  /* ===== 政务公开列表页 · 墨色主题（仅引用 base.html 设计令牌） ===== */
+  .gov-page {
+    --accent: var(--ink);
+    --accent-light: var(--ink-light);
+    --accent-pale: var(--paper-warm);
+    --accent2: var(--gold);
   }
 
+  /* ── Hero 全幅图 ── */
+  .svc-hero {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    min-height: 380px;
+    display: flex;
+    align-items: flex-end;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 8px;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent);
+  }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(26, 26, 46, 0.28) 0%, var(--ink-dark) 100%);
+    opacity: 0.62;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 52px 48px;
+    width: 100%;
+    color: var(--paper);
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    color: var(--paper);
+    opacity: 0.9;
+  }
+  .breadcrumb a {
+    color: var(--paper);
+    opacity: 0.85;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .breadcrumb a:hover {
+    opacity: 1;
+    color: var(--gold-light);
+  }
+  .breadcrumb .sep {
+    opacity: 0.5;
+  }
+  .svc-hero h1 {
+    color: var(--paper);
+    font-size: clamp(32px, 5vw, 50px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin: 0 0 12px;
+    text-shadow: 0 2px 16px rgba(26, 26, 46, 0.35);
+  }
+  .hero-sub {
+    color: var(--paper);
+    font-size: clamp(14px, 2vw, 18px);
+    letter-spacing: 2px;
+    opacity: 0.95;
+    margin: 0;
+  }
+
+  /* ── 波浪分隔 ── */
+  .svc-wave {
+    line-height: 0;
+    margin: -1px 0;
+  }
+  .svc-wave svg {
+    display: block;
+    width: 100%;
+    height: 70px;
+  }
+  .svc-wave path {
+    fill: var(--accent-pale);
+  }
+
+  /* ── 政务卡片列表 ── */
   .gov-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 18px;
+    margin-top: 36px;
   }
   .gov-card {
-    background: white;
-    border-radius: 10px;
-    padding: 20px 24px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s;
-    border: 1px solid #f0f0f0;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 16px;
+    gap: 24px;
+    background: white;
+    border: 1px solid var(--paper-deep);
+    border-left: 4px solid var(--accent-pale);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-normal) var(--ease-out),
+      box-shadow var(--duration-normal) var(--ease-out),
+      border-color var(--duration-normal) var(--ease-out);
   }
   .gov-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateX(4px);
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent-light);
+    border-left-color: var(--accent);
   }
-  .gov-card .info {
+  .gov-card-main {
     flex: 1;
+    min-width: 0;
   }
-  .gov-card h3 {
-    margin: 0 0 4px;
-    font-size: 16px;
-    color: #1d1d1f;
+  .gov-card-title {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin: 0 0 10px;
+    color: var(--ink-dark);
+    transition: color var(--duration-fast) var(--ease-out);
   }
-  .gov-card .date {
-    font-size: 13px;
-    color: #999;
+  .gov-card:hover .gov-card-title {
+    color: var(--accent);
   }
-  .gov-card .actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .gov-card .btn-download {
-    padding: 8px 16px;
-    background: #667eea;
-    color: white;
-    border-radius: 8px;
+  .gov-card-title a {
+    color: inherit;
     text-decoration: none;
-    font-size: 13px;
-    font-weight: 600;
-    transition: background 0.2s;
+  }
+  .gov-card-summary {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--ink-muted);
+    margin: 0;
+  }
+  .gov-card-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    align-items: center;
+  }
+  .gov-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-  }
-  .gov-card .btn-download:hover {
-    background: #5a6fd6;
-  }
-  .gov-card .btn-view {
-    padding: 8px 16px;
-    background: #f0f0f0;
-    color: #333;
-    border-radius: 8px;
-    text-decoration: none;
+    padding: 9px 18px;
+    border-radius: var(--radius-full);
     font-size: 13px;
-    transition: background 0.2s;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all var(--duration-normal) var(--ease-out);
   }
-  .gov-card .btn-view:hover {
-    background: #e0e0e0;
+  .gov-btn-view {
+    background: var(--paper-warm);
+    color: var(--ink-light);
+    border: 1px solid var(--paper-deep);
+  }
+  .gov-btn-view:hover {
+    background: var(--paper-deep);
+    color: var(--ink);
+  }
+  .gov-btn-download {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    color: var(--paper);
+    box-shadow: var(--shadow-md);
+  }
+  .gov-btn-download:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+    color: var(--paper);
   }
 
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: #999;
+  /* ── 返回顶部 ── */
+  #backToTop {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 200;
   }
-  .empty-state i {
-    font-size: 48px;
-    margin-bottom: 12px;
-    color: #ddd;
+  #backToTop.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
   }
 
-  @media (max-width: 600px) {
+  /* ── 响应式 ── */
+  @media (max-width: 768px) {
+    .hero-content {
+      padding: 36px 22px;
+    }
     .gov-card {
       flex-direction: column;
       align-items: stretch;
+      gap: 16px;
     }
-    .gov-card .actions {
-      justify-content: flex-end;
+    .gov-card-actions {
+      justify-content: flex-start;
     }
   }
 </style>
 {% endblock %} {% block content %}
-<div class="gov-hero">
-  <h2>🏛️ 政务公开</h2>
-  <p>透明行政，阳光村务 — 让权力在阳光下运行</p>
-</div>
+<div class="gov-page">
+  <!-- HERO -->
+  <section class="svc-hero">
+    <div
+      class="hero-bg"
+      style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1600&q=80');"
+    ></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="/"><i class="fas fa-home"></i> 首页</a>
+        <span class="sep">/</span>
+        <span>政务公开</span>
+      </nav>
+      <h1>政务公开</h1>
+      <p class="hero-sub">透明行政 · 阳光村务</p>
+    </div>
+  </section>
 
-{% if government_list %}
-<div class="gov-list">
-  {% for item in government_list %}
-  <div class="gov-card">
-    <div class="info">
-      <h3>{{ item.title }}</h3>
-      {% if item.content %}
-      <p style="margin: 4px 0 0; font-size: 13px; color: #666">
-        {{ item.content[:100] }}{% if item.content|length > 100 %}...{% endif %}
-      </p>
-      {% endif %}
-    </div>
-    <div class="actions">
-      <a href="/government/{{ item.id }}" class="btn-view">
-        <i class="fas fa-file-alt"></i> 阅读全文
-      </a>
-      {% if item.file_url %}
-      <a href="{{ item.file_url }}" class="btn-download" target="_blank">
-        <i class="fas fa-download"></i> 下载附件
-      </a>
-      {% endif %}
-    </div>
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
   </div>
-  {% endfor %}
+
+  <!-- 列表 / 空状态 -->
+  {% if government_list %}
+  <div class="gov-list">
+    {% for item in government_list %}
+    <article class="gov-card">
+      <div class="gov-card-main">
+        <h3 class="gov-card-title">
+          <a href="/government/{{ item.id }}">{{ item.title }}</a>
+        </h3>
+        {% set _summary = item.content or '' %}
+        {% if _summary %}
+        <p class="gov-card-summary">
+          {{ _summary[:100] }}{% if _summary|length > 100 %}…{% endif %}
+        </p>
+        {% endif %}
+      </div>
+      <div class="gov-card-actions">
+        <a href="/government/{{ item.id }}" class="gov-btn gov-btn-view">
+          <i class="fas fa-file-alt"></i> 阅读全文
+        </a>
+        {% if item.file_url %}
+        <a
+          href="{{ item.file_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="gov-btn gov-btn-download"
+        >
+          <i class="fas fa-download"></i> 下载附件
+        </a>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="far fa-folder-open"></i>
+    <p>暂无政务公开信息</p>
+    <a href="/" class="btn btn-secondary">返回首页</a>
+  </div>
+  {% endif %}
 </div>
-{% else %}
-<div class="empty-state">
-  <i class="fas fa-folder-open"></i>
-  <p>暂无政务公开信息</p>
-</div>
-{% endif %} {% endblock %}
+{% endblock %} {% block scripts %}
+<script>
+  (function () {
+    var btn = document.getElementById("backToTop");
+    if (!btn) return;
+    window.addEventListener("scroll", function () {
+      if (window.scrollY > 400) btn.classList.add("show");
+      else btn.classList.remove("show");
+    });
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  })();
+</script>
+{% endblock %}

@@ -85,6 +85,10 @@
     <h3>📝 页面文案配置 <small style="font-weight:400;color:#888;font-size:13px;">— 前台 /village 页面的标题、副标题、KPI 标签等</small></h3>
     <form id="villageConfigForm">
       <div class="form-group">
+        <label for="vcHeroTitle">封面标题</label>
+        <input type="text" id="vcHeroTitle" name="hero_title" placeholder="美丽乡村" />
+      </div>
+      <div class="form-group">
         <label for="vcHeroSubtitle">封面副标题</label>
         <input type="text" id="vcHeroSubtitle" name="hero_subtitle" placeholder="如：生态宜居 · 产业兴旺 · 乡风文明" />
       </div>
@@ -367,6 +371,7 @@
 
   // ═══ 页面文案配置（SiteConfig 村情字段） ═══
   const vcFields = [
+    ['vcHeroTitle', 'hero_title'],
     ['vcHeroSubtitle', 'hero_subtitle'],
     ['vcIntroTitle', 'intro_title'],
     ['vcIntroSubtitle', 'intro_subtitle'],

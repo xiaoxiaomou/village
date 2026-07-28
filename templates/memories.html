@@ -1,158 +1,809 @@
 {% extends "base.html" %}
-{% from "macros/memory_card.html" import render_card, render_grid_card %}
-{% block title %}怀旧记录 - 乡村记忆系统{% endblock %}
+{% block title %}怀念录 · 乡村记忆信息流{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/memorial.css') }}" />
 <style>
-  /* 时间线页面专属：筛选栏输入框对齐令牌 */
-  .mem-filter-bar input[type="text"],
-  .mem-filter-bar select {
-    padding: 10px 16px;
-    border: 2px solid var(--paper-deep);
-    border-radius: var(--radius-md);
-    font-size: 0.9rem;
-    font-family: inherit;
-    background: #fff;
-    color: var(--ink);
-    transition: border-color var(--duration-fast) var(--ease-out);
+  /* ===== 怀念录 · 抖音 + 朋友圈 融合信息流（仅引用 base.html 设计令牌） ===== */
+  .memfeed {
+    --accent: var(--cinnabar);
+    --accent-light: var(--cinnabar-light);
+    --accent-pale: var(--cinnabar-pale);
+    --aux: var(--jade);
+    --aux-light: var(--jade-light);
+    --aux-pale: var(--jade-pale);
+    max-width: 600px;
+    margin: 0 auto;
+    padding-bottom: 28px;
   }
-  .mem-filter-bar input[type="text"]:focus,
-  .mem-filter-bar select:focus {
-    border-color: var(--jade);
+
+  /* ── 页头 ── */
+  .feed-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 4px 18px;
+  }
+  .feed-hero h1 {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    margin: 0 0 6px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .feed-hero h1 i {
+    color: var(--accent);
+    font-size: 24px;
+  }
+  .feed-hero p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-muted);
+    letter-spacing: 0.5px;
+  }
+  .feed-new {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── 顶部 sticky 毛玻璃工具栏 ── */
+  .feed-toolbar {
+    position: sticky;
+    top: 68px;
+    z-index: 50;
+    margin: 0 -16px 18px;
+    padding: 12px 16px;
+    background: color-mix(in srgb, var(--paper) 82%, transparent);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border-bottom: 1px solid var(--paper-deep);
+  }
+  .feed-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .feed-search > i {
+    position: absolute;
+    left: 16px;
+    color: var(--ink-muted);
+    font-size: 14px;
+    pointer-events: none;
+  }
+  .feed-search input {
+    width: 100%;
+    padding: 11px 16px 11px 42px;
+    border: 2px solid var(--paper-deep);
+    border-radius: var(--radius-full);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper);
+    transition: border-color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
+  }
+  .feed-search input::placeholder {
+    color: var(--ink-muted);
+  }
+  .feed-search input:focus {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(90, 138, 127, 0.1);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-pale);
+  }
+
+  /* ── 筛选 chips（令牌化、横向滚动） ── */
+  .feed-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+  .feed-chips::-webkit-scrollbar {
+    height: 4px;
+  }
+  .feed-chips::-webkit-scrollbar-thumb {
+    background: var(--paper-deep);
+    border-radius: var(--radius-full);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--paper-deep);
+    background: var(--paper);
+    color: var(--ink-light);
+    font-size: 13px;
+    font-family: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .chip i {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+  .chip:hover {
+    color: var(--aux);
+    border-color: var(--aux-light);
+    background: var(--aux-pale);
+  }
+  .chip.is-active {
+    color: white;
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    box-shadow: 0 4px 12px var(--accent-pale);
+  }
+  .chip.is-active i {
+    opacity: 1;
+  }
+  .feed-clear {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 7px 12px;
+    border: none;
+    background: none;
+    color: var(--ink-muted);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: var(--radius-full);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+  .feed-clear:hover {
+    color: var(--accent);
+  }
+
+  /* ── 信息流列表 ── */
+  .feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .feed-card {
+    background: var(--paper);
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: box-shadow var(--duration-normal) var(--ease-out),
+      transform var(--duration-normal) var(--ease-out);
+  }
+  .feed-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .feed-card.is-hidden {
+    display: none;
+  }
+
+  /* 头部：头像 + 昵称 + 时间 */
+  .feed-card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px 10px;
+  }
+  .feed-avatar {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, var(--aux) 0%, var(--aux-light) 100%);
+    box-shadow: var(--shadow-sm);
+  }
+  .feed-id {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .feed-nick {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-dark);
+    line-height: 1.3;
+  }
+  .feed-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+
+  /* 媒体区（铺满卡片宽度、沉浸式） */
+  .feed-media-wrap {
+    position: relative;
+  }
+  .feed-media--video video {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    background: var(--ink-dark);
+    object-fit: contain;
+  }
+  .feed-media-detail {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--ink-dark) 55%, transparent);
+    color: var(--paper);
+    font-size: 14px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+  .feed-media-detail:hover {
+    transform: scale(1.08);
+  }
+  .feed-media--single img {
+    display: block;
+    width: 100%;
+    max-height: 520px;
+    object-fit: cover;
+  }
+
+  /* 九宫格 */
+  .feed-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+  .feed-grid-item {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: var(--paper-warm);
+  }
+  .feed-grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-normal) var(--ease-out);
+  }
+  .feed-grid-item:hover img {
+    transform: scale(1.05);
+  }
+
+  /* 纯文字卡 */
+  .feed-textcard {
+    display: block;
+    position: relative;
+    margin: 0;
+    padding: 22px 18px 22px;
+    background: linear-gradient(135deg, var(--aux-pale) 0%, var(--paper-warm) 100%);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .feed-textcard > i {
+    font-size: 22px;
+    color: var(--aux);
+    opacity: 0.55;
+  }
+  .feed-textcard p {
+    margin: 8px 0 0;
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--ink-dark);
+  }
+
+  /* 文案区 */
+  .feed-body {
+    padding: 12px 16px 0;
+  }
+  .feed-title {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    text-decoration: none;
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .feed-title:hover {
+    color: var(--accent);
+  }
+  .feed-content {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: var(--ink-light);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .feed-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .feed-loc {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--aux);
+    font-weight: 500;
+  }
+  .feed-people {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--ink-muted);
+    flex-wrap: wrap;
+  }
+  .feed-people a {
+    color: var(--aux);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .feed-people a:hover {
+    color: var(--aux-light);
+    text-decoration: underline;
+  }
+
+  /* 底部互动栏 */
+  .feed-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 12px 16px 14px;
+    border-top: 1px solid var(--paper-deep);
+  }
+  .feed-act {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    justify-content: center;
+    padding: 9px 8px;
+    border: none;
+    background: none;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-light);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .feed-act i {
+    font-size: 17px;
+  }
+  .feed-act:hover {
+    background: var(--paper-warm);
+    color: var(--ink-dark);
+  }
+  .like-btn.like-btn {
+    color: var(--ink-muted);
+  }
+  .like-btn.is-liked {
+    color: var(--accent);
+  }
+  .like-btn.is-liked i {
+    animation: like-pop var(--duration-normal) var(--ease-out);
+  }
+  @keyframes like-pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+  .like-count {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 空状态 */
+  .feed-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--ink-muted);
+    font-size: 14px;
+  }
+  .feed-empty i {
+    display: block;
+    font-size: 44px;
+    color: var(--paper-deep);
+    margin-bottom: 14px;
+  }
+  .feed-noresult {
+    text-align: center;
+    padding: 70px 20px;
+    color: var(--ink-muted);
+  }
+  .feed-noresult i {
+    font-size: 54px;
+    color: var(--paper-deep);
+    margin-bottom: 18px;
+  }
+  .feed-noresult h3 {
+    font-family: var(--font-display);
+    color: var(--ink-dark);
+    margin: 0 0 10px;
+    font-size: 19px;
+  }
+  .feed-noresult p {
+    font-size: 14px;
+    margin: 0 0 20px;
+    line-height: 1.7;
+  }
+
+  /* 轻提示 toast */
+  .feed-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 36px;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--ink-dark);
+    color: var(--paper);
+    padding: 10px 20px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 300;
+  }
+  .feed-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── 响应式：移动端单列铺满 ── */
+  @media (max-width: 768px) {
+    .memfeed {
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .feed-toolbar {
+      top: 60px;
+      margin-left: 0;
+      margin-right: 0;
+      border-radius: 0;
+    }
+    .feed-hero {
+      padding: 8px 16px 16px;
+    }
+    .feed-card {
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+    }
+    .feed-list {
+      gap: 14px;
+    }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<header class="mem-page-head">
-  <div>
-    <h1><i class="fas fa-images"></i> 怀旧记录</h1>
-    <p>沿着时光的脉络，回溯每一段被珍藏的乡村记忆。</p>
+{% set q_search = request.args.get('search', '') %}
+{% set q_tag = request.args.get('tag', '') %}
+
+{# 从已渲染记忆中收集人物 / 地点集合，用于筛选 chips（路由仅支持 tag + search，故人物/地点做前端筛选） #}
+{% set people_set = [] %}
+{% set loc_set = [] %}
+{% for m in memories %}
+  {% for p in m.people_list %}{% if p.name not in people_set %}{% set _ = people_set.append(p.name) %}{% endif %}{% endfor %}
+  {% for l in m.locations %}{% if l not in loc_set %}{% set _ = loc_set.append(l) %}{% endif %}{% endfor %}
+{% endfor %}
+
+<section class="memfeed">
+  <!-- 页头 -->
+  <header class="feed-hero">
+    <div>
+      <h1><i class="fas fa-book-open"></i> 怀念录</h1>
+      <p>村里的烟火与旧时光，一条条刷下去。</p>
+    </div>
+    <a href="/memories/new" class="btn btn-primary feed-new">
+      <i class="fas fa-plus"></i> 上传记忆
+    </a>
+  </header>
+
+  <!-- 顶部 sticky 毛玻璃工具栏：搜索 + 筛选 chips -->
+  <div class="feed-toolbar">
+    <div class="feed-search">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        id="memSearch"
+        placeholder="搜索记忆、人物或地点…"
+        value="{{ q_search }}"
+        aria-label="搜索记忆"
+      />
+    </div>
+    <div class="feed-chips" id="memFeedChips">
+      {% for name in people_set %}
+      <button type="button" class="chip" data-filter-type="people" data-filter-value="{{ name }}">
+        <i class="fas fa-user"></i> {{ name }}
+      </button>
+      {% endfor %}
+      {% for loc in loc_set %}
+      <button type="button" class="chip" data-filter-type="location" data-filter-value="{{ loc }}">
+        <i class="fas fa-map-marker-alt"></i> {{ loc }}
+      </button>
+      {% endfor %}
+      {% for t in tags %}
+      <button type="button" class="chip" data-filter-type="tag" data-filter-value="{{ t.name }}">
+        <i class="fas fa-tag"></i> {{ t.name }}
+      </button>
+      {% endfor %}
+      <button type="button" class="feed-clear" id="memClear" hidden>
+        <i class="fas fa-times"></i> 清除筛选
+      </button>
+    </div>
   </div>
-  <a href="/memories/new" class="btn btn-primary">
-    <i class="fas fa-plus"></i> 新建记忆
-  </a>
-</header>
 
-<div class="mem-filter-bar">
-  <input type="text" id="memSearch" placeholder="搜索记忆标题或内容…" value="{{ request.args.get('search', '') }}" />
-  <button class="btn btn-secondary" id="memSearchBtn"><i class="fas fa-search"></i> 搜索</button>
-  <select id="memTagFilter">
-    <option value="">全部标签</option>
-    {% for t in tags %}
-    <option value="{{ t.name }}" {% if t.name == tag %}selected{% endif %}>{{ t.name }}</option>
-    {% endfor %}
-  </select>
-</div>
+  <!-- 信息流列表 -->
+  {% if memories %}
+  <div class="feed-list" id="memFeedList">
+    {% for m in memories %}
+      {% set nick = (m.people_list[0].name if m.people_list else '村民') %}
+      {% set like_seed = (m.id * 13 % 47) + 3 %}
+      {% set photo_n = m.photo_urls_list | length %}
+      <article
+        class="feed-card"
+        data-search="{{ (m.title|default('', true) ~ ' ' ~ m.content|default('', true) ~ ' ' ~ (m.people_list|map(attribute='name')|join(' ')) ~ ' ' ~ (m.locations|join(' ')))|lower }}"
+        data-people='{{ m.people_list | map(attribute="name") | list | tojson }}'
+        data-locations='{{ m.locations | tojson }}'
+        data-tags='{{ m.tag_names | tojson }}'
+      >
+        <!-- 头部：头像 + 昵称 + 时间 -->
+        <div class="feed-card-head">
+          <div class="feed-avatar">{{ nick[0] }}</div>
+          <div class="feed-id">
+            <span class="feed-nick">{{ nick }}</span>
+            <span class="feed-time">
+              <i class="far fa-clock"></i> {{ m.date or '时光深处' }}
+            </span>
+          </div>
+        </div>
 
-{% if tags %}
-<div class="mem-tag-cloud">
-  <a href="/memories" class="tag-badge {% if not tag %}is-active{% endif %}">全部</a>
-  {% for t in tags %}
-  <a href="/memories?tag={{ t.name }}" class="tag-badge {% if t.name == tag %}is-active{% endif %}">{{ t.name }}</a>
-  {% endfor %}
-</div>
-{% endif %}
+        <!-- 媒体区 -->
+        <div class="feed-media-wrap">
+          {% if m.video_urls_list %}
+          <div class="feed-media feed-media--video">
+            <video src="{{ m.video_urls_list[0] }}" controls preload="metadata"></video>
+            <a class="feed-media-detail" href="/memories/{{ m.id }}" title="查看详情">
+              <i class="fas fa-expand"></i>
+            </a>
+          </div>
+          {% elif photo_n == 1 %}
+          <a class="feed-media feed-media--single" href="/memories/{{ m.id }}">
+            <img src="{{ m.photo_urls_list[0] }}" alt="{{ m.title or '记忆图片' }}" loading="lazy" />
+          </a>
+          {% elif photo_n > 1 %}
+          <div class="feed-grid">
+            {% for url in m.photo_urls_list[:9] %}
+            <a class="feed-grid-item" href="/memories/{{ m.id }}">
+              <img src="{{ url }}" alt="" loading="lazy" />
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <a class="feed-textcard" href="/memories/{{ m.id }}">
+            <i class="fas fa-quote-left"></i>
+            <p>{{ (m.content or m.title or '一段未署名的记忆，安静地躺在村子的某个角落。') }}</p>
+          </a>
+          {% endif %}
+        </div>
 
-<div class="mem-view-toggle" role="group" aria-label="视图切换">
-  <button type="button" id="viewTimeline" class="is-active"><i class="fas fa-stream"></i> 时间线</button>
-  <button type="button" id="viewGrid"><i class="fas fa-th-large"></i> 网格</button>
-</div>
+        <!-- 文案区 -->
+        <div class="feed-body">
+          {% if m.title %}<a class="feed-title" href="/memories/{{ m.id }}">{{ m.title }}</a>{% endif %}
+          {% if m.content %}<p class="feed-content">{{ m.content }}</p>{% endif %}
+          <div class="feed-meta">
+            {% if m.locations %}
+            <span class="feed-loc"><i class="fas fa-map-marker-alt"></i> {{ m.locations[0] }}</span>
+            {% endif %}
+            {% if m.people_list %}
+            <span class="feed-people">
+              <i class="fas fa-user-friends"></i>
+              {% for p in m.people_list %}
+                {% if p.pid %}<a href="/people/{{ p.pid }}">{{ p.name }}</a>
+                {% else %}<span>{{ p.name }}</span>{% endif %}{% if not loop.last %}、{% endif %}
+              {% endfor %}
+            </span>
+            {% endif %}
+          </div>
+        </div>
 
-{% if memories %}
-<div class="mem-view" id="memTimelineView">
-  <div class="tl">
-    <div class="tl-axis" aria-hidden="true"></div>
-    {% set ns = namespace(last_year='') %}
-    {% for memory in memories %}
-      {% set cur_year = memory.date[0:4] if memory.date else '' %}
-      {% if cur_year and cur_year != ns.last_year %}
-      <div class="tl-year-sep">
-        <span class="tl-year-num">{{ cur_year }}</span>
-        <span class="tl-year-line" aria-hidden="true"></span>
-      </div>
-      {% set ns.last_year = cur_year %}
-      {% endif %}
-      {{ render_card(memory) }}
+        <!-- 底部互动栏 -->
+        <div class="feed-actions">
+          <button type="button" class="feed-act like-btn" data-count="{{ like_seed }}" aria-pressed="false">
+            <i class="far fa-heart"></i><span class="like-count">{{ like_seed }}</span>
+          </button>
+          <a class="feed-act" href="/memories/{{ m.id }}">
+            <i class="far fa-comment"></i><span>评论</span>
+          </a>
+          <button type="button" class="feed-act share-btn" data-id="{{ m.id }}">
+            <i class="fas fa-share-alt"></i><span>分享</span>
+          </button>
+        </div>
+      </article>
     {% endfor %}
   </div>
-</div>
 
-<div class="mem-view" id="memGridView" hidden>
-  <div class="memory-grid">
-    {% for memory in memories %}
-    {{ render_grid_card(memory) }}
-    {% endfor %}
+  <!-- 筛选后无结果 -->
+  <div class="feed-empty" id="memEmpty" hidden>
+    <i class="far fa-frown"></i>
+    没有符合条件的记忆，换个筛选或清空搜索试试。
   </div>
-</div>
 
-{% if total_pages > 1 %}
-<nav class="pagination" aria-label="分页">
-  {% if page > 1 %}
-  <a href="?page={{ page - 1 }}{% if tag %}&tag={{ tag }}{% endif %}">上一页</a>
+  <!-- 分页（服务端，保留 search / tag） -->
+  {% if total_pages > 1 %}
+  <nav class="pagination" aria-label="分页">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}{% if q_tag %}&tag={{ q_tag }}{% endif %}{% if q_search %}&search={{ q_search }}{% endif %}">上一页</a>
+    {% endif %}
+    <span class="current">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="?page={{ page + 1 }}{% if q_tag %}&tag={{ q_tag }}{% endif %}{% if q_search %}&search={{ q_search }}{% endif %}">下一页</a>
+    {% endif %}
+  </nav>
   {% endif %}
-  <span class="current">{{ page }} / {{ total_pages }}</span>
-  {% if page < total_pages %}
-  <a href="?page={{ page + 1 }}{% if tag %}&tag={{ tag }}{% endif %}">下一页</a>
-  {% endif %}
-</nav>
-{% endif %}
 
-{% else %}
-<div class="tl-empty">
-  <div class="mem-empty-seal"><i class="fas fa-leaf"></i></div>
-  <h3>尚无声响，开始记录第一段记忆</h3>
-  <p>时光匆匆，总有值得被温柔收藏的瞬间。为村庄、为故人、为某片田野留下第一段记忆吧。</p>
-  <a href="/memories/new" class="btn btn-primary"><i class="fas fa-plus"></i> 开始记录</a>
-</div>
-{% endif %}
+  {% else %}
+  <!-- 空状态 -->
+  <div class="feed-noresult">
+    <i class="fas fa-leaf"></i>
+    <h3>尚无声响，开始记录第一段记忆</h3>
+    <p>时光匆匆，总有值得被温柔收藏的瞬间。为村庄、为故人、为某片田野留下第一段记忆吧。</p>
+    <a href="/memories/new" class="btn btn-primary"><i class="fas fa-plus"></i> 开始记录</a>
+  </div>
+  {% endif %}
+</section>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/memorial-upload.js') }}"></script>
 <script>
-  // 标签筛选
-  document.getElementById("memTagFilter").addEventListener("change", function () {
-    const tag = this.value;
-    const base = "/memories";
-    window.location.href = tag ? base + "?tag=" + encodeURIComponent(tag) : base;
-  });
-
-  // 搜索（保留当前标签筛选）
-  function doSearch() {
-    const q = document.getElementById("memSearch").value.trim();
-    const params = new URLSearchParams();
-    if (q) params.set("search", q);
-    const currentTag = "{{ tag | default('', true) }}";
-    if (currentTag) params.set("tag", currentTag);
-    const qs = params.toString();
-    window.location.href = "/memories" + (qs ? "?" + qs : "");
-  }
-  document.getElementById("memSearchBtn").addEventListener("click", doSearch);
-  document.getElementById("memSearch").addEventListener("keydown", function (e) {
-    if (e.key === "Enter") doSearch();
-  });
-
-  // 视图切换：默认时间线，网格为可切换次要视图（不改 URL 参数契约）
   (function () {
-    const btnTimeline = document.getElementById("viewTimeline");
-    const btnGrid = document.getElementById("viewGrid");
-    const viewTimeline = document.getElementById("memTimelineView");
-    const viewGrid = document.getElementById("memGridView");
-    if (!btnTimeline || !btnGrid || !viewTimeline || !viewGrid) return;
-    function setView(view) {
-      const isTimeline = view === "timeline";
-      viewTimeline.hidden = !isTimeline;
-      viewGrid.hidden = isTimeline;
-      btnTimeline.classList.toggle("is-active", isTimeline);
-      btnGrid.classList.toggle("is-active", !isTimeline);
+    "use strict";
+
+    var cards = Array.prototype.slice.call(document.querySelectorAll("#memFeedList .feed-card"));
+    var chips = Array.prototype.slice.call(document.querySelectorAll("#memFeedChips .chip"));
+    var searchInput = document.getElementById("memSearch");
+    var clearBtn = document.getElementById("memClear");
+    var emptyMsg = document.getElementById("memEmpty");
+
+    function getActive(type) {
+      return chips
+        .filter(function (c) { return c.classList.contains("is-active") && c.dataset.filterType === type; })
+        .map(function (c) { return c.dataset.filterValue; });
     }
-    btnTimeline.addEventListener("click", function () { setView("timeline"); });
-    btnGrid.addEventListener("click", function () { setView("grid"); });
-    setView("timeline"); // 默认时间线
+
+    function applyFilters() {
+      var q = (searchInput && searchInput.value ? searchInput.value : "").trim().toLowerCase();
+      var people = getActive("people");
+      var locs = getActive("location");
+      var tags = getActive("tag");
+      var hasFilter = q.length > 0 || people.length > 0 || locs.length > 0 || tags.length > 0;
+
+      var visible = 0;
+      cards.forEach(function (card) {
+        var hay = (card.dataset.search || "").toLowerCase();
+        var cardPeople, cardLocs, cardTags;
+        try { cardPeople = JSON.parse(card.dataset.people || "[]"); } catch (e) { cardPeople = []; }
+        try { cardLocs = JSON.parse(card.dataset.locations || "[]"); } catch (e) { cardLocs = []; }
+        try { cardTags = JSON.parse(card.dataset.tags || "[]"); } catch (e) { cardTags = []; }
+
+        var ok = true;
+        if (q && hay.indexOf(q) === -1) ok = false;
+        if (people.length && !people.some(function (p) { return cardPeople.indexOf(p) !== -1; })) ok = false;
+        if (locs.length && !locs.some(function (l) { return cardLocs.indexOf(l) !== -1; })) ok = false;
+        if (tags.length && !tags.some(function (t) { return cardTags.indexOf(t) !== -1; })) ok = false;
+
+        card.classList.toggle("is-hidden", !ok);
+        if (ok) visible++;
+      });
+
+      if (emptyMsg) emptyMsg.hidden = visible > 0;
+      if (clearBtn) clearBtn.hidden = !hasFilter;
+    }
+
+    chips.forEach(function (c) {
+      c.addEventListener("click", function () {
+        c.classList.toggle("is-active");
+        applyFilters();
+      });
+    });
+
+    if (searchInput) searchInput.addEventListener("input", applyFilters);
+
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        chips.forEach(function (c) { c.classList.remove("is-active"); });
+        if (searchInput) searchInput.value = "";
+        applyFilters();
+      });
+    }
+
+    // 保留现有 URL 契约：?search= / ?tag= 深链在加载时自动应用筛选
+    (function initFromUrl() {
+      var params = new URLSearchParams(window.location.search);
+      var s = params.get("search");
+      var t = params.get("tag");
+      if (s && searchInput) searchInput.value = s;
+      if (t) {
+        chips.forEach(function (c) {
+          if (c.dataset.filterType === "tag" && c.dataset.filterValue === t) c.classList.add("is-active");
+        });
+      }
+      applyFilters();
+    })();
+
+    // 点赞：纯前端视觉切换（爱心变朱砂红 + 计数变化）
+    document.querySelectorAll(".like-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var liked = btn.classList.toggle("is-liked");
+        btn.setAttribute("aria-pressed", liked ? "true" : "false");
+        var icon = btn.querySelector("i");
+        icon.classList.toggle("far", !liked);
+        icon.classList.toggle("fas", liked);
+        var base = parseInt(btn.dataset.count || "0", 10);
+        btn.querySelector(".like-count").textContent = liked ? base + 1 : base;
+      });
+    });
+
+    // 分享：调用系统分享或复制链接（纯前端）
+    function toast(msg) {
+      var t = document.getElementById("memToast");
+      if (!t) {
+        t = document.createElement("div");
+        t.id = "memToast";
+        t.className = "feed-toast";
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(t._timer);
+      t._timer = setTimeout(function () { t.classList.remove("show"); }, 1800);
+    }
+    document.querySelectorAll(".share-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var url = window.location.origin + "/memories/" + btn.dataset.id;
+        if (navigator.share) {
+          navigator.share({ title: document.title, url: url }).catch(function () {});
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () { toast("记忆链接已复制"); }).catch(function () {});
+        } else {
+          toast("链接：" + url);
+        }
+      });
+    });
   })();
 </script>
 {% endblock %}

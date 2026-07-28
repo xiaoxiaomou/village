@@ -201,7 +201,26 @@ def memory_detail_page(mid):
         "tags": memory.get_tags(),
         "create_time": memory.create_time.isoformat() if memory.create_time else None,
     }
-    return render_template("memory_detail.html", memory=memory_data)
+    # 相邻记忆导航：上一条（id 更小、最接近当前）+ 下一条（id 更大、最接近当前）
+    prev_memory = Memory.query.filter(Memory.id < mid).order_by(
+        Memory.id.desc()
+    ).first()
+    next_memory = Memory.query.filter(Memory.id > mid).order_by(
+        Memory.id.asc()
+    ).first()
+    prev_data = (
+        {"id": prev_memory.id, "title": prev_memory.title}
+        if prev_memory
+        else None
+    )
+    next_data = (
+        {"id": next_memory.id, "title": next_memory.title}
+        if next_memory
+        else None
+    )
+    return render_template(
+        "memory_detail.html", memory=memory_data, prev=prev_data, next=next_data
+    )
 
 
 @memories_bp.route("/memories/<int:mid>/edit")

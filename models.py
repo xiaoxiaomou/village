@@ -380,6 +380,7 @@ class SiteConfig(db.Model):
     hero_subtitle = db.Column(
         db.Text, default="生态宜居 · 产业兴旺 · 乡风文明"
     )  # 封面副标题
+    hero_title = db.Column(db.Text, default="美丽乡村")  # 封面主标题（Hero 悬浮文字，后台可配）
     stat_labels = db.Column(db.Text, default="{}")  # KPI 标签 JSON: {population,area,output,satisfaction}
     intro_title = db.Column(db.Text, default="关于我们的村庄")  # 「关于我们的村庄」区块标题
     intro_subtitle = db.Column(db.Text, default="山水田园间，品味乡村魅力")  # 「关于我们的村庄」副文案
@@ -468,6 +469,7 @@ class SiteConfig(db.Model):
                 "这里收藏着村庄的故事、人物与风景，让每一份乡愁都有处安放。</p>"
             ),
             # ─── 以下为本次新增（村情页面可见文本，T1） ───
+            "hero_title": "美丽乡村",
             "hero_subtitle": "生态宜居 · 产业兴旺 · 乡风文明",
             "stat_labels": json.dumps(stat_labels, ensure_ascii=False),
             "intro_title": "关于我们的村庄",
@@ -555,6 +557,44 @@ class SiteConfig(db.Model):
         for k, v in default_labels.items():
             d.setdefault(k, v)
         return d
+
+
+def ensure_site_config_columns(db):
+    """自愈式加列：比对 ``site_config`` 表列集合与 ``SiteConfig`` 模型列集合，缺失则 ALTER 补齐并回填默认值。
+
+    比对对象直接取自模型定义（``SiteConfig.__table__.columns``），因此新增字段
+    （如 ``hero_title``）无需手工维护列清单，模型一改即自动自愈。
+
+    仅在旧库未执行迁移脚本时兜底；幂等，可重复运行。须在应用上下文（app_context）内调用。
+    """
+    from sqlalchemy import inspect as sa_inspect, text
+
+    try:
+        inspector = sa_inspect(db.engine)
+        existing_cols = {c["name"] for c in inspector.get_columns("site_config")}
+    except Exception:
+        # 表不存在时 db.create_all 已建好带新列的表，无需处理
+        return
+
+    model_cols = {c.name for c in SiteConfig.__table__.columns}
+    missing_cols = [c for c in model_cols if c not in existing_cols]
+    if not missing_cols:
+        return
+
+    # 先加列（ALTER 后立即提交，使后续模型查询可见新列）
+    with db.engine.begin() as conn:
+        for col in missing_cols:
+            conn.execute(text(f"ALTER TABLE site_config ADD COLUMN {col} TEXT"))
+
+    # 再用默认值回填为 NULL 的列（仅当真实数据行存在时）
+    cfg = SiteConfig.query.first()
+    if cfg is not None:
+        defaults = SiteConfig.default_values()
+        for col in missing_cols:
+            if not getattr(cfg, col, None):
+                setattr(cfg, col, defaults.get(col, ""))
+        db.session.commit()
+    print(f"[自愈] 已为 site_config 补齐缺失列并回填: {missing_cols}")
 
 
 class FriendLink(db.Model):

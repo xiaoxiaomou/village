@@ -1,40 +1,245 @@
-{% extends "base.html" %} {% block title %}{{ government.title }} - 政务公开{% endblock %} {% block
-head %}
+{% extends "base.html" %} {% block title %}{{ government.title }} - 政务公开{% endblock %} {% block head %}
 <style>
+  /* ===== 政务详情页 · 墨色主题（仅引用 base.html 设计令牌） ===== */
+  .gov-page {
+    --accent: var(--ink);
+    --accent-light: var(--ink-light);
+    --accent-pale: var(--paper-warm);
+    --accent2: var(--gold);
+  }
+
+  /* ── Hero 渐变图（墨色 → 黛绿） ── */
+  .svc-hero {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    min-height: 320px;
+    display: flex;
+    align-items: flex-end;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 8px;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent);
+  }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(26, 26, 46, 0.18) 0%, var(--ink-dark) 100%);
+    opacity: 0.55;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 52px 48px;
+    width: 100%;
+    color: var(--paper);
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    color: var(--paper);
+    opacity: 0.9;
+    flex-wrap: wrap;
+  }
+  .breadcrumb a {
+    color: var(--paper);
+    opacity: 0.85;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .breadcrumb a:hover {
+    opacity: 1;
+    color: var(--gold-light);
+  }
+  .breadcrumb .sep {
+    opacity: 0.5;
+  }
+  .svc-hero h1 {
+    color: var(--paper);
+    font-size: clamp(28px, 4.5vw, 44px);
+    font-weight: 900;
+    letter-spacing: 3px;
+    margin: 0 0 12px;
+    text-shadow: 0 2px 16px rgba(26, 26, 46, 0.35);
+  }
+  .hero-sub {
+    color: var(--paper);
+    font-size: clamp(14px, 2vw, 18px);
+    letter-spacing: 2px;
+    opacity: 0.95;
+    margin: 0;
+  }
+
+  /* ── 波浪分隔 ── */
+  .svc-wave {
+    line-height: 0;
+    margin: -1px 0;
+  }
+  .svc-wave svg {
+    display: block;
+    width: 100%;
+    height: 70px;
+  }
+  .svc-wave path {
+    fill: var(--accent-pale);
+  }
+
+  /* ── 正文区 ── */
   .gov-detail {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 24px 0;
+    max-width: 860px;
+    margin: 36px auto 0;
   }
-  .gov-detail h1 {
-    font-family: "Noto Serif SC", serif;
-    font-size: 28px;
-    margin-bottom: 16px;
-    color: var(--ink-dark);
+  .gov-detail-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    background: var(--paper-warm);
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-full);
+    padding: 6px 16px;
+    margin: 0 0 20px;
   }
-  .gov-detail .content {
+  .gov-detail-card {
+    background: white;
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 36px 40px;
+  }
+  .gov-detail-content {
     font-size: 16px;
-    line-height: 1.8;
+    line-height: 2;
     color: var(--ink);
-    white-space: pre-wrap;
+    word-break: break-word;
   }
-  .gov-detail .actions {
+  .gov-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
     margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--paper-deep);
+  }
+  .gov-detail-actions .btn {
+    gap: 8px;
+  }
+
+  /* ── 返回顶部 ── */
+  #backToTop {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 200;
+  }
+  #backToTop.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* ── 响应式 ── */
+  @media (max-width: 768px) {
+    .hero-content {
+      padding: 36px 22px;
+    }
+    .gov-detail-card {
+      padding: 26px 22px;
+    }
   }
 </style>
 {% endblock %} {% block content %}
-<div class="gov-detail">
-  <a href="/government" class="btn btn-secondary" style="margin-bottom: 20px">← 返回政务列表</a>
-  <h1>{{ government.title }}</h1>
-  <div class="content">
-    {{ government.content|replace('\n', '<br />')|safe if government.content else '暂无内容' }}
+<div class="gov-page">
+  <!-- HERO -->
+  <section class="svc-hero">
+    <div
+      class="hero-bg"
+      style="background: linear-gradient(135deg, var(--ink) 0%, var(--jade) 100%);"
+    ></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="/"><i class="fas fa-home"></i> 首页</a>
+        <span class="sep">/</span>
+        <a href="/government">政务公开</a>
+        <span class="sep">/</span>
+        <span>{{ government.title }}</span>
+      </nav>
+      <h1>{{ government.title }}</h1>
+      <p class="hero-sub">政务公开 · 阳光村务</p>
+    </div>
+  </section>
+
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
   </div>
-  <div class="actions">
-    {% if government.file_url %}
-    <a href="{{ government.file_url }}" class="btn btn-primary" target="_blank">
-      <i class="fas fa-download"></i> 下载附件
-    </a>
+
+  <!-- 正文 -->
+  <div class="gov-detail">
+    {% if government.create_time %}
+    <p class="gov-detail-meta">
+      <i class="far fa-calendar-alt"></i> 发布于 {{ government.create_time }}
+    </p>
     {% endif %}
+    <article class="gov-detail-card">
+      <div class="gov-detail-content">
+        {{ government.content|replace('\n', '<br />')|safe if government.content else '暂无内容' }}
+      </div>
+      <div class="gov-detail-actions">
+        <a href="/government" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> 返回列表
+        </a>
+        {% if government.file_url %}
+        <a
+          href="{{ government.file_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-primary"
+        >
+          <i class="fas fa-download"></i> 下载附件
+        </a>
+        {% endif %}
+      </div>
+    </article>
   </div>
 </div>
+{% endblock %} {% block scripts %}
+<script>
+  (function () {
+    var btn = document.getElementById("backToTop");
+    if (!btn) return;
+    window.addEventListener("scroll", function () {
+      if (window.scrollY > 400) btn.classList.add("show");
+      else btn.classList.remove("show");
+    });
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  })();
+</script>
 {% endblock %}

@@ -1,117 +1,266 @@
-{% extends 'base.html' %} {% block content %}
-<div class="container mt-4">
+{% extends 'base.html' %}
+{% block title %}政务管理 - 管理后台{% endblock %}
+{% block head %}
+<style>
+  /* ===== 政务管理 · 墨色主题（仅引用 base.html 设计令牌） ===== */
+  .admin-wrap {
+    --accent: var(--ink);
+    --accent-light: var(--ink-light);
+    --accent-pale: var(--ink-muted);
+    max-width: 1000px;
+    margin: 24px auto;
+    padding: 0 20px;
+  }
+
+  /* ── 卡片 ── */
+  .admin-card {
+    background: var(--paper);
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .admin-wrap > h2 {
+    font-family: var(--font-display);
+    color: var(--ink-dark);
+    margin: 0 0 20px;
+    font-size: 24px;
+  }
+  .admin-card h3 {
+    font-family: var(--font-display);
+    color: var(--ink);
+    border-left: 4px solid var(--accent);
+    padding-left: 12px;
+    margin: 0 0 16px;
+    font-size: 18px;
+  }
+
+  /* ── 表单 ── */
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--paper-deep);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--paper);
+    color: var(--ink);
+    box-sizing: border-box;
+    transition: border-color var(--duration-fast) var(--ease-out);
+  }
+  .form-group textarea { resize: vertical; }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+
+  /* ── 按钮系统（令牌化） ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    transition: filter var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .btn:hover { filter: brightness(0.94); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-secondary { background: var(--ink-light); color: white; }
+  .btn-warning { background: var(--gold); color: white; }
+  .btn-danger { background: var(--cinnabar); color: white; }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+  /* ── 表格 ── */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--paper-deep);
+    box-shadow: var(--shadow-sm);
+  }
+  table.admin-table { width: 100%; border-collapse: collapse; }
+  .admin-table th {
+    background: var(--paper-warm);
+    color: var(--ink);
+    font-weight: 600;
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 2px solid var(--paper-deep);
+    font-size: 13px;
+  }
+  .admin-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--paper-deep);
+    color: var(--ink);
+    font-size: 14px;
+    vertical-align: top;
+  }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .admin-table tbody tr:hover td { background: var(--paper-warm); }
+
+  /* ── 模态框 ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-content {
+    background: var(--paper);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal-content h3 {
+    font-family: var(--font-display);
+    color: var(--ink);
+    margin: 0 0 16px;
+    border-left: 4px solid var(--accent);
+    padding-left: 12px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrap">
   <h2>政务管理</h2>
-  <form method="post" action="{{ url_for('admin.admin_government') }}" class="mb-4">
-    <div class="mb-3">
-      <label for="title" class="form-label">标题</label>
-      <input type="text" class="form-control" id="title" name="title" required />
-    </div>
-    <div class="mb-3">
-      <label for="content" class="form-label">内容</label>
-      <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">添加政务信息</button>
-  </form>
-  <script
-    src="https://cdn.tiny.cloud/1/{{ config.TINYMCE_API_KEY }}/tinymce/7/tinymce.min.js"
-    referrerpolicy="origin"
-  ></script>
-  <script>
-    tinymce.init({
-      selector: "#content",
-      height: 300,
-      plugins:
-        "advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount",
-      toolbar:
-        "undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image link | code | help",
-      menubar: false,
-      branding: false,
-    });
-  </script>
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>标题</th>
-        <th>内容</th>
-        <th>创建时间</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for gov in government_list %}
-      <tr>
-        <td>{{ gov.id }}</td>
-        <td>{{ gov.title }}</td>
-        <td>{{ gov.content }}</td>
-        <td>{{ gov.create_time }}</td>
-        <td>
-          <button
-            class="btn btn-sm btn-warning"
-            onclick="editGov({{ gov.id }}, '{{ gov.title }}', '{{ gov.content }}')"
-          >
-            编辑
-          </button>
-          <button class="btn btn-sm btn-danger" onclick="deleteGov({{ gov.id }})">删除</button>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <!-- 编辑模态框 -->
-  <div
-    class="modal fade"
-    id="editModal"
-    tabindex="-1"
-    aria-labelledby="editModalLabel"
-    aria-hidden="true"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="editForm">
-          <div class="modal-header">
-            <h5 class="modal-title" id="editModalLabel">编辑政务信息</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" id="edit_id" name="id" />
-            <div class="mb-3">
-              <label for="edit_title" class="form-label">标题</label>
-              <input type="text" class="form-control" id="edit_title" name="title" required />
-            </div>
-            <div class="mb-3">
-              <label for="edit_content" class="form-label">内容</label>
-              <textarea
-                class="form-control"
-                id="edit_content"
-                name="content"
-                rows="4"
-                required
-              ></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-            <button type="submit" class="btn btn-primary">保存修改</button>
-          </div>
-        </form>
+
+  <!-- 添加政务 -->
+  <div class="admin-card">
+    <h3>添加政务信息</h3>
+    <form method="post" action="{{ url_for('admin.admin_government') }}">
+      <div class="form-group">
+        <label for="title">标题</label>
+        <input type="text" id="title" name="title" required />
       </div>
+      <div class="form-group">
+        <label for="content">内容</label>
+        <textarea id="content" name="content" rows="4" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">添加政务信息</button>
+    </form>
+  </div>
+
+  <!-- 政务列表 -->
+  <div class="admin-card">
+    <h3>政务信息列表</h3>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>标题</th>
+            <th>内容</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for gov in government_list %}
+          <tr>
+            <td>{{ gov.id }}</td>
+            <td>{{ gov.title }}</td>
+            <td>{{ gov.content }}</td>
+            <td>{{ gov.create_time }}</td>
+            <td>
+              <button
+                class="btn btn-sm btn-warning"
+                onclick="editGov({{ gov.id }}, '{{ gov.title }}', '{{ gov.content }}')"
+              >
+                编辑
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="deleteGov({{ gov.id }})">删除</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 编辑模态框 -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+      <h3>编辑政务信息</h3>
+      <form id="editForm">
+        <input type="hidden" id="edit_id" name="id" />
+        <div class="form-group">
+          <label for="edit_title">标题</label>
+          <input type="text" id="edit_title" name="title" required />
+        </div>
+        <div class="form-group">
+          <label for="edit_content">内容</label>
+          <textarea id="edit_content" name="content" rows="4" required></textarea>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary">保存修改</button>
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">关闭</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
+
+<script
+  src="https://cdn.tiny.cloud/1/{{ config.TINYMCE_API_KEY }}/tinymce/7/tinymce.min.js"
+  referrerpolicy="origin"
+></script>
 <script>
+  tinymce.init({
+    selector: "#content",
+    height: 300,
+    plugins:
+      "advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount",
+    toolbar:
+      "undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image link | code | help",
+    menubar: false,
+    branding: false,
+  });
+
   function editGov(id, title, content) {
     document.getElementById("edit_id").value = id;
     document.getElementById("edit_title").value = title;
     document.getElementById("edit_content").value = content;
-    var editModal = new bootstrap.Modal(document.getElementById("editModal"));
-    editModal.show();
+    document.getElementById("editModal").classList.add("show");
   }
+
+  function closeEditModal() {
+    document.getElementById("editModal").classList.remove("show");
+  }
+
+  document.getElementById("editModal").addEventListener("click", function (e) {
+    if (e.target === this) closeEditModal();
+  });
+
   document.getElementById("editForm").onsubmit = function (e) {
     e.preventDefault();
     var id = document.getElementById("edit_id").value;

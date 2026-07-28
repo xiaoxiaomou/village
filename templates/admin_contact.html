@@ -1,189 +1,299 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>联系信息 - 乡村信息平台</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-style.css') }}">
-    <link href="{{ url_for('static', filename='font-awesome/css/all.min.css') }}" rel="stylesheet">
-    <style>
-        .form-section {
-            margin-bottom: 30px;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0 20px;
-        }
-        @media (max-width: 640px) {
-            .form-grid { grid-template-columns: 1fr; }
-        }
-        .section-title {
-            font-size: 20px;
-            color: var(--primary-color);
-            border-left: 4px solid var(--primary-color);
-            padding-left: 12px;
-            margin: 24px 0 16px;
-        }
-        textarea.apple-form-control {
-            resize: vertical;
-            min-height: 80px;
-            font-family: inherit;
-        }
-    </style>
-</head>
-<body>
-    <div style="background:linear-gradient(135deg,#007aff,#0055d4);padding:10px 24px;display:flex;align-items:center;justify-content:flex-end;gap:8px;">
-        <a href="/admin" style="color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;"><i class="fas fa-arrow-left"></i> 返回后台首页</a>
-    </div>
-    <header class="apple-navbar">
-        <nav>
-            <a href="/admin/contact" class="apple-nav-link">联系信息</a>
-            <a href="/admin/logo" class="apple-nav-link">Logo管理</a>
-            <a href="/admin/carousel" class="apple-nav-link">轮播图管理</a>
-            <a href="/admin/logout" class="apple-nav-link" onclick="logout(); return false;">退出</a>
-        </nav>
-    </header>
+{% extends "base.html" %}
+{% block title %}联系信息 - 管理后台{% endblock %}
+{% block head %}
+<style>
+  /* ===== 联系信息 · 朱砂主题（仅引用 base.html 设计令牌） ===== */
+  .admin-wrap {
+    --accent: var(--cinnabar);
+    --accent-light: var(--cinnabar-light);
+    --accent-pale: var(--cinnabar-pale);
+    max-width: 1000px;
+    margin: 24px auto;
+    padding: 0 20px;
+  }
 
-    <main class="main-container">
-        <div class="apple-card" style="max-width: 900px; margin: 0 auto;">
-            <h1 class="apple-page-title">乡村联系信息</h1>
-            <p class="apple-page-subtitle">维护乡村平台对外展示的联系方式，保存后在首页“联系我们”中展示</p>
+  /* ── 卡片 ── */
+  .admin-card {
+    background: var(--paper);
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .admin-card h1 {
+    font-family: var(--font-display);
+    color: var(--ink-dark);
+    margin: 0 0 6px;
+    font-size: 24px;
+  }
+  .admin-card .page-sub {
+    color: var(--ink-muted);
+    margin: 0 0 8px;
+    font-size: 14px;
+  }
 
-            <div id="alert-container"></div>
+  /* ── 区块标题 ── */
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--ink);
+    border-left: 4px solid var(--accent);
+    padding-left: 12px;
+    margin: 24px 0 16px;
+  }
 
-            <form id="contactForm">
-                <div class="section-title">基本信息</div>
-                <div class="form-grid">
-                    <div class="apple-form-group">
-                        <label for="address" class="apple-form-label">详细地址</label>
-                        <input type="text" class="apple-form-control" id="address" placeholder="如：xx省xx市xx镇xx村">
-                    </div>
-                    <div class="apple-form-group">
-                        <label for="phone" class="apple-form-label">办公电话</label>
-                        <input type="text" class="apple-form-control" id="phone" placeholder="如：0755-12345678">
-                    </div>
-                    <div class="apple-form-group">
-                        <label for="mobile" class="apple-form-label">手机 / 联系电话</label>
-                        <input type="text" class="apple-form-control" id="mobile" placeholder="如：138xxxx8888">
-                    </div>
-                    <div class="apple-form-group">
-                        <label for="email" class="apple-form-label">电子邮箱</label>
-                        <input type="text" class="apple-form-control" id="email" placeholder="如：contact@example.com">
-                    </div>
-                    <div class="apple-form-group">
-                        <label for="website" class="apple-form-label">官方网站</label>
-                        <input type="text" class="apple-form-control" id="website" placeholder="如：https://www.example.com">
-                    </div>
-                    <div class="apple-form-group">
-                        <label for="wechat" class="apple-form-label">微信公众号</label>
-                        <input type="text" class="apple-form-control" id="wechat" placeholder="如：xx乡村发布">
-                    </div>
-                </div>
-                <div class="apple-form-group">
-                    <label for="workHours" class="apple-form-label">办公时间</label>
-                    <input type="text" class="apple-form-control" id="workHours" placeholder="如：周一至周五 9:00-17:00">
-                </div>
-                <div class="apple-form-group">
-                    <label for="workNote" class="apple-form-label">办公时间说明</label>
-                    <textarea class="apple-form-control" id="workNote" rows="2" placeholder="如：法定节假日休息，紧急情况请拨手机"></textarea>
-                </div>
+  /* ── 表单 ── */
+  .form-section { margin-bottom: 8px; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 20px;
+  }
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--paper-deep);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--paper);
+    color: var(--ink);
+    box-sizing: border-box;
+    transition: border-color var(--duration-fast) var(--ease-out);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+  .form-hint {
+    color: var(--ink-muted);
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+  }
 
-                <div class="section-title">交通指引</div>
-                <div class="apple-form-group">
-                    <label for="public_transit" class="apple-form-label">公共交通</label>
-                    <textarea class="apple-form-control" id="public_transit" rows="3" placeholder="如：乘坐xx路公交至xx站下车，步行约500米"></textarea>
-                </div>
-                <div class="apple-form-group">
-                    <label for="driving_route" class="apple-form-label">自驾路线</label>
-                    <textarea class="apple-form-control" id="driving_route" rows="3" placeholder="如：导航搜索“xx村村委会”，沿xx路直行至红绿灯右转"></textarea>
-                </div>
-                <div class="apple-form-group">
-                    <label for="route_link" class="apple-form-label">路线规划链接</label>
-                    <input type="text" class="apple-form-control" id="route_link" placeholder="如：https://uri.amap.com/marker?position=... 或百度地图分享链接">
-                    <small style="color:#999;font-size:12px;">填写高德/百度等地图导航链接，前台“联系我们”将显示“路线规划”按钮跳转</small>
-                </div>
+  /* ── 按钮系统（令牌化） ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    transition: filter var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .btn:hover { filter: brightness(0.94); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-secondary { background: var(--ink-light); color: white; }
+  .btn-danger { background: var(--cinnabar); color: white; }
 
-                <div class="section-title">地图嵌入</div>
-                <div class="apple-form-group">
-                    <label for="mapEmbed" class="apple-form-label">地图嵌入代码（iframe）</label>
-                    <textarea class="apple-form-control" id="mapEmbed" rows="4" placeholder="粘贴第三方地图生成的 &lt;iframe&gt; 嵌入代码（可选）"></textarea>
-                </div>
+  /* ── 提示框（令牌化） ── */
+  .apple-alert {
+    padding: 14px 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .apple-alert::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+  }
+  .apple-alert-success {
+    background: var(--jade-pale);
+    color: var(--jade);
+    border-color: var(--jade-light);
+  }
+  .apple-alert-success::before { background: var(--jade); }
+  .apple-alert-danger {
+    background: var(--cinnabar-pale);
+    color: var(--cinnabar);
+    border-color: var(--cinnabar-light);
+  }
+  .apple-alert-danger::before { background: var(--cinnabar); }
 
-                <button type="submit" class="apple-btn apple-btn-primary" id="saveBtn">
-                    <i class="fas fa-save"></i> 保存联系信息
-                </button>
-            </form>
+  .page-footer-actions {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrap">
+  <div class="admin-card">
+    <h1>乡村联系信息</h1>
+    <p class="page-sub">维护乡村平台对外展示的联系方式，保存后在首页"联系我们"中展示</p>
+
+    <div id="alert-container"></div>
+
+    <form id="contactForm">
+      <div class="section-title">基本信息</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="address">详细地址</label>
+          <input type="text" id="address" placeholder="如：xx省xx市xx镇xx村" />
         </div>
-    </main>
+        <div class="form-group">
+          <label for="phone">办公电话</label>
+          <input type="text" id="phone" placeholder="如：0755-12345678" />
+        </div>
+        <div class="form-group">
+          <label for="mobile">手机 / 联系电话</label>
+          <input type="text" id="mobile" placeholder="如：138xxxx8888" />
+        </div>
+        <div class="form-group">
+          <label for="email">电子邮箱</label>
+          <input type="text" id="email" placeholder="如：contact@example.com" />
+        </div>
+        <div class="form-group">
+          <label for="website">官方网站</label>
+          <input type="text" id="website" placeholder="如：https://www.example.com" />
+        </div>
+        <div class="form-group">
+          <label for="wechat">微信公众号</label>
+          <input type="text" id="wechat" placeholder="如：xx乡村发布" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="work_hours">办公时间</label>
+        <input type="text" id="work_hours" placeholder="如：周一至周五 9:00-17:00" />
+      </div>
+      <div class="form-group">
+        <label for="work_note">办公时间说明</label>
+        <textarea id="work_note" rows="2" placeholder="如：法定节假日休息，紧急情况请拨手机"></textarea>
+      </div>
 
-    <script>
-        const FIELDS = [
-            "address", "phone", "mobile", "email", "website", "wechat",
-            "work_hours", "work_note", "public_transit", "driving_route",
-            "map_embed", "route_link"
-        ];
+      <div class="section-title">交通指引</div>
+      <div class="form-group">
+        <label for="public_transit">公共交通</label>
+        <textarea id="public_transit" rows="3" placeholder="如：乘坐xx路公交至xx站下车，步行约500米"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="driving_route">自驾路线</label>
+        <textarea id="driving_route" rows="3" placeholder="如：导航搜索“xx村村委会”，沿xx路直行至红绿灯右转"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="route_link">路线规划链接</label>
+        <input type="text" id="route_link" placeholder="如：https://uri.amap.com/marker?position=... 或百度地图分享链接" />
+        <span class="form-hint">填写高德/百度等地图导航链接，前台"联系我们"将显示"路线规划"按钮跳转</span>
+      </div>
 
-        document.addEventListener('DOMContentLoaded', function () {
-            loadContact();
-            document.getElementById('contactForm').addEventListener('submit', saveContact);
+      <div class="section-title">地图嵌入</div>
+      <div class="form-group">
+        <label for="map_embed">地图嵌入代码（iframe）</label>
+        <textarea id="map_embed" rows="4" placeholder="粘贴第三方地图生成的 &lt;iframe&gt; 嵌入代码（可选）"></textarea>
+      </div>
+
+      <div class="page-footer-actions">
+        <button type="submit" class="btn btn-primary" id="saveBtn">
+          <i class="fas fa-save"></i> 保存联系信息
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> 退出登录
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const FIELDS = [
+    "address", "phone", "mobile", "email", "website", "wechat",
+    "work_hours", "work_note", "public_transit", "driving_route",
+    "map_embed", "route_link"
+  ];
+
+  document.addEventListener('DOMContentLoaded', function () {
+    loadContact();
+    document.getElementById('contactForm').addEventListener('submit', saveContact);
+  });
+
+  function loadContact() {
+    fetch('/api/contact')
+      .then(r => r.json())
+      .then(data => {
+        const c = data.contact || {};
+        FIELDS.forEach(f => {
+          const el = document.getElementById(f);
+          if (el && c[f] != null) el.value = c[f];
         });
+      })
+      .catch(err => {
+        console.error('加载联系信息失败:', err);
+        showAlert('加载联系信息失败', 'error');
+      });
+  }
 
-        function loadContact() {
-            fetch('/api/contact')
-                .then(r => r.json())
-                .then(data => {
-                    const c = data.contact || {};
-                    FIELDS.forEach(f => {
-                        const el = document.getElementById(f);
-                        if (el && c[f] != null) el.value = c[f];
-                    });
-                })
-                .catch(err => {
-                    console.error('加载联系信息失败:', err);
-                    showAlert('加载联系信息失败', 'error');
-                });
-        }
+  function saveContact(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveBtn');
+    const payload = {};
+    FIELDS.forEach(f => {
+      const el = document.getElementById(f);
+      payload[f] = el ? el.value.trim() : "";
+    });
+    btn.disabled = true;
+    fetch('/admin/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(r => r.json())
+      .then(data => {
+        showAlert(data.msg || '保存成功', 'success');
+      })
+      .catch(err => {
+        console.error('保存失败:', err);
+        showAlert('保存失败，请重试', 'error');
+      })
+      .finally(() => { btn.disabled = false; });
+  }
 
-        function saveContact(e) {
-            e.preventDefault();
-            const btn = document.getElementById('saveBtn');
-            const payload = {};
-            FIELDS.forEach(f => {
-                const el = document.getElementById(f);
-                payload[f] = el ? el.value.trim() : "";
-            });
-            btn.disabled = true;
-            fetch('/admin/contact', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-                .then(r => r.json())
-                .then(data => {
-                    showAlert(data.msg || '保存成功', 'success');
-                })
-                .catch(err => {
-                    console.error('保存失败:', err);
-                    showAlert('保存失败，请重试', 'error');
-                })
-                .finally(() => { btn.disabled = false; });
-        }
+  function logout() {
+    fetch('/admin/logout', { method: 'POST' })
+      .then(() => { window.location.href = '/admin/login'; });
+  }
 
-        function logout() {
-            fetch('/admin/logout', { method: 'POST' })
-                .then(() => { window.location.href = '/admin/login'; });
-        }
-
-        function showAlert(message, type) {
-            const container = document.getElementById('alert-container');
-            const div = document.createElement('div');
-            div.className = 'apple-alert apple-alert-' + (type === 'success' ? 'success' : 'danger');
-            div.innerHTML = '<span>' + message + '</span>';
-            container.innerHTML = '';
-            container.appendChild(div);
-            setTimeout(() => { div.remove(); }, 3000);
-        }
-    </script>
-</body>
-</html>
+  function showAlert(message, type) {
+    const container = document.getElementById('alert-container');
+    const div = document.createElement('div');
+    div.className = 'apple-alert apple-alert-' + (type === 'success' ? 'success' : 'danger');
+    div.innerHTML = '<span>' + message + '</span>';
+    container.innerHTML = '';
+    container.appendChild(div);
+    setTimeout(() => { div.remove(); }, 3000);
+  }
+</script>
+{% endblock %}

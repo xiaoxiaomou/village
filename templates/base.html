@@ -726,11 +726,12 @@
 
     <main class="container">
       {% with messages = get_flashed_messages() %} {% if messages %}
-      <div class="flash-messages">
+      <div class="flash-messages" id="flashMessages">
         {% for message in messages %}
         <div class="flash">{{ message }}</div>
         {% endfor %}
       </div>
+      <script>(function(){var el=document.getElementById('flashMessages');if(el){setTimeout(function(){el.style.transition='opacity .4s';el.style.opacity='0';setTimeout(function(){el.remove()},400)},3000)}})()</script>
       {% endif %} {% endwith %} {% block content %}{% endblock %}
     </main>
 

@@ -1,107 +1,251 @@
-{% extends 'base.html' %} {% block content %}
-<div class="container mt-4">
+{% extends 'base.html' %}
+{% block title %}服务管理 - 管理后台{% endblock %}
+{% block head %}
+<style>
+  /* ===== 服务管理 · 金色主题（仅引用 base.html 设计令牌） ===== */
+  .admin-wrap {
+    --accent: var(--gold);
+    --accent-light: var(--gold-light);
+    --accent-pale: var(--gold-pale);
+    max-width: 1000px;
+    margin: 24px auto;
+    padding: 0 20px;
+  }
+
+  /* ── 卡片 ── */
+  .admin-card {
+    background: var(--paper);
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .admin-wrap > h2 {
+    font-family: var(--font-display);
+    color: var(--ink-dark);
+    margin: 0 0 20px;
+    font-size: 24px;
+  }
+  .admin-card h3 {
+    font-family: var(--font-display);
+    color: var(--ink);
+    border-left: 4px solid var(--accent);
+    padding-left: 12px;
+    margin: 0 0 16px;
+    font-size: 18px;
+  }
+
+  /* ── 表单 ── */
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--paper-deep);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--paper);
+    color: var(--ink);
+    box-sizing: border-box;
+    transition: border-color var(--duration-fast) var(--ease-out);
+  }
+  .form-group textarea { resize: vertical; }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+
+  /* ── 按钮系统（令牌化） ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    transition: filter var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .btn:hover { filter: brightness(0.94); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-secondary { background: var(--ink-light); color: white; }
+  .btn-warning { background: var(--gold); color: white; }
+  .btn-danger { background: var(--cinnabar); color: white; }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+  /* ── 表格 ── */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--paper-deep);
+    box-shadow: var(--shadow-sm);
+  }
+  table.admin-table { width: 100%; border-collapse: collapse; }
+  .admin-table th {
+    background: var(--paper-warm);
+    color: var(--ink);
+    font-weight: 600;
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 2px solid var(--paper-deep);
+    font-size: 13px;
+  }
+  .admin-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--paper-deep);
+    color: var(--ink);
+    font-size: 14px;
+    vertical-align: top;
+  }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .admin-table tbody tr:hover td { background: var(--paper-warm); }
+
+  /* ── 模态框 ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-content {
+    background: var(--paper);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal-content h3 {
+    font-family: var(--font-display);
+    color: var(--ink);
+    margin: 0 0 16px;
+    border-left: 4px solid var(--accent);
+    padding-left: 12px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrap">
   <h2>服务管理</h2>
-  <form method="post" action="{{ url_for('admin.admin_services') }}" class="mb-4">
-    <div class="mb-3">
-      <label for="name" class="form-label">服务名称</label>
-      <input type="text" class="form-control" id="name" name="name" required />
-    </div>
-    <div class="mb-3">
-      <label for="description" class="form-label">服务描述</label>
-      <textarea
-        class="form-control"
-        id="description"
-        name="description"
-        rows="3"
-        required
-      ></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">添加服务</button>
-  </form>
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>服务名称</th>
-        <th>描述</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for service in services %}
-      <tr>
-        <td>{{ service.id }}</td>
-        <td>{{ service.name }}</td>
-        <td>{{ service.description }}</td>
-        <td>
-          <button
-            class="btn btn-sm btn-warning"
-            onclick="editService({{ service.id }}, '{{ service.name }}', '{{ service.description }}')"
-          >
-            编辑
-          </button>
-          <button class="btn btn-sm btn-danger" onclick="deleteService({{ service.id }})">
-            删除
-          </button>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <!-- 编辑模态框 -->
-  <div
-    class="modal fade"
-    id="editModal"
-    tabindex="-1"
-    aria-labelledby="editModalLabel"
-    aria-hidden="true"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="editForm">
-          <div class="modal-header">
-            <h5 class="modal-title" id="editModalLabel">编辑服务</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" id="edit_id" name="id" />
-            <div class="mb-3">
-              <label for="edit_name" class="form-label">服务名称</label>
-              <input type="text" class="form-control" id="edit_name" name="name" required />
-            </div>
-            <div class="mb-3">
-              <label for="edit_description" class="form-label">服务描述</label>
-              <textarea
-                class="form-control"
-                id="edit_description"
-                name="description"
-                rows="3"
-                required
-              ></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-            <button type="submit" class="btn btn-primary">保存修改</button>
-          </div>
-        </form>
+
+  <!-- 添加服务 -->
+  <div class="admin-card">
+    <h3>添加服务</h3>
+    <form method="post" action="{{ url_for('admin.admin_services') }}">
+      <div class="form-group">
+        <label for="name">服务名称</label>
+        <input type="text" id="name" name="name" required />
       </div>
+      <div class="form-group">
+        <label for="description">服务描述</label>
+        <textarea id="description" name="description" rows="3" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">添加服务</button>
+    </form>
+  </div>
+
+  <!-- 服务列表 -->
+  <div class="admin-card">
+    <h3>服务列表</h3>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>服务名称</th>
+            <th>描述</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for service in services %}
+          <tr>
+            <td>{{ service.id }}</td>
+            <td>{{ service.name }}</td>
+            <td>{{ service.description }}</td>
+            <td>
+              <button
+                class="btn btn-sm btn-warning"
+                onclick="editService({{ service.id }}, '{{ service.name }}', '{{ service.description }}')"
+              >
+                编辑
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="deleteService({{ service.id }})">
+                删除
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 编辑模态框 -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+      <h3>编辑服务</h3>
+      <form id="editForm">
+        <input type="hidden" id="edit_id" name="id" />
+        <div class="form-group">
+          <label for="edit_name">服务名称</label>
+          <input type="text" id="edit_name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="edit_description">服务描述</label>
+          <textarea id="edit_description" name="description" rows="3" required></textarea>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary">保存修改</button>
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">关闭</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
+
 <script>
   function editService(id, name, description) {
     document.getElementById("edit_id").value = id;
     document.getElementById("edit_name").value = name;
     document.getElementById("edit_description").value = description;
-    var editModal = new bootstrap.Modal(document.getElementById("editModal"));
-    editModal.show();
+    document.getElementById("editModal").classList.add("show");
   }
+
+  function closeEditModal() {
+    document.getElementById("editModal").classList.remove("show");
+  }
+
+  document.getElementById("editModal").addEventListener("click", function (e) {
+    if (e.target === this) closeEditModal();
+  });
+
   document.getElementById("editForm").onsubmit = function (e) {
     e.preventDefault();
     var id = document.getElementById("edit_id").value;

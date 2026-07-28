@@ -1,156 +1,362 @@
 {% extends "base.html" %} {% block title %}{{ news.title }} - 新闻详情{% endblock %} {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <style>
-  .news-detail-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 32px 24px;
+  /* ===== 新闻详情页 · 朱砂主题（仅引用 base.html 设计令牌） ===== */
+  .news-page {
+    --accent: var(--cinnabar);
+    --accent-light: var(--cinnabar-light);
+    --accent-pale: var(--cinnabar-pale);
+    --accent2: var(--gold);
+    --aux: var(--jade);
   }
 
-  .news-detail-header {
-    margin-bottom: 32px;
+  /* ── Hero（封面大图 + 标题 + meta） ── */
+  .svc-hero {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    min-height: 420px;
+    display: flex;
+    align-items: flex-end;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 8px;
   }
-
-  .news-detail-header h1 {
-    font-family: "Noto Serif SC", serif;
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--ink-dark, #1a1a1a);
-    margin: 0 0 16px;
-    line-height: 1.4;
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent);
   }
-
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(26, 26, 46, 0.22) 0%, var(--ink-dark) 100%);
+    opacity: 0.66;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 52px 48px;
+    width: 100%;
+    color: var(--paper);
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    color: var(--paper);
+    opacity: 0.9;
+  }
+  .breadcrumb a {
+    color: var(--paper);
+    opacity: 0.85;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .breadcrumb a:hover {
+    opacity: 1;
+    color: var(--gold-light);
+  }
+  .breadcrumb .sep {
+    opacity: 0.5;
+  }
+  .svc-hero h1 {
+    color: var(--paper);
+    font-size: clamp(26px, 4vw, 42px);
+    font-weight: 900;
+    letter-spacing: 2px;
+    line-height: 1.35;
+    margin: 0 0 18px;
+    text-shadow: 0 2px 16px rgba(26, 26, 46, 0.4);
+  }
   .news-detail-meta {
     display: flex;
-    gap: 20px;
     flex-wrap: wrap;
+    gap: 18px;
     font-size: 14px;
-    color: var(--ink-muted, #666);
+    color: var(--paper);
+    opacity: 0.95;
   }
-
   .news-detail-meta span {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
   }
-
-  .news-detail-meta .tag {
-    background: var(--gold-pale, #fdf6e3);
-    color: var(--gold, #c9a227);
-    padding: 3px 14px;
-    border-radius: 20px;
+  .news-detail-cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: var(--radius-full);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    box-shadow: 0 2px 10px rgba(26, 26, 46, 0.2);
   }
 
-  .news-detail-meta .views {
-    color: var(--ink-muted, #666);
+  /* ── 波浪分隔 ── */
+  .svc-wave {
+    line-height: 0;
+    margin: -1px 0;
   }
-
-  .news-detail-cover {
+  .svc-wave svg {
+    display: block;
     width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    border-radius: 16px;
-    margin-bottom: 32px;
-    box-shadow: 0 4px 20px var(--shadow-soft, rgba(0,0,0,0.08));
+    height: 70px;
+  }
+  .svc-wave path {
+    fill: var(--accent-pale);
   }
 
-  .news-detail-content {
+  /* ── 正文卡片 ── */
+  .news-article {
+    background: white;
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: 44px 48px;
+    margin-top: 36px;
+  }
+  .news-article-content {
     font-size: 16px;
-    line-height: 1.8;
-    color: var(--ink, #333);
-    white-space: pre-wrap;
+    line-height: 1.95;
+    color: var(--ink);
     word-wrap: break-word;
   }
-
-  .news-detail-content p {
-    margin-bottom: 16px;
+  .news-article-content p {
+    margin: 0 0 18px;
+    max-width: none;
   }
-
-  .news-detail-content img {
+  .news-article-content img {
     max-width: 100%;
     height: auto;
-    border-radius: 12px;
-    margin: 16px 0;
+    border-radius: var(--radius-md);
+    margin: 18px 0;
+    box-shadow: var(--shadow-sm);
+  }
+  .news-article-content h2,
+  .news-article-content h3,
+  .news-article-content h4 {
+    margin: 28px 0 14px;
+    color: var(--ink-dark);
+  }
+  .news-article-content a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .news-article-content blockquote {
+    margin: 20px 0;
+    padding: 14px 22px;
+    border-left: 4px solid var(--accent);
+    background: var(--accent-pale);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    color: var(--ink-light);
+    font-style: italic;
   }
 
-  .news-detail-back {
+  /* ── 上一篇 / 下一篇 ── */
+  .news-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 28px;
+  }
+  .news-nav a {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px 24px;
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    background: white;
+    text-decoration: none;
+    transition: all var(--duration-normal) var(--ease-out);
+  }
+  .news-nav a:hover {
+    border-color: var(--accent-light);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .news-nav .news-nav-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .news-nav .news-nav-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-dark);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .news-nav-next {
+    text-align: right;
+  }
+  .news-nav-next .news-nav-label {
+    justify-content: flex-end;
+  }
+  .news-nav-empty {
+    border: 1px dashed var(--paper-deep);
+    border-radius: var(--radius-lg);
+    background: transparent;
+  }
+
+  /* ── 返回列表按钮 ── */
+  .news-back {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-top: 40px;
-    padding: 12px 24px;
-    background: var(--paper-warm, #faf8f5);
-    border-radius: 10px;
+    margin-top: 28px;
+    padding: 12px 26px;
+    border-radius: var(--radius-full);
+    background: var(--paper-warm);
+    border: 1px solid var(--paper-deep);
+    color: var(--ink-light);
+    font-weight: 600;
     text-decoration: none;
-    color: var(--ink, #333);
-    font-weight: 500;
-    transition: all 0.3s;
-    border: 1px solid var(--paper-deep, #eee);
+    transition: all var(--duration-normal) var(--ease-out);
+  }
+  .news-back:hover {
+    background: var(--accent-pale);
+    border-color: var(--accent-light);
+    color: var(--accent);
+    transform: translateY(-1px);
   }
 
-  .news-detail-back:hover {
-    background: var(--gold-pale, #fdf6e3);
-    border-color: var(--gold, #c9a227);
-    color: var(--cinnabar, #c45c48);
-  }
-
-  .news-categories-nav {
+  /* ── 返回顶部 ── */
+  #backToTop {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
     display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 200;
+  }
+  #backToTop.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
   }
 
-  .news-categories-nav a {
-    padding: 8px 18px;
-    border-radius: 20px;
-    text-decoration: none;
-    font-size: 14px;
-    background: white;
-    color: var(--ink, #333);
-    border: 1px solid var(--paper-deep, #eee);
-    transition: all 0.3s;
-  }
-
-  .news-categories-nav a:hover,
-  .news-categories-nav a.active {
-    background: var(--gold-pale, #fdf6e3);
-    border-color: var(--gold, #c9a227);
-    color: var(--cinnabar, #c45c48);
+  /* ── 响应式 ── */
+  @media (max-width: 768px) {
+    .hero-content {
+      padding: 36px 22px;
+    }
+    .news-article {
+      padding: 28px 22px;
+    }
+    .news-nav {
+      grid-template-columns: 1fr;
+    }
+    .news-nav-next {
+      text-align: left;
+    }
+    .news-nav-next .news-nav-label {
+      justify-content: flex-start;
+    }
   }
 </style>
 {% endblock %} {% block content %}
-
-<div class="news-detail-container">
-  <!-- 文章标题 -->
-  <div class="news-detail-header">
-    <h1>{{ news.title }}</h1>
-    <div class="news-detail-meta">
-      {% if news.category %}
-      <span class="tag">{{ news.category }}</span>
-      {% endif %}
-      {% if news.author %}
-      <span>👤 {{ news.author }}</span>
-      {% endif %}
-      <span>📅 {{ news.create_time }}</span>
-      <span class="views">👁 {{ news.view_count }} 阅读</span>
+<div class="news-page">
+  <!-- HERO（封面大图） -->
+  <section class="svc-hero">
+    {% if news.image_url %}
+    <div class="hero-bg" style="background-image:url('{{ news.image_url }}');"></div>
+    {% else %}
+    <div class="hero-bg" style="background:linear-gradient(135deg, var(--accent) 0%, var(--aux) 100%);"></div>
+    {% endif %}
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="/"><i class="fas fa-home"></i> 首页</a>
+        <span class="sep">/</span>
+        <a href="{{ url_for('main.news_page') }}">新闻动态</a>
+        <span class="sep">/</span>
+        <span>{{ news.title }}</span>
+      </nav>
+      <h1>{{ news.title }}</h1>
+      <div class="news-detail-meta">
+        {% if news.category %}
+        <span class="news-detail-cat"><i class="fas fa-tag"></i> {{ news.category }}</span>
+        {% endif %} {% if news.author %}
+        <span><i class="far fa-user"></i> {{ news.author }}</span>
+        {% endif %}
+        <span><i class="far fa-calendar-alt"></i> {{ news.create_time }}</span>
+        <span><i class="far fa-eye"></i> {{ news.view_count }} 阅读</span>
+      </div>
     </div>
+  </section>
+
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
   </div>
 
-  <!-- 封面图 -->
-  {% if news.image_url %}
-  <img src="{{ news.image_url }}" alt="{{ news.title }}" class="news-detail-cover">
-  {% endif %}
+  <!-- 正文 -->
+  <article class="news-article">
+    <div class="news-article-content">{{ news.content | safe }}</div>
+  </article>
 
-  <!-- 正文内容 -->
-  <div class="news-detail-content">
-    {{ news.content | safe }}
+  <!-- 上一篇 / 下一篇 -->
+  <div class="news-nav">
+    {% if news.prev %}
+    <a class="news-nav-prev" href="{{ url_for('main.news_detail', news_id=news.prev.id) }}">
+      <span class="news-nav-label"><i class="fas fa-chevron-left"></i> 上一篇</span>
+      <span class="news-nav-title">{{ news.prev.title }}</span>
+    </a>
+    {% else %}
+    <span class="news-nav-empty"></span>
+    {% endif %} {% if news.next %}
+    <a class="news-nav-next" href="{{ url_for('main.news_detail', news_id=news.next.id) }}">
+      <span class="news-nav-label">下一篇 <i class="fas fa-chevron-right"></i></span>
+      <span class="news-nav-title">{{ news.next.title }}</span>
+    </a>
+    {% else %}
+    <span class="news-nav-empty"></span>
+    {% endif %}
   </div>
 
   <!-- 返回列表 -->
-  <a href="{{ url_for('main.news_page') }}" class="news-detail-back">← 返回新闻列表</a>
+  <a href="{{ url_for('main.news_page') }}" class="news-back">
+    <i class="fas fa-arrow-left"></i> 返回新闻列表
+  </a>
 </div>
-
+{% endblock %} {% block scripts %}
+<script>
+  (function () {
+    var btn = document.getElementById("backToTop");
+    if (!btn) return;
+    window.addEventListener("scroll", function () {
+      if (window.scrollY > 400) btn.classList.add("show");
+      else btn.classList.remove("show");
+    });
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  })();
+</script>
 {% endblock %}

@@ -1,284 +1,483 @@
-{% extends "base.html" %}
-{% block title %}互动交流 - 乡村信息平台{% endblock %}
-
-{% block head %}
+{% extends "base.html" %} {% block title %}互动交流 - 美丽乡村{% endblock %} {% block head %}
 <style>
-    .message-form {
-        background: #f8f9fa;
-        padding: 25px;
-        border-radius: 8px;
-        margin-bottom: 30px;
-        border: 1px solid #e9ecef;
+  /* ===== 互动交流（留言板）· 黛绿主题（仅引用 base.html 设计令牌） ===== */
+  .msg-page {
+    --accent: var(--jade);
+    --accent-light: var(--jade-light);
+    --accent-pale: var(--paper-warm);
+    --accent2: var(--gold);
+  }
+
+  /* ── Hero 全幅图 ── */
+  .svc-hero {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    min-height: 380px;
+    display: flex;
+    align-items: flex-end;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 8px;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent);
+  }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(26, 26, 46, 0.28) 0%, var(--ink-dark) 100%);
+    opacity: 0.62;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 52px 48px;
+    width: 100%;
+    color: var(--paper);
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    color: var(--paper);
+    opacity: 0.9;
+  }
+  .breadcrumb a {
+    color: var(--paper);
+    opacity: 0.85;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+  .breadcrumb a:hover {
+    opacity: 1;
+    color: var(--gold-light);
+  }
+  .breadcrumb .sep {
+    opacity: 0.5;
+  }
+  .svc-hero h1 {
+    color: var(--paper);
+    font-size: clamp(32px, 5vw, 50px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin: 0 0 12px;
+    text-shadow: 0 2px 16px rgba(26, 26, 46, 0.35);
+  }
+  .hero-sub {
+    color: var(--paper);
+    font-size: clamp(14px, 2vw, 18px);
+    letter-spacing: 2px;
+    opacity: 0.95;
+    margin: 0;
+  }
+
+  /* ── 波浪分隔 ── */
+  .svc-wave {
+    line-height: 0;
+    margin: -1px 0;
+  }
+  .svc-wave svg {
+    display: block;
+    width: 100%;
+    height: 70px;
+  }
+  .svc-wave path {
+    fill: var(--accent-pale);
+  }
+
+  /* ── 双栏布局 ── */
+  .msg-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 380px) 1fr;
+    gap: 28px;
+    align-items: start;
+    margin-top: 36px;
+  }
+
+  /* ── 留言表单 ── */
+  .msg-form-card {
+    background: white;
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 28px 26px;
+    position: sticky;
+    top: 88px;
+  }
+  .msg-form-card h3 {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    margin: 0 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .msg-form-card h3 i {
+    color: var(--accent);
+  }
+  .msg-field {
+    margin-bottom: 18px;
+  }
+  .msg-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-light);
+  }
+  .msg-field label .req {
+    color: var(--cinnabar);
+    margin-left: 2px;
+  }
+  .msg-field .form-control {
+    width: 100%;
+  }
+  /* focus 高亮使用 accent 色（令牌，无硬编码） */
+  .msg-page .form-control:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  .char-count {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-muted);
+    text-align: right;
+  }
+  .char-count.warn {
+    color: var(--cinnabar);
+    font-weight: 600;
+  }
+  .msg-submit {
+    width: 100%;
+    margin-top: 4px;
+    gap: 8px;
+  }
+
+  /* ── 留言列表 ── */
+  .msg-list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .msg-list-head h3 {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .msg-list-head h3 i {
+    color: var(--accent);
+  }
+  .msg-count-badge {
+    font-size: 13px;
+    color: var(--ink-muted);
+    background: var(--paper-warm);
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-full);
+    padding: 4px 14px;
+  }
+  .msg-card {
+    background: white;
+    border: 1px solid var(--paper-deep);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    transition: box-shadow var(--duration-normal) var(--ease-out);
+  }
+  .msg-card:hover {
+    box-shadow: var(--shadow-md);
+  }
+  .msg-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .msg-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--accent-pale);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .msg-meta {
+    flex: 1;
+    min-width: 0;
+  }
+  .msg-name {
+    font-weight: 700;
+    color: var(--ink-dark);
+    font-size: 15px;
+  }
+  .msg-time {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .msg-body {
+    color: var(--ink);
+    line-height: 1.85;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg-contact {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .msg-contact i {
+    margin-right: 5px;
+  }
+  .msg-reply {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--paper-warm);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+  .reply-label {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 13px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .msg-reply div:last-child {
+    color: var(--ink-light);
+    font-size: 14px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  /* ── 返回顶部 ── */
+  #backToTop {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: all var(--duration-normal) var(--ease-out);
+    z-index: 200;
+  }
+  #backToTop.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* ── 响应式 ── */
+  @media (max-width: 768px) {
+    .hero-content {
+      padding: 36px 22px;
     }
-    .form-group {
-        margin-bottom: 20px;
+    .msg-layout {
+      grid-template-columns: 1fr;
     }
-    .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: bold;
-        color: #333;
+    .msg-form-card {
+      position: static;
     }
-    .form-control {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-        box-sizing: border-box;
-    }
-    .form-control:focus {
-        border-color: #2d8cf0;
-        outline: none;
-        box-shadow: 0 0 5px rgba(45, 140, 240, 0.3);
-    }
-    .btn-primary {
-        background: #2d8cf0;
-        color: white;
-        padding: 12px 30px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-        transition: background 0.3s;
-    }
-    .btn-primary:hover {
-        background: #1a6fb3;
-    }
-    .message-item {
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .message-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
-    }
-    .message-author {
-        font-weight: bold;
-        color: #2d8cf0;
-    }
-    .message-time {
-        color: #666;
-        font-size: 12px;
-    }
-    .message-content {
-        line-height: 1.6;
-        color: #333;
-        margin-bottom: 15px;
-    }
-    .message-reply {
-        background: #f0f8ff;
-        border-left: 4px solid #2d8cf0;
-        padding: 15px;
-        margin-top: 15px;
-        border-radius: 0 4px 4px 0;
-    }
-    .reply-header {
-        font-weight: bold;
-        color: #2d8cf0;
-        margin-bottom: 8px;
-    }
-    .contact-info {
-        background: #e8f5e8;
-        border: 1px solid #c3e6c3;
-        border-radius: 8px;
-        padding: 20px;
-        margin-top: 30px;
-    }
-    .contact-title {
-        color: #2d8cf0;
-        font-size: 18px;
-        font-weight: bold;
-        margin-bottom: 15px;
-    }
-    .contact-item {
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-    }
-    .contact-icon {
-        width: 20px;
-        margin-right: 10px;
-        color: #2d8cf0;
-    }
-    .alert {
-        padding: 12px 20px;
-        border-radius: 4px;
-        margin-bottom: 20px;
-    }
-    .alert-success {
-        background: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
-    }
-    .alert-error {
-        background: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
-    }
-    .no-messages {
-        text-align: center;
-        color: #666;
-        font-style: italic;
-        padding: 40px;
-        background: #f8f9fa;
-        border-radius: 8px;
-    }
+  }
 </style>
-{% endblock %}
+{% endblock %} {% block content %}
+<div class="msg-page">
+  <!-- HERO -->
+  <section class="svc-hero">
+    <div
+      class="hero-bg"
+      style="background-image:url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=80');"
+    ></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="/"><i class="fas fa-home"></i> 首页</a>
+        <span class="sep">/</span>
+        <span>互动交流</span>
+      </nav>
+      <h1>互动交流</h1>
+      <p class="hero-sub">畅所欲言 · 有问必答</p>
+    </div>
+  </section>
 
-{% block content %}
-<div class="container">
-    <h2 style="color: #2d8cf0; margin-bottom: 30px;">💬 互动交流</h2>
-    
-    <!-- Flash消息显示 -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-success">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    
+  <div class="svc-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 70" preserveAspectRatio="none">
+      <path d="M0,38 C240,70 480,6 720,38 C960,70 1200,6 1440,38 L1440,70 L0,70 Z"></path>
+    </svg>
+  </div>
+
+  <!-- 双栏：表单 + 列表 -->
+  <div class="msg-layout">
     <!-- 留言表单 -->
-    <div class="message-form">
-        <h3 style="color: #333; margin-bottom: 20px;">📝 发表留言</h3>
-        <form method="POST" action="/message">
-            <div class="form-group">
-                <label for="name">姓名 *</label>
-                <input type="text" id="name" name="name" class="form-control" required 
-                       placeholder="请输入您的姓名" maxlength="50">
-            </div>
-            
-            <div class="form-group">
-                <label for="contact">联系方式</label>
-                <input type="text" id="contact" name="contact" class="form-control" 
-                       placeholder="手机号码或邮箱（选填）" maxlength="100">
-            </div>
-            
-            <div class="form-group">
-                <label for="content">留言内容 *</label>
-                <textarea id="content" name="content" class="form-control" rows="5" required 
-                          placeholder="请输入您的留言内容，我们会尽快回复您..." maxlength="1000"></textarea>
-            </div>
-            
-            <button type="submit" class="btn-primary">提交留言</button>
-        </form>
-    </div>
-    
+    <aside class="msg-form-card">
+      <h3><i class="fas fa-pen-nib"></i> 发表留言</h3>
+      <form method="POST" action="/message" id="msgForm">
+        <div class="msg-field">
+          <label for="name">姓名 <span class="req">*</span></label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            class="form-control"
+            required
+            placeholder="请输入您的姓名"
+            maxlength="50"
+          />
+        </div>
+        <div class="msg-field">
+          <label for="contact">联系方式</label>
+          <input
+            type="text"
+            id="contact"
+            name="contact"
+            class="form-control"
+            placeholder="手机号码或邮箱（选填）"
+            maxlength="100"
+          />
+        </div>
+        <div class="msg-field">
+          <label for="content">留言内容 <span class="req">*</span></label>
+          <textarea
+            id="content"
+            name="content"
+            class="form-control"
+            rows="5"
+            required
+            placeholder="请输入您的留言内容，我们会尽快回复您…"
+            maxlength="1000"
+          ></textarea>
+          <div class="char-count" id="charCount">0/1000 字符</div>
+        </div>
+        <button type="submit" class="btn btn-primary msg-submit">
+          <i class="fas fa-paper-plane"></i> 提交留言
+        </button>
+      </form>
+    </aside>
+
     <!-- 留言列表 -->
-    <div class="messages-list">
-        <h3 style="color: #333; margin-bottom: 20px;">💭 留言列表</h3>
-        
+    <section>
+      <div class="msg-list-head">
+        <h3><i class="far fa-comments"></i> 留言列表</h3>
         {% if messages and messages|length > 0 %}
-            {% for msg in messages %}
-            <div class="message-item">
-                <div class="message-header">
-                    <span class="message-author">{{ msg.name or '匿名用户' }}</span>
-                    <span class="message-time">{{ msg.create_time.strftime('%Y-%m-%d %H:%M') if msg.create_time else '' }}</span>
-                </div>
-                
-                <div class="message-content">
-                    {{ msg.content }}
-                </div>
-                
-                {% if msg.contact %}
-                <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
-                    联系方式: {{ msg.contact }}
-                </div>
-                {% endif %}
-                
-                {% if msg.reply %}
-                <div class="message-reply">
-                    <div class="reply-header">🏛️ 管理员回复:</div>
-                    <div>{{ msg.reply }}</div>
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="no-messages">
-                <p>暂无留言，欢迎您成为第一个留言的用户！</p>
-            </div>
+        <span class="msg-count-badge">共 {{ messages|length }} 条留言</span>
         {% endif %}
-    </div>
-    
-    <!-- 联系我们信息 -->
-    <div class="contact-info">
-        <div class="contact-title">📞 联系我们</div>
-        <div class="contact-item">
-            <span class="contact-icon">🏛️</span>
-            <span><strong>村委会地址:</strong> 美丽乡村示范村村委会</span>
+      </div>
+
+      {% if messages and messages|length > 0 %}
+      {% for msg in messages %}
+      <article class="msg-card">
+        <div class="msg-head">
+          <div class="msg-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="msg-meta">
+            <div class="msg-name">{{ msg.name or '匿名用户' }}</div>
+            <div class="msg-time">
+              <i class="far fa-clock"></i> {{ msg.create_time or '' }}
+            </div>
+          </div>
         </div>
-        <div class="contact-item">
-            <span class="contact-icon">📞</span>
-            <span><strong>联系电话:</strong> 0123-12345678</span>
+        <div class="msg-body">{{ msg.content }}</div>
+        {% if msg.contact %}
+        <div class="msg-contact"><i class="fas fa-address-book"></i> 联系方式：{{ msg.contact }}</div>
+        {% endif %}
+        {% if msg.reply %}
+        <div class="msg-reply">
+          <div class="reply-label"><i class="fas fa-reply"></i> 管理员回复</div>
+          <div>{{ msg.reply }}</div>
         </div>
-        <div class="contact-item">
-            <span class="contact-icon">📧</span>
-            <span><strong>电子邮箱:</strong> village@example.com</span>
-        </div>
-        <div class="contact-item">
-            <span class="contact-icon">🕒</span>
-            <span><strong>办公时间:</strong> 周一至周五 8:30-17:30</span>
-        </div>
-        <div class="contact-item">
-            <span class="contact-icon">🚌</span>
-            <span><strong>交通指引:</strong> 乘坐123路公交车到村委会站下车</span>
-        </div>
-    </div>
+        {% endif %}
+      </article>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state">
+        <i class="far fa-comment-dots"></i>
+        <p>暂无留言，欢迎您成为第一个留言的用户！</p>
+      </div>
+      {% endif %}
+    </section>
+  </div>
 </div>
-
+{% endblock %} {% block scripts %}
 <script>
-// 表单验证
-document.querySelector('form').addEventListener('submit', function(e) {
-    const name = document.getElementById('name').value.trim();
-    const content = document.getElementById('content').value.trim();
-    
-    if (!name) {
-        alert('请输入您的姓名');
+  (function () {
+    // 返回顶部
+    var btn = document.getElementById("backToTop");
+    if (btn) {
+      window.addEventListener("scroll", function () {
+        if (window.scrollY > 400) btn.classList.add("show");
+        else btn.classList.remove("show");
+      });
+      btn.addEventListener("click", function (e) {
         e.preventDefault();
-        return;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
     }
-    
-    if (!content) {
-        alert('请输入留言内容');
-        e.preventDefault();
-        return;
-    }
-    
-    if (content.length > 1000) {
-        alert('留言内容不能超过1000个字符');
-        e.preventDefault();
-        return;
-    }
-});
 
-// 字符计数
-document.getElementById('content').addEventListener('input', function() {
-    const maxLength = 1000;
-    const currentLength = this.value.length;
-    const remaining = maxLength - currentLength;
-    
-    // 创建或更新字符计数显示
-    let counter = document.getElementById('char-counter');
-    if (!counter) {
-        counter = document.createElement('div');
-        counter.id = 'char-counter';
-        counter.style.cssText = 'font-size: 12px; color: #666; text-align: right; margin-top: 5px;';
-        this.parentNode.appendChild(counter);
+    // 表单校验 + 字符计数（保留原交互逻辑）
+    var form = document.getElementById("msgForm");
+    var nameEl = document.getElementById("name");
+    var contentEl = document.getElementById("content");
+    var counter = document.getElementById("charCount");
+    var MAX = 1000;
+
+    if (contentEl && counter) {
+      contentEl.addEventListener("input", function () {
+        var len = this.value.length;
+        counter.textContent = len + "/" + MAX + " 字符";
+        counter.classList.toggle("warn", MAX - len < 50);
+      });
     }
-    
-    counter.textContent = `${currentLength}/${maxLength} 字符`;
-    counter.style.color = remaining < 50 ? '#e74c3c' : '#666';
-});
+
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        var name = nameEl ? nameEl.value.trim() : "";
+        var content = contentEl ? contentEl.value.trim() : "";
+        if (!name) {
+          alert("请输入您的姓名");
+          e.preventDefault();
+          return;
+        }
+        if (!content) {
+          alert("请输入留言内容");
+          e.preventDefault();
+          return;
+        }
+        if (content.length > MAX) {
+          alert("留言内容不能超过 1000 个字符");
+          e.preventDefault();
+        }
+      });
+    }
+  })();
 </script>
 {% endblock %}

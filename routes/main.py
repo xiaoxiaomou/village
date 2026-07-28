@@ -96,6 +96,9 @@ def news_page():
             "author": n.author,
             "category_id": n.category_id,
             "category_name": cat_map.get(n.category_id, ""),
+            # 新增（向后兼容，不破坏旧模板）：封面图与阅读量，用于列表卡片展示
+            "image_url": n.image_url,
+            "view_count": n.view_count or 0,
         }
         for n in pagination.items
     ]
@@ -134,6 +137,18 @@ def news_detail(news_id):
         logger.debug("新闻浏览量+1 失败")
         pass
 
+    # 上一篇 / 下一篇（按发布时间相邻，用于详情页"相关阅读"导航；纯增量，不破坏旧字段）
+    prev_news = (
+        News.query.filter(News.create_time < news.create_time)
+        .order_by(News.create_time.desc())
+        .first()
+    )
+    next_news = (
+        News.query.filter(News.create_time > news.create_time)
+        .order_by(News.create_time.asc())
+        .first()
+    )
+
     news_data = {
         "id": news.id,
         "title": news.title,
@@ -146,6 +161,16 @@ def news_detail(news_id):
         if news.create_time
         else None,
         "category": news.category.name if news.category else None,
+        "prev": (
+            {"id": prev_news.id, "title": prev_news.title}
+            if prev_news
+            else None
+        ),
+        "next": (
+            {"id": next_news.id, "title": next_news.title}
+            if next_news
+            else None
+        ),
     }
 
     return render_template("news_detail.html", news=news_data)
@@ -246,6 +271,27 @@ def service_detail(service_id):
     return render_template("service_detail.html", service=svc)
 
 
+# ─── 特色服务独立详情页（首页「特色服务」卡片跳转） ───
+
+
+@main_bp.route("/services/ecological-agriculture")
+def service_eco_agri():
+    """生态农业详情页"""
+    return render_template("service_eco_agri.html")
+
+
+@main_bp.route("/services/rural-tourism")
+def service_rural_tourism():
+    """乡村旅游详情页"""
+    return render_template("service_rural_tourism.html")
+
+
+@main_bp.route("/services/convenience-services")
+def service_convenience():
+    """便民服务详情页"""
+    return render_template("service_convenience.html")
+
+
 # ─── 互动交流（留言板） ───
 
 
@@ -295,7 +341,7 @@ def message_page():
             messages = []
 
         try:
-            return render_template("message_simple.html", messages=messages)
+            return render_template("message.html", messages=messages)
         except Exception as template_error:
             logger.error(f"模板渲染失败: {template_error}")
             return f"""<html><head><title>互动交流</title></head><body>
